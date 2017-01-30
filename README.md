@@ -43,7 +43,7 @@ alternative port. That means we will not have any port number collisions any mor
 The default port number of the MCP is 8100
 
 Other port numbers will be:
-- 8200: webloader, a http(s) loader acting as headless browser which is able to enrich http with AJAX content
+-  8200: webloader, a http(s) loader acting as headless browser which is able to enrich http with AJAX content
 -  8300: webcrawler, a crawler which loads a lot of documents from web documents
 -  8400: warcmanager, a process which combines single WARC files to bigger ones to create archives
 -  8500: yacyparser, a parser service which turns WARC into YaCy JSON
@@ -64,7 +64,7 @@ Please join our forums at http://forum.yacy.net
 At this time, yacy_grid_mcp is not provided in compiled form, you easily build it yourself. It's not difficult and done in one minute! The source code is hosted at https://github.com/yacy/yacy_grid_mcp, you can download it and run loklak with:
 
     > git clone https://github.com/yacy/yacy_grid_mcp.git
-    > cd lyacy_grid_mcp
+    > cd yacy_grid_mcp
     > gradle run
 
 ### Requirements for development
@@ -74,34 +74,52 @@ Maven and Gradle tools should be installed. To refresh gradle settings in eclips
 ## How to install the infrastructure services (message server, ftp server)?
 
 ### install and start apache ftp server
-- Download apache-ftpserver-1.1.0.tar.gz
+- Download apache-ftpserver-1.1.0.tar.gz (or a later version) from https://mina.apache.org/downloads-ftpserver.html
 - decompress the server package with
+
     > tar xfz apache-ftpserver-1.1.0.tar.gz
-- modify the write right of the anonymous user that we will use to write assets:
-edit the file apache-ftpserver-1.1.0/res/conf/users.properties
+    
+- modify the write right of the anonymous user that we will use to write assets: edit the file
+
+    apache-ftpserver-1.1.0/res/conf/users.properties
+
 - set the write permission for anonymous (we will introduce user accounts later, for now we use anonymous)
+
     ftpserver.user.anonymous.writepermission=true
+    
 - set a home path for the user, i.e.
+
     ftpserver.user.anonymous.homedirectory=/Users/admin/Downloads/ftphome
+    
 - edit the file apache-ftpserver-1.1.0/bin/ftpd.sh and set JAVA_HOME according to your system, i.e. on a Mac you set
+
     JAVA_HOME=/usr
+    
 - run the server, doing:
+
     > cd apache-ftpserver-1.1.0
     > bin/ftpd.sh res/conf/ftpd-typical.xml
+    
 This will run the ftp server at port 2121. To test the connection use a standard ftp client and start it with
+
     > ftp -P 2121 anonymous@127.0.0.1
 
 ### install and start rabbitmq:
 
 - Download rabbitmq-server-generic-unix-3.6.6.tar.xz
 - Extract the package with
+
     > tar xf rabbitmq-server-generic-unix-3.6.6.tar.xz
+
 - Run the server with
+
     > rabbitmq_server-3.6.6/sbin/rabbitmq-server
+
 - install the management plugin to be able to use a web interface:
+
     > rabbitmq_server-3.6.6/sbin/rabbitmq-plugins enable rabbitmq_management
-- To view the administration pages, open in your web browser:
-    http://127.0.0.1:15672
+
+- To view the administration pages, open in your web browser: http://127.0.0.1:15672
 - open http://127.0.0.1:15672/api/ for an api documentation
 - open http://127.0.0.1:15672/cli/ for the rabbitmqadmin
 
@@ -110,21 +128,32 @@ To test the api, try the following example:
 
 ### Writing messages
 Call:
+
     curl "127.0.0.1:8100/yacy/grid/mcp/messages/send.json?serviceName=testService&queueName=testQueue&message=hello_world"
+    
 This will send a message "hello_world" to the queue 'test' of service 'test'. You can ask for the number of entries in the queue with
+
     curl "http://127.0.0.1:8100/yacy/grid/mcp/messages/available.json?serviceName=testService&queueName=testQueue"
+    
 To get an entry from such a queue, call:
+
     curl "http://127.0.0.1:8100/yacy/grid/mcp/messages/receive.json?serviceName=testService&queueName=testQueue"
+    
 If you did not run the RabbitMQ message server, the messages are written to
+
     data/mcp-8100/messages/testService
-If you started a RabbitMQ message server, please monitor the writing of the messages at the web page
-    http://127.0.0.1:15672
+    
+If you started a RabbitMQ message server, please monitor the writing of the messages at the web page http://127.0.0.1:15672
 
 ### Writing assets
 Call:
+
     curl "http://127.0.0.1:8100/yacy/grid/mcp/assets/store.json?path=/xx/test.txt&asset=hello_world"
+    
 This will write an asset to the path xx/test.txt with the content "hello_world".
+
     curl "http://127.0.0.1:8100/yacy/grid/mcp/assets/load?path=/xx/test.txt"
+    
 will load the asset again.
 
 If you started a ftp server, the file(s) will be written relatively to the root path of the ftp home path.
@@ -140,9 +169,5 @@ LGPL 2.1
 
 
 Have fun!
+
 @0rb1t3r
-
-
-
-
-
