@@ -1,0 +1,9 @@
+classes/
+target/
+data/
+.settings/
+/class/
+/.gradle/
+/build/
+/bin/
+.DS_Store

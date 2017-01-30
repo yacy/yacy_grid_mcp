@@ -1,0 +1,35 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'application'
+apply plugin: 'eclipse'
+
+mainClassName = "net.yacy.grid.mcp.MCP"
+applicationDefaultJvmArgs = ["-Xmx96m"]
+
+group = 'net.yacy'
+version = '0.0.1-SNAPSHOT'
+
+description = "YaCy Grid MCP"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+repositories {
+     mavenCentral()
+}
+
+dependencies {
+    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.22'
+    compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.2'
+    compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.3.11.v20160721'
+    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '9.3.11.v20160721'
+    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
+    compile group: 'org.mapdb', name: 'mapdb', version: '3.0.2'
+    compile group: 'com.rabbitmq', name: 'amqp-client', version: '4.0.1'
+    compile group: 'commons-net', name: 'commons-net', version: '3.5'
+    compile group: 'jcifs', name: 'jcifs', version: '1.3.17'    
+}
