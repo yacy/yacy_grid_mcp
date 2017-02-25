@@ -100,22 +100,6 @@ public class MCP {
             File home = FileSystems.getDefault().getPath(".").toFile();
             File data = FileSystems.getDefault().getPath("data").toFile();
             Data.init(home, new File(data, "mcp-" + port), config);
-
-            // connect outside services
-            // first try to connect to the configured MCPs.
-            // if that fails, try to make all connections self
-            String[] gridMcpAddress = config.get("grid.mcp.address").split(",");
-            boolean mcpConnected = false;
-            for (String address: gridMcpAddress) {
-                if (
-                        Data.gridBroker.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort()) &&
-                        Data.gridStorage.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort())
-                    ) {
-                    Data.logger.info("Connected MCP at " + address);
-                    mcpConnected = true;
-                    break;
-                }
-            }
             
             // open the server on available port
             boolean portForce = Boolean.getBoolean(config.get("port.force"));
@@ -123,39 +107,6 @@ public class MCP {
 
             // give positive feedback
             Data.logger.info("Service started at port " + port);
-            
-            // read the config a third time, now with the appropriate port
-            dataFile = FileSystems.getDefault().getPath("mcp-" + port + "/conf").toFile();
-            try {
-                config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
-            } catch (IOException e1) {
-                e1.printStackTrace();
-                System.exit(-1);
-            }
-            
-            if (!mcpConnected) {
-                // try to connect to local services directly
-                String[] gridBrokerAddress = config.get("grid.broker.address").split(",");
-                for (String address: gridBrokerAddress) {
-                    if (Data.gridBroker.connectRabbitMQ(getHost(address), getPort(address, -1))) {
-                        Data.logger.info("Connected Broker at " + address);
-                        break;
-                    }
-                }
-                if (!Data.gridBroker.isRabbitMQConnected()) {
-                    Data.logger.info("Connected to the embedded Broker");
-                }
-                String[] gridFtpAddress = config.get("grid.ftp.address").split(",");
-                for (String address: gridFtpAddress) {
-                    if (Data.gridStorage.connectFTP(getHost(address), getPort(address, 2121), "anonymous", "yacy")) {
-                        Data.logger.info("Connected Storage at " + address);
-                        break;
-                    }
-                }
-                if (!Data.gridStorage.isFTPConnected()) {
-                    Data.logger.info("Connected to the embedded Asset Storage");
-                }
-            }
 
             // prepare shutdown signal
             File pid = new File(data, "mcp-" + port + ".pid");
@@ -172,14 +123,5 @@ public class MCP {
         Data.close();
     }
     
-    private static String getHost(String address) {
-        int p = address.indexOf(':');
-        return p < 0 ? address : address.substring(0,  p);
-    }
-
-    private static int getPort(String address, int defaultPort) {
-        int p = address.indexOf(':');
-        return p < 0 ? defaultPort : Integer.parseInt(address.substring(p + 1));
-    }
 
 }

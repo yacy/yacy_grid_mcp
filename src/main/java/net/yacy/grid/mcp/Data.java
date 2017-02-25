@@ -25,6 +25,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.assets.GridStorage;
 import net.yacy.grid.io.db.JSONDatabase;
 import net.yacy.grid.io.db.PeerDatabase;
@@ -75,7 +76,57 @@ public class Data {
         // create storage
         File assetsPath = new File(gridServicePath, "assets");
         gridStorage = new GridStorage(assetsPath);
+ 
+        // connect outside services
+        // first try to connect to the configured MCPs.
+        // if that fails, try to make all connections self
+        String[] gridMcpAddress = config.get("grid.mcp.address").split(",");
+        boolean mcpConnected = false;
+        for (String address: gridMcpAddress) {
+            if (
+                    Data.gridBroker.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort()) &&
+                    Data.gridStorage.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort())
+                ) {
+                Data.logger.info("Connected MCP at " + address);
+                mcpConnected = true;
+                break;
+            }
+        }
         
+        if (!mcpConnected) {
+            // try to connect to local services directly
+            String[] gridBrokerAddress = config.get("grid.broker.address").split(",");
+            for (String address: gridBrokerAddress) {
+                if (Data.gridBroker.connectRabbitMQ(getHost(address), getPort(address, -1))) {
+                    Data.logger.info("Connected Broker at " + address);
+                    break;
+                }
+            }
+            if (!Data.gridBroker.isRabbitMQConnected()) {
+                Data.logger.info("Connected to the embedded Broker");
+            }
+            String[] gridFtpAddress = config.get("grid.ftp.address").split(",");
+            for (String address: gridFtpAddress) {
+                if (Data.gridStorage.connectFTP(getHost(address), getPort(address, 2121), "anonymous", "yacy")) {
+                    Data.logger.info("Connected Storage at " + address);
+                    break;
+                }
+            }
+            if (!Data.gridStorage.isFTPConnected()) {
+                Data.logger.info("Connected to the embedded Asset Storage");
+            }
+        }
+        
+    }
+    
+    private static String getHost(String address) {
+        int p = address.indexOf(':');
+        return p < 0 ? address : address.substring(0,  p);
+    }
+
+    private static int getPort(String address, int defaultPort) {
+        int p = address.indexOf(':');
+        return p < 0 ? defaultPort : Integer.parseInt(address.substring(p + 1));
     }
     
     public static void close() {
