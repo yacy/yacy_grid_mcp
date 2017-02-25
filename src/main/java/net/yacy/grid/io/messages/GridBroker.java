@@ -44,14 +44,14 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         protocolhoststub = protocolhoststub.substring(RabbitQueueFactory.PROTOCOL_PREFIX.length());
         int p = protocolhoststub.indexOf(':');
         if (p < 0)
-            return connectRabbitMQ(protocolhoststub, -1);
+            return connectRabbitMQ(protocolhoststub, -1, null, null);
         else 
-            return connectRabbitMQ(protocolhoststub.substring(0,  p), Integer.parseInt(protocolhoststub.substring(p + 1)));
+            return connectRabbitMQ(protocolhoststub.substring(0,  p), Integer.parseInt(protocolhoststub.substring(p + 1)), null, null);
     }
     
-    public boolean connectRabbitMQ(String host, int port) {
+    public boolean connectRabbitMQ(String host, int port, String username, String password) {
         try {
-            QueueFactory<byte[]> qc = new RabbitQueueFactory(host, port, null, null);
+            QueueFactory<byte[]> qc = new RabbitQueueFactory(host, port, username, password);
             this.rabbitConnector = qc;
             return true;
         } catch (IOException e) {

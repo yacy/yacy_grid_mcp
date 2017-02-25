@@ -34,7 +34,7 @@ import net.yacy.grid.io.messages.PeerBroker;
 
 public class Data {
     
-    public static File approot, gridServicePath;
+    public static File gridServicePath;
     public static PeerDatabase peerDB;
     public static JSONDatabase peerJsonDB;
     public static GridBroker gridBroker;
@@ -45,9 +45,8 @@ public class Data {
     
     //public static Swagger swagger;
     
-    public static void init(File root, File data, Map<String, String> cc) {
+    public static void init(File serviceData, Map<String, String> cc) {
         logger = LoggerFactory.getLogger(Data.class);
-        approot = root;
         config = cc;
         /*
         try {
@@ -58,7 +57,7 @@ public class Data {
         */
         //swagger.getServlets().forEach(path -> System.out.println(swagger.getServlet(path).toString()));
         
-        gridServicePath = data;
+        gridServicePath = serviceData;
         if (!gridServicePath.exists()) gridServicePath.mkdirs();
         
         // create databases
@@ -97,7 +96,7 @@ public class Data {
             // try to connect to local services directly
             String[] gridBrokerAddress = config.get("grid.broker.address").split(",");
             for (String address: gridBrokerAddress) {
-                if (Data.gridBroker.connectRabbitMQ(getHost(address), getPort(address, -1))) {
+                if (Data.gridBroker.connectRabbitMQ(getHost(address), getPort(address, "-1"), getUser(address, "anonymous"), getPassword(address, "yacy"))) {
                     Data.logger.info("Connected Broker at " + address);
                     break;
                 }
@@ -107,7 +106,7 @@ public class Data {
             }
             String[] gridFtpAddress = config.get("grid.ftp.address").split(",");
             for (String address: gridFtpAddress) {
-                if (Data.gridStorage.connectFTP(getHost(address), getPort(address, 2121), "anonymous", "yacy")) {
+                if (Data.gridStorage.connectFTP(getHost(address), getPort(address, "2121"), getUser(address, "anonymous"), getPassword(address, "yacy"))) {
                     Data.logger.info("Connected Storage at " + address);
                     break;
                 }
@@ -118,15 +117,29 @@ public class Data {
         }
         
     }
-    
+
     private static String getHost(String address) {
-        int p = address.indexOf(':');
-        return p < 0 ? address : address.substring(0,  p);
+        String hp = t(address, '@', address);
+        return h(hp, ':', hp);
+    }
+    private static int getPort(String address, String defaultPort) {
+        return Integer.parseInt(t(t(address, '@', address), ':', defaultPort));
+    }
+    private static String getUser(String address, String defaultUser) {
+        return h(h(address, '@', ""), ':', defaultUser);
+    }
+    private static String getPassword(String address, String defaultPassword) {
+        return t(h(address, '@', ""), ':', defaultPassword);
+    }
+    
+    private static String h(String a, char s, String d) {
+        int p = a.indexOf(s);
+        return p < 0 ? d : a.substring(0,  p);
     }
 
-    private static int getPort(String address, int defaultPort) {
-        int p = address.indexOf(':');
-        return p < 0 ? defaultPort : Integer.parseInt(address.substring(p + 1));
+    private static String t(String a, char s, String d) {
+        int p = a.indexOf(s);
+        return p < 0 ? d : a.substring(p + 1);
     }
     
     public static void close() {
