@@ -30,6 +30,7 @@ import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.JSONAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
 import net.yacy.grid.mcp.api.messages.ReceiveService;
 import net.yacy.grid.mcp.api.messages.SendService;
@@ -75,6 +76,14 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
         params.put("queueName", serviceQueueName.substring(p + 1));
         return new Queue<byte[]>() {
 
+            @Override
+            public void checkConnection() throws IOException {
+                String protocolhostportstub = MCPQueueFactory.this.getConnectionURL();
+                ServiceResponse sr = APIServer.getAPI(StatusService.NAME).serviceImpl(protocolhostportstub, params);
+                if (!sr.getObject().has("system")) throw new IOException("MCP does not respond properly");
+                available(); // check on service level again
+            }
+            
             @Override
             public Queue<byte[]> send(byte[] message) throws IOException {
                 params.put("message", new String(message, StandardCharsets.UTF_8));

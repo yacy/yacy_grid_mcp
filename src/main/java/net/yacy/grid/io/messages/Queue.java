@@ -27,6 +27,12 @@ import java.io.IOException;
 public interface Queue<A> {
 
     /**
+     * check the connection
+     * @throws IOException in case that the connection is invalid
+     */
+    public void checkConnection() throws IOException;
+    
+    /**
      * send a message to the queue
      * @param message
      * @return the Queue

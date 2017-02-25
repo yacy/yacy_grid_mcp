@@ -38,6 +38,10 @@ public class Action {
     
     private JSONObject json;
 
+    public Action() {
+        this.json = new JSONObject();
+    }
+    
     public Action(JSONObject json) {
         this.json = json;
     }

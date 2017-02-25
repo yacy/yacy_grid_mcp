@@ -117,6 +117,11 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             this.queueName = queueName;
             RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, null);
         }
+
+        @Override
+        public void checkConnection() throws IOException {
+            available();
+        }
         
         @Override
         public Queue<byte[]> send(byte[] message) throws IOException {

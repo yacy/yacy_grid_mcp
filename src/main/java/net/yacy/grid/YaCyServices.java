@@ -36,8 +36,8 @@ package net.yacy.grid;
 public enum YaCyServices implements Services {
 
     mcp(8100),              // the master connect program which orchestrates all other services
-    webloader(8200),        // a http(s) loader acting as headless browser which is able to enrich http with AJAX content
-    webcrawler(8300),       // a crawler which loads a lot of documents from web documents
+    loader(8200),           // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
+    crawler(8300),          // a crawler which loads a lot of documents from web or other network resources
     warcmanager(8400),      // a process which combines single WARC files to bigger ones to create archives
     yacyparser(8500),       // a parser service which turns WARC into YaCy JSON
     yacyenricher(8600),     // a semantic enricher for YaCy JSON objects

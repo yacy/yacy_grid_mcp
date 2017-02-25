@@ -65,9 +65,15 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
 
     public boolean connectMCP(String host, int port) {
-        QueueFactory<byte[]> mcpqf = new MCPQueueFactory(this, host, port);
-        this.mcpConnector = mcpqf;
-        return true;
+        try {
+            QueueFactory<byte[]> mcpqf = new MCPQueueFactory(this, host, port);
+            mcpqf.getQueue("test_test").checkConnection();
+            this.mcpConnector = mcpqf;
+            return true;
+        } catch (IOException e) {
+            Data.logger.debug("trying to connect to a Queue over MCP at " + host + ":" + port + " failed");
+            return false;
+        }
     }
 
     @Override

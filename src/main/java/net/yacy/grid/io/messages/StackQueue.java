@@ -37,6 +37,11 @@ public class StackQueue<A> implements Queue<A> {
         this.stack = backedStack;
         this.semaphore = new Semaphore(this.stack.size(), true);
     }
+
+    @Override
+    public void checkConnection() throws IOException {
+        available();
+    }
     
     @Override
     public Queue<A> send(A message) throws IOException {

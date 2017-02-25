@@ -95,9 +95,34 @@ public class MCP {
         // start server
         APIServer.init(services);
         try {
+            
+            // find home path
+            File home = FileSystems.getDefault().getPath(".").toFile();
+            File data = FileSystems.getDefault().getPath("data").toFile();
+            Data.init(home, new File(data, "mcp-" + port), config);
+
+            // connect outside services
+            // first try to connect to the configured MCPs.
+            // if that fails, try to make all connections self
+            String[] gridMcpAddress = config.get("grid.mcp.address").split(",");
+            boolean mcpConnected = false;
+            for (String address: gridMcpAddress) {
+                if (
+                        Data.gridBroker.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort()) &&
+                        Data.gridStorage.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort())
+                    ) {
+                    Data.logger.info("Connected MCP at " + address);
+                    mcpConnected = true;
+                    break;
+                }
+            }
+            
             // open the server on available port
             boolean portForce = Boolean.getBoolean(config.get("port.force"));
             port = APIServer.open(port, portForce);
+
+            // give positive feedback
+            Data.logger.info("Service started at port " + port);
             
             // read the config a third time, now with the appropriate port
             dataFile = FileSystems.getDefault().getPath("mcp-" + port + "/conf").toFile();
@@ -107,15 +132,9 @@ public class MCP {
                 e1.printStackTrace();
                 System.exit(-1);
             }
-
-            // find home path
-            File home = FileSystems.getDefault().getPath(".").toFile();
-            File data = FileSystems.getDefault().getPath("data").toFile();
-            Data.init(home, new File(data, "mcp-" + port), config);
-
-            // connect outside services
-            if (port == YaCyServices.mcp.getDefaultPort()) {
-                // primary mcp services try to connect to local services directly
+            
+            if (!mcpConnected) {
+                // try to connect to local services directly
                 String[] gridBrokerAddress = config.get("grid.broker.address").split(",");
                 for (String address: gridBrokerAddress) {
                     if (Data.gridBroker.connectRabbitMQ(getHost(address), getPort(address, -1))) {
@@ -136,23 +155,7 @@ public class MCP {
                 if (!Data.gridStorage.isFTPConnected()) {
                     Data.logger.info("Connected to the embedded Asset Storage");
                 }
-            } else {
-                // secondary mcp services try connect to the primary mcp which then tells
-                // us where to connect to directly
-                String[] gridMcpAddress = config.get("grid.mcp.address").split(",");
-                for (String address: gridMcpAddress) {
-                    if (
-                            Data.gridBroker.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort()) &&
-                            Data.gridStorage.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort())
-                        ) {
-                        Data.logger.info("Connected MCP at " + address);
-                        break;
-                    }
-                }
             }
-
-            // give positive feedback
-            Data.logger.info("Service started at port " + port);
 
             // prepare shutdown signal
             File pid = new File(data, "mcp-" + port + ".pid");

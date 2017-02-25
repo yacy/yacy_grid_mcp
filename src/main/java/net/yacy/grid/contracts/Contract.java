@@ -47,6 +47,10 @@ public class Contract extends JSONObject {
 
     public Contract() {
         super(true);
+        // create base data structure
+        getMetadata();
+        getData();
+        getActions();
     }
     
     public Contract(JSONObject json) {
@@ -244,4 +248,16 @@ public class Contract extends JSONObject {
     public JSONObject toJSON() {
         return this;
     }
+    
+    public static void main(String[] args) {
+        Contract contract = new Contract();
+        contract.setQuery("*");
+        contract.addDirection("url", "http://fsfe.de");
+        Action action = new Action()
+                .setQuery(new JSONObject().put("q", "abc"))
+                .setServletName("yacysearch");
+        contract.addAction(action);
+        System.out.println(contract.toString(2));
+    }
+    
 }

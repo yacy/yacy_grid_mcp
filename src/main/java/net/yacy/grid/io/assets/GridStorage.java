@@ -65,8 +65,14 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
     }
     
     public boolean connectMCP(String host, int port) {
-        this.mcp = new MCPStorageFactory(this, host, port);
-        return true;
+        try {
+            this.mcp = new MCPStorageFactory(this, host, port);
+            this.mcp.getStorage().checkConnection();
+            return true;
+        } catch (IOException e) {
+            Data.logger.debug("trying to connect to a Storage over MCP at " + host + ":" + port + " failed");
+            return false;
+        }
     }
     
     @Override
