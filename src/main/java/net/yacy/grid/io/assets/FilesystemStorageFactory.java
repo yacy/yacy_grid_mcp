@@ -31,6 +31,11 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
         this.storage = new Storage<byte[]>() {
 
             @Override
+            public void checkConnection() throws IOException {
+                // do nothing
+            }
+            
+            @Override
             public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
                 File f = new File(basePath, path);
                 File f1 = new File(basePath, path + ".bkp");

@@ -33,6 +33,7 @@ import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Data;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
+import net.yacy.grid.mcp.api.info.StatusService;
 
 public class MCPStorageFactory implements StorageFactory<byte[]> {
 
@@ -71,6 +72,14 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
         return new Storage<byte[]>() {
 
             @Override
+            public void checkConnection() throws IOException {
+                final Map<String, byte[]> params = new HashMap<>();
+                String protocolhostportstub = MCPStorageFactory.this.getConnectionURL();
+                ServiceResponse sr = APIServer.getAPI(StatusService.NAME).serviceImpl(protocolhostportstub, params);
+                if (!sr.getObject().has("system")) throw new IOException("MCP does not respond properly");
+            }
+            
+            @Override
             public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
                 final Map<String, byte[]> params = new HashMap<>();
                 params.put("path", path.getBytes(StandardCharsets.UTF_8));
@@ -99,6 +108,7 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
             @Override
             public void close() {
             }
+            
             private void connectMCP(JSONObject response) {
                 if (response.has(JSONAPIHandler.SERVICE_KEY)) {
                     String server = response.getString(JSONAPIHandler.SERVICE_KEY);
@@ -109,6 +119,7 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
                     }
                 }
             }
+            
             private IOException handleError(JSONObject response) {
                 if (response.has(JSONAPIHandler.COMMENT_KEY)) {
                     return new IOException("cannot connect to MCP: " + response.getString(JSONAPIHandler.COMMENT_KEY));

@@ -27,8 +27,8 @@ import net.yacy.grid.tools.MultiProtocolURL;
 
 public class GridStorage extends PeerStorage implements Storage<byte[]> {
 
-    private StorageFactory<byte[]> ftp;
-    private StorageFactory<byte[]> mcp;
+    private StorageFactory<byte[]> ftp = null;
+    private StorageFactory<byte[]> mcp = null;
     
     public GridStorage(File basePath) {
         super(basePath);
@@ -38,10 +38,11 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
     public boolean connectFTP(String host, int port, String username, String password) {
         try {
             StorageFactory<byte[]> ftp = new FTPStorageFactory(host, port, username, password);
+            ftp.getStorage().checkConnection(); // test the connection
             this.ftp = ftp;
             return true;
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to the ftp server failed", e);
+            Data.logger.debug("trying to connect to the ftp server at " + host + ":" + port + " failed");
             return false;
         }
     }
@@ -50,12 +51,17 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         try {
             MultiProtocolURL u = new MultiProtocolURL(url);
             StorageFactory<byte[]> ftp = new FTPStorageFactory(u.getHost(), u.getPort(), u.getUser(), u.getPassword());
+            ftp.getStorage().checkConnection(); // test the connection
             this.ftp = ftp;
             return true;
         } catch (IOException e) {
             Data.logger.debug("trying to connect to the ftp server failed", e);
             return false;
         }
+    }
+    
+    public boolean isFTPConnected() {
+        return this.ftp != null;
     }
     
     public boolean connectMCP(String host, int port) {

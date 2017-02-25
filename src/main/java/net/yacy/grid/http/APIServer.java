@@ -76,7 +76,7 @@ public class APIServer {
                 open(port);
                 return port;
             } catch (IOException e) {
-                if (!force) throw e;
+                if (force) throw e;
                 port++;
                 continue;
             }

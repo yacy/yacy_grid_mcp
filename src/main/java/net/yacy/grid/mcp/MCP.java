@@ -22,9 +22,13 @@ package net.yacy.grid.mcp;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.util.Map;
+
 import javax.servlet.Servlet;
 
 import org.apache.log4j.BasicConfigurator;
+
+import net.yacy.grid.tools.MapUtil;
 
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIServer;
@@ -44,23 +48,44 @@ public class MCP {
 
         // configure logging
         BasicConfigurator.configure();
-        
-        
+
         // define service port
         int port = YaCyServices.mcp.getDefaultPort();
-
+        
+        // load the config file(s);
+        File conf_dir = FileSystems.getDefault().getPath("conf").toFile();
+        File dataFile = FileSystems.getDefault().getPath("mcp-" + port + "/conf").toFile();
+        String confFileName = "config.properties";
+        Map<String, String> config = null;
+        try {
+            config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+            System.exit(-1);
+        }
+        
+        // read the port again and then read also the configuration again because the path of the custom settings may have moved
+        port = Integer.parseInt(config.get("port"));
+        dataFile = FileSystems.getDefault().getPath("mcp-" + port + "/conf").toFile();
+        try {
+            config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+            System.exit(-1);
+        }
+        
         // define services
         @SuppressWarnings("unchecked")
         Class<? extends Servlet>[] services = new Class[]{
                 // information services
                 ServicesService.class,
                 StatusService.class,
-                
+
                 // message services
                 SendService.class,
                 ReceiveService.class,
                 AvailableService.class,
-                
+
                 // asset services
                 //RetrieveService.class,
                 StoreService.class,
@@ -71,30 +96,66 @@ public class MCP {
         APIServer.init(services);
         try {
             // open the server on available port
-            port = APIServer.open(port, true);
+            boolean portForce = Boolean.getBoolean(config.get("port.force"));
+            port = APIServer.open(port, portForce);
+            
+            // read the config a third time, now with the appropriate port
+            dataFile = FileSystems.getDefault().getPath("mcp-" + port + "/conf").toFile();
+            try {
+                config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.exit(-1);
+            }
 
             // find home path
             File home = FileSystems.getDefault().getPath(".").toFile();
-            Data.init(home, "mcp-" + port);
-            
+            File data = FileSystems.getDefault().getPath("data").toFile();
+            Data.init(home, new File(data, "mcp-" + port), config);
+
             // connect outside services
-            // TODO make addresses configurable
             if (port == YaCyServices.mcp.getDefaultPort()) {
                 // primary mcp services try to connect to local services directly
-                Data.gridBroker.connectRabbitMQ("127.0.0.1", -1);
-                Data.gridStorage.connectFTP("127.0.0.1", 2121, "anonymous", "yacy");
+                String[] gridBrokerAddress = config.get("grid.broker.address").split(",");
+                for (String address: gridBrokerAddress) {
+                    if (Data.gridBroker.connectRabbitMQ(getHost(address), getPort(address, -1))) {
+                        Data.logger.info("Connected Broker at " + address);
+                        break;
+                    }
+                }
+                if (!Data.gridBroker.isRabbitMQConnected()) {
+                    Data.logger.info("Connected to the embedded Broker");
+                }
+                String[] gridFtpAddress = config.get("grid.ftp.address").split(",");
+                for (String address: gridFtpAddress) {
+                    if (Data.gridStorage.connectFTP(getHost(address), getPort(address, 2121), "anonymous", "yacy")) {
+                        Data.logger.info("Connected Storage at " + address);
+                        break;
+                    }
+                }
+                if (!Data.gridStorage.isFTPConnected()) {
+                    Data.logger.info("Connected to the embedded Asset Storage");
+                }
             } else {
                 // secondary mcp services try connect to the primary mcp which then tells
                 // us where to connect to directly
-                Data.gridBroker.connectMCP("127.0.0.1", YaCyServices.mcp.getDefaultPort());
-                Data.gridStorage.connectMCP("127.0.0.1", YaCyServices.mcp.getDefaultPort());
+                String[] gridMcpAddress = config.get("grid.mcp.address").split(",");
+                for (String address: gridMcpAddress) {
+                    if (
+                            Data.gridBroker.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort()) &&
+                            Data.gridStorage.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort())
+                        ) {
+                        Data.logger.info("Connected MCP at " + address);
+                        break;
+                    }
+                }
             }
-            
+
             // give positive feedback
             Data.logger.info("Service started at port " + port);
-            
+
             // prepare shutdown signal
-            File pid = new File(Data.dataPath, "mcp-" + port + ".pid");
+            File pid = new File(data, "mcp-" + port + ".pid");
             if (pid.exists()) pid.delete(); // clean up rubbish
             pid.createNewFile();
             pid.deleteOnExit();
@@ -108,4 +169,14 @@ public class MCP {
         Data.close();
     }
     
+    private static String getHost(String address) {
+        int p = address.indexOf(':');
+        return p < 0 ? address : address.substring(0,  p);
+    }
+
+    private static int getPort(String address, int defaultPort) {
+        int p = address.indexOf(':');
+        return p < 0 ? defaultPort : Integer.parseInt(address.substring(p + 1));
+    }
+
 }

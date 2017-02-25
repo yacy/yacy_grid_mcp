@@ -29,6 +29,11 @@ public class PeerStorage implements Storage<byte[]> {
     public PeerStorage(File basePath) {
         this.factory = new FilesystemStorageFactory(basePath);
     }
+
+    @Override
+    public void checkConnection() throws IOException {
+        // do nothing
+    }
     
     @Override
     public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {

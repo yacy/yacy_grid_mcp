@@ -43,7 +43,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
         this.ftp = null;
 
         this.ftpClient = new Storage<byte[]>() {
-            private void checkConnection() throws IOException {
+            public void checkConnection() throws IOException {
                 // check if there was any first initialization
                 if (FTPStorageFactory.this.ftp == null) {
                     initConnection();

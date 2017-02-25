@@ -19,12 +19,20 @@
 
 package net.yacy.grid.tools;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class MapUtil {
 
@@ -57,5 +65,31 @@ public class MapUtil {
             result.put(entry.getKey(), entry.getValue());
         }
         return result;
+    }
+    
+    /**
+     * read a configuration file and overload it with custom configurations
+     * @param conf_dir the path where the default configuration file is stored
+     * @param user_dir the path where the user writes a custom configuration
+     * @param confFileName the name of the configuration file
+     * @return a map from the properties in the configuration
+     * @throws IOException
+     */
+    public static Map<String, String> readConfig(File conf_dir, File user_dir, String confFileName) throws IOException {
+        Properties prop = new Properties();
+        prop.load(new FileInputStream(new File(conf_dir, confFileName)));
+        Map<String, String> config = new HashMap<>();
+        for (Map.Entry<Object, Object> entry: prop.entrySet()) config.put((String) entry.getKey(), (String) entry.getValue());
+        user_dir.mkdirs();
+        File customized_config = new File(user_dir, confFileName);
+        if (!customized_config.exists()) {
+            BufferedWriter w = new BufferedWriter(new FileWriter(customized_config));
+            w.write("# This file can be used to customize the configuration\n");
+            w.close();
+        }
+        Properties customized_config_props = new Properties();
+        customized_config_props.load(new FileInputStream(customized_config));
+        for (Map.Entry<Object, Object> entry: customized_config_props.entrySet()) config.put((String) entry.getKey(), (String) entry.getValue());
+        return config;
     }
 }

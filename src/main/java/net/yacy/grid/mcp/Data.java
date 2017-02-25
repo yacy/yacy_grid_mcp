@@ -20,6 +20,7 @@
 package net.yacy.grid.mcp;
 
 import java.io.File;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,19 +33,21 @@ import net.yacy.grid.io.messages.PeerBroker;
 
 public class Data {
     
-    public static File approot, dataPath, gridServicePath;
+    public static File approot, gridServicePath;
     public static PeerDatabase peerDB;
     public static JSONDatabase peerJsonDB;
     public static GridBroker gridBroker;
     public static PeerBroker peerBroker;
     public static GridStorage gridStorage;
     public static Logger logger;
+    public static Map<String, String> config;
     
     //public static Swagger swagger;
     
-    public static void init(File root, String gridServiceName) {
+    public static void init(File root, File data, Map<String, String> cc) {
         logger = LoggerFactory.getLogger(Data.class);
         approot = root;
+        config = cc;
         /*
         try {
             swagger = new Swagger(new File(new File(approot, "conf"), "swagger.json"));
@@ -54,9 +57,7 @@ public class Data {
         */
         //swagger.getServlets().forEach(path -> System.out.println(swagger.getServlet(path).toString()));
         
-        dataPath = new File(root, "data");
-        if (!dataPath.exists()) dataPath.mkdirs();
-        gridServicePath = new File(dataPath, gridServiceName);
+        gridServicePath = data;
         if (!gridServicePath.exists()) gridServicePath.mkdirs();
         
         // create databases
