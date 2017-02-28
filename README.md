@@ -144,6 +144,10 @@ This will run the ftp server at port 2121. To test the connection use a standard
 - open http://127.0.0.1:15672/api/ for an api documentation
 - open http://127.0.0.1:15672/cli/ for the rabbitmqadmin
 
+## Configuration of the MCP
+
+The mcp will create a subdirectory `data/mcp-8100`. There, within a `conf` sub-path you can place a file `config.properties` which has the same structure as the file in `<application-home>/conf/config.properties`. Just copy that file to `data/mcp-8100/conf/config.properties` and replace the default values with your own.
+
 ## How to use the API
 To test the api, try the following example:
 
