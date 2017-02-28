@@ -83,9 +83,13 @@ Maven and Gradle tools should be installed. To refresh gradle settings in eclips
 
     apache-ftpserver-1.1.0/res/conf/users.properties
 
-- set the write permission for anonymous (we will introduce user accounts later, for now we use anonymous)
+- set the write permission for anonymous.. if you don't want to set an user account
 
     ftpserver.user.anonymous.writepermission=true
+    
+- to create a user account, clone all entries for the user anonymous, rename the account name and set a password using a md5 encoding. The following command will encode the password 'password4account':
+
+    > echo -n password4account | md5sum
     
 - set a home path for the user, i.e.
 
@@ -111,6 +115,10 @@ This will run the ftp server at port 2121. To test the connection use a standard
 
     > tar xf rabbitmq-server-generic-unix-3.6.6.tar.xz
 
+- install the erlang programming language, rabbitmq is written in erlang. I.e. in debian, install:
+
+    > apt-get install erlang
+
 - Run the server with
 
     > rabbitmq_server-3.6.6/sbin/rabbitmq-server
@@ -118,6 +126,19 @@ This will run the ftp server at port 2121. To test the connection use a standard
 - install the management plugin to be able to use a web interface:
 
     > rabbitmq_server-3.6.6/sbin/rabbitmq-plugins enable rabbitmq_management
+    
+- add a rabbitmq user:
+
+    > rabbitmq_server-3.6.6/sbin/rabbitmqctl add_user yacygrid password4account
+
+- to make it possible that the rabbitmq server can be accessed from outside of localhost, add a configuration file to `rabbitmq_server-3.6.6/etc/rabbitmq/rabbitmq.config` with the following content:
+
+```
+[{rabbit, [{loopback_users,[]}]}].
+```
+
+- if you made it possible to set a remote connection to localhost, change the default password of the guest account (or remove the guest account)
+
 
 - To view the administration pages, open in your web browser: http://127.0.0.1:15672
 - open http://127.0.0.1:15672/api/ for an api documentation
