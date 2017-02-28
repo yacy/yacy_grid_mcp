@@ -41,8 +41,9 @@ import net.yacy.grid.mcp.api.messages.ReceiveService;
 import net.yacy.grid.mcp.api.messages.SendService;
 
 public class MCP {
-    
-    public final static String APP_NICK = "mcp";
+
+    public final static String DATA_PATH = "data";
+    public final static String APP_PATH = "mcp";
     
     public static void main(String[] args) {
         // run in headless mode
@@ -56,7 +57,7 @@ public class MCP {
         
         // load the config file(s);
         File conf_dir = FileSystems.getDefault().getPath("conf").toFile();
-        File dataFile = FileSystems.getDefault().getPath(APP_NICK + "-" + port + "/conf").toFile();
+        File dataFile = new File(new File(FileSystems.getDefault().getPath(DATA_PATH).toFile(), APP_PATH + "-" + port), "conf");
         String confFileName = "config.properties";
         Map<String, String> config = null;
         try {
@@ -68,7 +69,7 @@ public class MCP {
         
         // read the port again and then read also the configuration again because the path of the custom settings may have moved
         port = Integer.parseInt(config.get("port"));
-        dataFile = FileSystems.getDefault().getPath(APP_NICK + "-" + port + "/conf").toFile();
+        dataFile = new File(new File(FileSystems.getDefault().getPath(DATA_PATH).toFile(), APP_PATH + "-" + port), "conf");
         try {
             config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
         } catch (IOException e1) {
@@ -100,7 +101,7 @@ public class MCP {
             
             // find data path
             File data = FileSystems.getDefault().getPath("data").toFile();
-            Data.init(new File(data, APP_NICK + "-" + port), config);
+            Data.init(new File(data, APP_PATH + "-" + port), config);
             
             // open the server on available port
             boolean portForce = Boolean.getBoolean(config.get("port.force"));
@@ -110,7 +111,7 @@ public class MCP {
             Data.logger.info("Service started at port " + port);
 
             // prepare shutdown signal
-            File pid = new File(data, APP_NICK + "-" + port + ".pid");
+            File pid = new File(data, APP_PATH + "-" + port + ".pid");
             if (pid.exists()) pid.delete(); // clean up rubbish
             pid.createNewFile();
             pid.deleteOnExit();
