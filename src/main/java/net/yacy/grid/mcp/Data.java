@@ -86,7 +86,7 @@ public class Data {
                     Data.gridBroker.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort()) &&
                     Data.gridStorage.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort())
                 ) {
-                Data.logger.info("Connected MCP at " + address);
+                Data.logger.info("Connected MCP at " + getHost(address));
                 mcpConnected = true;
                 break;
             }
@@ -97,7 +97,7 @@ public class Data {
             String[] gridBrokerAddress = config.get("grid.broker.address").split(",");
             for (String address: gridBrokerAddress) {
                 if (Data.gridBroker.connectRabbitMQ(getHost(address), getPort(address, "-1"), getUser(address, "anonymous"), getPassword(address, "yacy"))) {
-                    Data.logger.info("Connected Broker at " + address);
+                    Data.logger.info("Connected Broker at " + getHost(address));
                     break;
                 }
             }
@@ -107,7 +107,7 @@ public class Data {
             String[] gridFtpAddress = config.get("grid.ftp.address").split(",");
             for (String address: gridFtpAddress) {
                 if (Data.gridStorage.connectFTP(getHost(address), getPort(address, "2121"), getUser(address, "anonymous"), getPassword(address, "yacy"))) {
-                    Data.logger.info("Connected Storage at " + address);
+                    Data.logger.info("Connected Storage at " + getHost(address));
                     break;
                 }
             }
