@@ -7,3 +7,4 @@ data/
 /bin/
 .DS_Store
 .classpath
+.settings
