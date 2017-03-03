@@ -6,3 +6,4 @@ data/
 /build/
 /bin/
 .DS_Store
+.classpath
