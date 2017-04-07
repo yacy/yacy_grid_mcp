@@ -110,7 +110,7 @@ This will run the ftp server at port 2121. To test the connection use a standard
 
 ### install and start rabbitmq:
 
-- Download rabbitmq-server-generic-unix-3.6.6.tar.xz
+- Download rabbitmq-server-generic-unix-3.6.6.tar.xz (from https://www.rabbitmq.com/download.html)
 - Extract the package with
 
     > tar xf rabbitmq-server-generic-unix-3.6.6.tar.xz
