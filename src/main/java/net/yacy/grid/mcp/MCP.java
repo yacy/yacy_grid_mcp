@@ -44,6 +44,24 @@ public class MCP {
 
     public final static String DATA_PATH = "data";
     public final static String APP_PATH = "mcp";
+ 
+    // define services
+    @SuppressWarnings("unchecked")
+    public final static Class<? extends Servlet>[] services = new Class[]{
+            // information services
+            ServicesService.class,
+            StatusService.class,
+
+            // message services
+            SendService.class,
+            ReceiveService.class,
+            AvailableService.class,
+
+            // asset services
+            //RetrieveService.class,
+            StoreService.class,
+            LoadService.class
+    };
     
     public static void main(String[] args) {
         // run in headless mode
@@ -77,23 +95,7 @@ public class MCP {
             System.exit(-1);
         }
         
-        // define services
-        @SuppressWarnings("unchecked")
-        Class<? extends Servlet>[] services = new Class[]{
-                // information services
-                ServicesService.class,
-                StatusService.class,
-
-                // message services
-                SendService.class,
-                ReceiveService.class,
-                AvailableService.class,
-
-                // asset services
-                //RetrieveService.class,
-                StoreService.class,
-                LoadService.class
-        };
+        
 
         // start server
         APIServer.init(services);
