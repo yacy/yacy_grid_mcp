@@ -26,8 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 
 import net.yacy.grid.http.APIHandler;
-import net.yacy.grid.http.JSONAPIHandler;
-import net.yacy.grid.http.JSONObjectAPIHandler;
+import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.messages.AvailableContainer;
@@ -37,7 +36,7 @@ import net.yacy.grid.mcp.Data;
  * test: call
  * http://127.0.0.1:8100/yacy/grid/mcp/messages/available.json?serviceName=testService&queueName=testQueue
  */
-public class AvailableService extends JSONObjectAPIHandler implements APIHandler {
+public class AvailableService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578478303031749879L;
     public static final String NAME = "available";
@@ -56,16 +55,16 @@ public class AvailableService extends JSONObjectAPIHandler implements APIHandler
             try {
                 AvailableContainer available = Data.gridBroker.available(serviceName, queueName);
                 String url = available.getFactory().getConnectionURL();
-                json.put(JSONAPIHandler.AVAILABLE_KEY, available.getAvailable());
-                json.put(JSONAPIHandler.SUCCESS_KEY, true);
-                if (url != null) json.put(JSONAPIHandler.SERVICE_KEY, url);
+                json.put(ObjectAPIHandler.AVAILABLE_KEY, available.getAvailable());
+                json.put(ObjectAPIHandler.SUCCESS_KEY, true);
+                if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
             } catch (IOException e) {
-                json.put(JSONAPIHandler.SUCCESS_KEY, false);
-                json.put(JSONAPIHandler.COMMENT_KEY, e.getMessage());
+                json.put(ObjectAPIHandler.SUCCESS_KEY, false);
+                json.put(ObjectAPIHandler.COMMENT_KEY, e.getMessage());
             }
         } else {
-            json.put(JSONAPIHandler.SUCCESS_KEY, false);
-            json.put(JSONAPIHandler.COMMENT_KEY, "the request must contain a serviceName and a queueName");
+            json.put(ObjectAPIHandler.SUCCESS_KEY, false);
+            json.put(ObjectAPIHandler.COMMENT_KEY, "the request must contain a serviceName and a queueName");
         }
         return new ServiceResponse(json);
     }

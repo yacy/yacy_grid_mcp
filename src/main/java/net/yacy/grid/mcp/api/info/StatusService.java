@@ -25,12 +25,12 @@ import org.json.JSONObject;
 
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.APIServer;
-import net.yacy.grid.http.JSONObjectAPIHandler;
+import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.tools.OS;
 
-public class StatusService extends JSONObjectAPIHandler implements APIHandler {
+public class StatusService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578478303032749479L;
     public static final String NAME = "status";

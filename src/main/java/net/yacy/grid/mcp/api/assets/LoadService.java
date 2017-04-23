@@ -24,7 +24,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 
 import net.yacy.grid.http.APIHandler;
-import net.yacy.grid.http.JSONObjectAPIHandler;
+import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.assets.Asset;
@@ -36,7 +36,7 @@ import net.yacy.grid.mcp.Data;
  * i.e.
  * curl -O http://127.0.0.1:8100/yacy/grid/mcp/assets/load?path=/test/land.nrw.warc.gz
  */
-public class LoadService extends JSONObjectAPIHandler implements APIHandler {
+public class LoadService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578378303032739879L;
     public static final String NAME = "load";

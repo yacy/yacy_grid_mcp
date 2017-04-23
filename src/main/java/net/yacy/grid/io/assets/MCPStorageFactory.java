@@ -28,7 +28,7 @@ import org.json.JSONObject;
 
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIServer;
-import net.yacy.grid.http.JSONAPIHandler;
+import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Data;
 import net.yacy.grid.mcp.api.assets.LoadService;
@@ -87,7 +87,7 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
                 String protocolhostportstub = MCPStorageFactory.this.getConnectionURL();
                 ServiceResponse sr = APIServer.getAPI(StoreService.NAME).serviceImpl(protocolhostportstub, params);
                 JSONObject response = sr.getObject();
-                if (response.has(JSONAPIHandler.SUCCESS_KEY) && response.getBoolean(JSONAPIHandler.SUCCESS_KEY)) {
+                if (response.has(ObjectAPIHandler.SUCCESS_KEY) && response.getBoolean(ObjectAPIHandler.SUCCESS_KEY)) {
                     connectMCP(response);
                     return MCPStorageFactory.this;
                 } else {
@@ -110,8 +110,8 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
             }
             
             private void connectMCP(JSONObject response) {
-                if (response.has(JSONAPIHandler.SERVICE_KEY)) {
-                    String server = response.getString(JSONAPIHandler.SERVICE_KEY);
+                if (response.has(ObjectAPIHandler.SERVICE_KEY)) {
+                    String server = response.getString(ObjectAPIHandler.SERVICE_KEY);
                     if (MCPStorageFactory.this.storage.connectFTP(server)) {
                         Data.logger.info("connected MCP storage at " + server);
                     } else {
@@ -121,8 +121,8 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
             }
             
             private IOException handleError(JSONObject response) {
-                if (response.has(JSONAPIHandler.COMMENT_KEY)) {
-                    return new IOException("cannot connect to MCP: " + response.getString(JSONAPIHandler.COMMENT_KEY));
+                if (response.has(ObjectAPIHandler.COMMENT_KEY)) {
+                    return new IOException("cannot connect to MCP: " + response.getString(ObjectAPIHandler.COMMENT_KEY));
                 }
                 return new IOException("bad response from MCP: no success and no comment key");
             }

@@ -22,21 +22,53 @@ package net.yacy.grid.http;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-public abstract class JSONObjectAPIHandler extends AbstractAPIHandler implements APIHandler {
+public abstract class ObjectAPIHandler extends AbstractAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = -2191240526448018368L;
 
+    // generic keywords in JSON keys of API responses
+    public static final String SUCCESS_KEY   = "success";
+    public static final String SERVICE_KEY   = "service";
+    public static final String COMMENT_KEY   = "comment";
+    
+    // for messages
+    public static final String MESSAGE_KEY   = "message";
+    public static final String AVAILABLE_KEY = "available";
+    
+    /**
+     * helper method to implement serviceImpl
+     * @param params
+     * @return
+     * @throws IOException
+     */
+    public static String json2url(final JSONObject params) throws IOException {
+        StringBuilder query = new StringBuilder();
+        if (params != null) {
+            Iterator<String> i = params.keys(); int c = 0;
+            while (i.hasNext()) {
+                String key = i.next();
+                query.append(c == 0 ? '?' : '&');
+                query.append(key);
+                query.append('=');
+                query.append(params.get(key));
+                c++;
+            }
+        }
+        return query.toString();
+    }
+    
     /**
      * GET request
      */
     public ServiceResponse serviceImpl(final String protocolhostportstub, JSONObject params) throws IOException {
-        String urlstring = protocolhostportstub + this.getAPIPath() + JSONAPIHandler.json2url(params);
+        String urlstring = protocolhostportstub + this.getAPIPath() + json2url(params);
         ClientConnection connection = new ClientConnection(urlstring);
         return doConnection(connection);
     }

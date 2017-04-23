@@ -27,13 +27,17 @@ import org.json.JSONArray;
 
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIHandler;
-import net.yacy.grid.http.JSONArrayAPIHandler;
+import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Data;
 import net.yacy.grid.mcp.Service;
 
-public class ServicesService extends JSONArrayAPIHandler implements APIHandler {
+/**
+ * test url
+ * http://127.0.0.1:8100/yacy/grid/mcp/info/services.json
+ */
+public class ServicesService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578478303032749879L;
     public static final String NAME = "services";

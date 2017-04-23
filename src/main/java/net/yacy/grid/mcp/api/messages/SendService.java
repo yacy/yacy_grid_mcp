@@ -27,8 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 
 import net.yacy.grid.http.APIHandler;
-import net.yacy.grid.http.JSONAPIHandler;
-import net.yacy.grid.http.JSONObjectAPIHandler;
+import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.messages.QueueFactory;
@@ -39,7 +38,7 @@ import net.yacy.grid.mcp.Data;
  * Test: call
  * 127.0.0.1:8100/yacy/grid/mcp/messages/send.json?serviceName=testService&queueName=testQueue&message=hello_world
  */
-public class SendService extends JSONObjectAPIHandler implements APIHandler {
+public class SendService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578478303032749879L;
     public static final String NAME = "send";
@@ -59,15 +58,15 @@ public class SendService extends JSONObjectAPIHandler implements APIHandler {
             try {
                 QueueFactory<byte[]> factory = Data.gridBroker.send(serviceName, queueName, message.getBytes(StandardCharsets.UTF_8));
                 String url = factory.getConnectionURL();
-                json.put(JSONAPIHandler.SUCCESS_KEY, true);
-                if (url != null) json.put(JSONAPIHandler.SERVICE_KEY, url);
+                json.put(ObjectAPIHandler.SUCCESS_KEY, true);
+                if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
             } catch (IOException e) {
-                json.put(JSONAPIHandler.SUCCESS_KEY, false);
-                json.put(JSONAPIHandler.COMMENT_KEY, e.getMessage());
+                json.put(ObjectAPIHandler.SUCCESS_KEY, false);
+                json.put(ObjectAPIHandler.COMMENT_KEY, e.getMessage());
             }
         } else {
-            json.put(JSONAPIHandler.SUCCESS_KEY, false);
-            json.put(JSONAPIHandler.COMMENT_KEY, "the request must contain a serviceName, a queueName and a message");
+            json.put(ObjectAPIHandler.SUCCESS_KEY, false);
+            json.put(ObjectAPIHandler.COMMENT_KEY, "the request must contain a serviceName, a queueName and a message");
         }
         return new ServiceResponse(json);
     }

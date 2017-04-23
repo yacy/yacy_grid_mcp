@@ -26,8 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 
 import net.yacy.grid.http.APIHandler;
-import net.yacy.grid.http.JSONAPIHandler;
-import net.yacy.grid.http.JSONObjectAPIHandler;
+import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.assets.StorageFactory;
@@ -39,7 +38,7 @@ import net.yacy.grid.mcp.Data;
  * to push a binary, run
  * curl --request POST --form "asset=@land.nrw.warc.gz;type=application/octet-stream" --form "path=/test/land.nrw.warc.gz" http://127.0.0.1:8100/yacy/grid/mcp/assets/store.json
  */
-public class StoreService extends JSONObjectAPIHandler implements APIHandler {
+public class StoreService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578378303032749879L;
     public static final String NAME = "store";
@@ -59,15 +58,15 @@ public class StoreService extends JSONObjectAPIHandler implements APIHandler {
             try {
                 StorageFactory<byte[]> factory = Data.gridStorage.store(path, asset);
                 String url = factory.getConnectionURL();
-                json.put(JSONAPIHandler.SUCCESS_KEY, true);
-                if (url != null) json.put(JSONAPIHandler.SERVICE_KEY, url);
+                json.put(ObjectAPIHandler.SUCCESS_KEY, true);
+                if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
             } catch (IOException e) {
-                json.put(JSONAPIHandler.SUCCESS_KEY, false);
-                json.put(JSONAPIHandler.COMMENT_KEY, e.getMessage());
+                json.put(ObjectAPIHandler.SUCCESS_KEY, false);
+                json.put(ObjectAPIHandler.COMMENT_KEY, e.getMessage());
             }
         } else {
-            json.put(JSONAPIHandler.SUCCESS_KEY, false);
-            json.put(JSONAPIHandler.COMMENT_KEY, "the request must contain a path and a asset");
+            json.put(ObjectAPIHandler.SUCCESS_KEY, false);
+            json.put(ObjectAPIHandler.COMMENT_KEY, "the request must contain a path and a asset");
         }
         return new ServiceResponse(json);
     }

@@ -27,7 +27,7 @@ import org.json.JSONObject;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.APIServer;
-import net.yacy.grid.http.JSONAPIHandler;
+import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Data;
 import net.yacy.grid.mcp.api.info.StatusService;
@@ -106,8 +106,8 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
-                    if (response.has(JSONAPIHandler.MESSAGE_KEY)) {
-                        String message = response.getString(JSONAPIHandler.MESSAGE_KEY);
+                    if (response.has(ObjectAPIHandler.MESSAGE_KEY)) {
+                        String message = response.getString(ObjectAPIHandler.MESSAGE_KEY);
                         return message.getBytes(StandardCharsets.UTF_8);
                     }
                     throw new IOException("bad response from MCP: success but no message key");
@@ -123,8 +123,8 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
-                    if (response.has(JSONAPIHandler.AVAILABLE_KEY)) {
-                        int available = response.getInt(JSONAPIHandler.AVAILABLE_KEY);
+                    if (response.has(ObjectAPIHandler.AVAILABLE_KEY)) {
+                        int available = response.getInt(ObjectAPIHandler.AVAILABLE_KEY);
                         return available;
                     }
                     throw new IOException("bad response from MCP: success but no message key");
@@ -138,11 +138,11 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                 return sr.getObject();
             }
             private boolean success(JSONObject response) {
-                return response.has(JSONAPIHandler.SUCCESS_KEY) && response.getBoolean(JSONAPIHandler.SUCCESS_KEY);
+                return response.has(ObjectAPIHandler.SUCCESS_KEY) && response.getBoolean(ObjectAPIHandler.SUCCESS_KEY);
             }
             private void connectMCP(JSONObject response) {
-                if (response.has(JSONAPIHandler.SERVICE_KEY)) {
-                    String broker = response.getString(JSONAPIHandler.SERVICE_KEY);
+                if (response.has(ObjectAPIHandler.SERVICE_KEY)) {
+                    String broker = response.getString(ObjectAPIHandler.SERVICE_KEY);
                     if (MCPQueueFactory.this.broker.connectRabbitMQ(broker)) {
                         Data.logger.info("connected MCP broker at " + broker);
                     } else {
@@ -151,8 +151,8 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                 }
             }
             private IOException handleError(JSONObject response) {
-                if (response.has(JSONAPIHandler.COMMENT_KEY)) {
-                    return new IOException("cannot connect to MCP: " + response.getString(JSONAPIHandler.COMMENT_KEY));
+                if (response.has(ObjectAPIHandler.COMMENT_KEY)) {
+                    return new IOException("cannot connect to MCP: " + response.getString(ObjectAPIHandler.COMMENT_KEY));
                 }
                 return new IOException("bad response from MCP: no success and no comment key");
             }
