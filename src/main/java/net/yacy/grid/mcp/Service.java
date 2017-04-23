@@ -19,8 +19,21 @@
 
 package net.yacy.grid.mcp;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import javax.servlet.Servlet;
+
+import org.apache.log4j.BasicConfigurator;
+
+import net.yacy.grid.YaCyServices;
+import net.yacy.grid.http.APIServer;
+import net.yacy.grid.tools.MapUtil;
 
 /**
  * The services enum contains information about all services implemented in this
@@ -40,11 +53,83 @@ public enum Service {
             "lastping"     // ISO 8601 Time of the latest contact of the service to the mcp
     });
     
-    private Set<String> fields;
+    private final Set<String> fields;
     
-    Service(String[] fields) {
+    Service(final String[] fields) {
         this.fields = new LinkedHashSet<String>();
         for (String field: fields) this.fields.add(field);
     }
+    
 
+    public static void runService(
+            final YaCyServices serviceType,
+            final String data_path,
+            final String app_path,
+            final List<Class<? extends Servlet>> services) {
+        runService(serviceType.getDefaultPort(), data_path, app_path, services);
+    }
+
+    public static void runService(
+            int port,
+            final String data_path,
+            final String app_path,
+            final List<Class<? extends Servlet>> services) {
+        // run in headless mode
+        System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
+
+        // configure logging
+        BasicConfigurator.configure();
+        
+        // load the config file(s);
+        File conf_dir = FileSystems.getDefault().getPath("conf").toFile();
+        File dataFile = new File(new File(FileSystems.getDefault().getPath(data_path).toFile(), app_path + "-" + port), "conf");
+        String confFileName = "config.properties";
+        Map<String, String> config = null;
+        try {
+            config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+            System.exit(-1);
+        }
+        
+        // read the port again and then read also the configuration again because the path of the custom settings may have moved
+        port = Integer.parseInt(config.get("port"));
+        dataFile = new File(new File(FileSystems.getDefault().getPath(data_path).toFile(), app_path + "-" + port), "conf");
+        try {
+            config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+            System.exit(-1);
+        }
+        
+        // start server
+        services.forEach(service -> APIServer.addService(service));
+        try {
+            
+            // find data path
+            File data = FileSystems.getDefault().getPath("data").toFile();
+            Data.init(new File(data, app_path + "-" + port), config);
+            
+            // open the server on available port
+            boolean portForce = Boolean.getBoolean(config.get("port.force"));
+            port = APIServer.open(port, portForce);
+
+            // give positive feedback
+            Data.logger.info("Service started at port " + port);
+
+            // prepare shutdown signal
+            File pid = new File(data, app_path + "-" + port + ".pid");
+            if (pid.exists()) pid.delete(); // clean up rubbish
+            pid.createNewFile();
+            pid.deleteOnExit();
+            
+            // wait for shutdown signal (kill on process)
+            APIServer.join();
+        } catch (IOException e) {
+            Data.logger.error("Main fail", e);
+        }
+        
+        Data.close();
+    }
+    
 }

@@ -35,7 +35,6 @@ import org.apache.http.HttpResponseFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.impl.DefaultHttpResponseFactory;
-import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpCoreContext;
 import org.json.JSONObject;

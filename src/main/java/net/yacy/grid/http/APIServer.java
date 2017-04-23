@@ -21,6 +21,8 @@ package net.yacy.grid.http;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -46,7 +48,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
  */
 public class APIServer {
 
-   private static Class<? extends Servlet>[] services = null;
+   private static List<Class<? extends Servlet>> services = new ArrayList<>();
    private static Map<String, APIHandler> serviceMap = new ConcurrentHashMap<>();
    private static Server server = null;
     
@@ -54,15 +56,13 @@ public class APIServer {
         return server.getThreadPool().getThreads() - server.getThreadPool().getIdleThreads();
     }
     
-    public static void init(Class<? extends Servlet>[] servicelist) {
-        services = servicelist;
-        for (Class<? extends Servlet> service: services) {
-            try {
-                APIHandler handler = (APIHandler) service.newInstance();
-                serviceMap.put(handler.getAPIName(), handler);
-            } catch (InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
+    public static void addService(Class<? extends Servlet> service) {
+        try {
+            APIHandler handler = (APIHandler) service.newInstance();
+            services.add(service);
+            serviceMap.put(handler.getAPIName(), handler);
+        } catch (InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
         }
     }
     
