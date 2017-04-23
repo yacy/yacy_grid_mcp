@@ -60,6 +60,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             }
             private void initConnection() throws IOException {
                 FTPStorageFactory.this.ftp = new FTPClient();
+                FTPStorageFactory.this.ftp.setDataTimeout(3000);
                 if (FTPStorageFactory.this.port < 0 || FTPStorageFactory.this.port == DEFAULT_PORT)
                     FTPStorageFactory.this.ftp.connect(FTPStorageFactory.this.server);
                 else
@@ -80,7 +81,8 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
                 checkConnection();
                 String file = cdPath(path);
-                FTPStorageFactory.this.ftp.storeFile(file, new ByteArrayInputStream(asset));
+                boolean success = FTPStorageFactory.this.ftp.storeFile(file, new ByteArrayInputStream(asset));
+                if (!success) throw new IOException("storage to path " + path + " was not successful");
                 return FTPStorageFactory.this;
             }
 
