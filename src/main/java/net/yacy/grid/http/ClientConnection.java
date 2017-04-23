@@ -58,6 +58,7 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -92,6 +93,7 @@ public class ClientConnection {
     private CloseableHttpClient httpClient;
     private HttpRequestBase request;
     private HttpResponse httpResponse;
+    private ContentType contentType;
     
     private static class TrustAllHostNameVerifier implements HostnameVerifier {
         public boolean verify(String hostname, SSLSession session) {
@@ -210,6 +212,7 @@ public class ClientConnection {
             throw new IOException("client connection handshake error for domain " + this.request.getURI().getHost() + ": " + e.getMessage());
         }
         HttpEntity httpEntity = this.httpResponse.getEntity();
+        this.contentType = ContentType.get(httpEntity);
         if (httpEntity != null) {
             if (this.httpResponse.getStatusLine().getStatusCode() == 200) {
                 try {
@@ -232,6 +235,10 @@ public class ClientConnection {
             this.request.releaseConnection();
             throw new IOException("client connection to " + this.request.getURI() + " fail: no connection");
         }
+    }
+    
+    public ContentType getContentType() {
+        return this.contentType == null ? ContentType.DEFAULT_BINARY : this.contentType;
     }
     
     /**
@@ -328,7 +335,7 @@ public class ClientConnection {
      */
     public static byte[] load(String source_url) throws IOException {
         ClientConnection connection = new ClientConnection(source_url);
-        return load(connection);
+        return connection.load();
     }
     
     /**
@@ -340,20 +347,20 @@ public class ClientConnection {
      */
     public static byte[] load(String source_url, Map<String, byte[]> post) throws IOException {
         ClientConnection connection = new ClientConnection(source_url, post);
-        return load(connection);
+        return connection.load();
     }
 
-    private static byte[] load(ClientConnection connection) throws IOException {
-        if (connection.inputStream == null) return null;
+    public byte[] load() throws IOException {
+        if (this.inputStream == null) return null;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int count;
         byte[] buffer = new byte[2048];
         try {
-            while ((count = connection.inputStream.read(buffer)) > 0) baos.write(buffer, 0, count);
+            while ((count = this.inputStream.read(buffer)) > 0) baos.write(buffer, 0, count);
         } catch (IOException e) {
             Log.getLog().warn(e.getMessage());
         } finally {
-            connection.close();
+            this.close();
         }
         return baos.toByteArray();
     }

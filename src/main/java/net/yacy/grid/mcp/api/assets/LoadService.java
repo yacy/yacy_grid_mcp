@@ -32,6 +32,9 @@ import net.yacy.grid.mcp.Data;
 
 /**
  * test with http://127.0.0.1:8100/yacy/grid/mcp/assets/load?path=/xx/test.txt
+ * 
+ * i.e.
+ * curl -O http://127.0.0.1:8100/yacy/grid/mcp/assets/load?path=/test/land.nrw.warc.gz
  */
 public class LoadService extends JSONObjectAPIHandler implements APIHandler {
 

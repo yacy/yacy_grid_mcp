@@ -20,23 +20,52 @@
 package net.yacy.grid.http;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 public abstract class JSONObjectAPIHandler extends AbstractAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = -2191240526448018368L;
 
+    /**
+     * GET request
+     */
     public ServiceResponse serviceImpl(final String protocolhostportstub, JSONObject params) throws IOException {
         String urlstring = protocolhostportstub + this.getAPIPath() + JSONAPIHandler.json2url(params);
-        JSONObject json = ClientConnection.loadJSONObject(urlstring);
-        return new ServiceResponse(json);
+        ClientConnection connection = new ClientConnection(urlstring);
+        return doConnection(connection);
     }
     
+    /**
+     * POST request
+     */
     public ServiceResponse serviceImpl(final String protocolhostportstub, Map<String, byte[]> params) throws IOException {
-        JSONObject json = ClientConnection.loadJSONObject(protocolhostportstub + this.getAPIPath(), params);
-        return new ServiceResponse(json);
+        String urlstring = protocolhostportstub + this.getAPIPath();
+        ClientConnection connection = new ClientConnection(urlstring, params);
+        return doConnection(connection);
+    }
+    
+    private ServiceResponse doConnection(ClientConnection connection) throws IOException {
+        Charset charset = connection.getContentType().getCharset();
+        String mime = connection.getContentType().getMimeType(); //application/javascript, application/octet-stream
+        byte[] b = connection.load();
+        if (mime.indexOf("javascript") >= 0) {
+            if (b.length > 0 && b[0] == (byte) '[') {
+                JSONArray json = new JSONArray(new JSONTokener(new String(b, charset == null ? StandardCharsets.UTF_8 : charset)));
+                return new ServiceResponse(json);
+            } else {
+                JSONObject json = new JSONObject(new JSONTokener(new String(b, charset == null ? StandardCharsets.UTF_8 : charset)));
+                return new ServiceResponse(json);
+            }
+        } else {
+            // consider this is binary
+            return new ServiceResponse(b);
+        }
     }
     
 }

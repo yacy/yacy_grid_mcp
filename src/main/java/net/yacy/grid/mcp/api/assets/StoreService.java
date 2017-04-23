@@ -35,6 +35,9 @@ import net.yacy.grid.mcp.Data;
 
 /**
  * test with http://127.0.0.1:8100/yacy/grid/mcp/assets/store.json?path=/xx/test.txt&asset=hello_world
+ * 
+ * to push a binary, run
+ * curl --request POST --form "asset=@land.nrw.warc.gz;type=application/octet-stream" --form "path=/test/land.nrw.warc.gz" http://127.0.0.1:8100/yacy/grid/mcp/assets/store.json
  */
 public class StoreService extends JSONObjectAPIHandler implements APIHandler {
 
