@@ -68,8 +68,12 @@ public class Query {
         return val == null ? dflt : val;
     }
     public byte[] get(String key, byte[] dflt) {
+        if (this.qm.containsKey(key)) {
+            byte[] b = this.qm.get(key);
+            if (b != null) return b;
+        }
+        assert false; // that should not happen!
         String val = this.request == null ? null : this.request.getParameter(key);
-        if (val == null && this.qm.containsKey(key)) return this.qm.get(key);
         return val == null ? dflt : val.getBytes(StandardCharsets.UTF_8);
     }
     public String[] get(String key, String[] dflt, String delim) {

@@ -23,8 +23,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
+
+import net.yacy.grid.mcp.Data;
 
 public class FTPStorageFactory implements StorageFactory<byte[]> {
 
@@ -61,11 +64,12 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             private void initConnection() throws IOException {
                 FTPStorageFactory.this.ftp = new FTPClient();
                 FTPStorageFactory.this.ftp.setDataTimeout(3000);
-                if (FTPStorageFactory.this.port < 0 || FTPStorageFactory.this.port == DEFAULT_PORT)
+                if (FTPStorageFactory.this.port < 0 || FTPStorageFactory.this.port == DEFAULT_PORT) {
                     FTPStorageFactory.this.ftp.connect(FTPStorageFactory.this.server);
-                else
+                } else {
                     FTPStorageFactory.this.ftp.connect(FTPStorageFactory.this.server, FTPStorageFactory.this.port);
-
+                }
+                FTPStorageFactory.this.ftp.enterLocalPassiveMode(); // the server opens a data port to which the client conducts data transfers
                 int reply = ftp.getReplyCode();
                 if(!FTPReply.isPositiveCompletion(reply)) {
                     ftp.disconnect();
@@ -75,13 +79,20 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                     ftp.disconnect();
                     throw new IOException("login failure");
                 }
+                FTPStorageFactory.this.ftp.setFileType(FTP.BINARY_FILE_TYPE);
+                FTPStorageFactory.this.ftp.setBufferSize(8192);
             }
             
             @Override
             public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
+                long t0 = System.currentTimeMillis();
                 checkConnection();
+                long t1 = System.currentTimeMillis();
                 String file = cdPath(path);
+                long t2 = System.currentTimeMillis();
                 boolean success = FTPStorageFactory.this.ftp.storeFile(file, new ByteArrayInputStream(asset));
+                long t3 = System.currentTimeMillis();
+                Data.logger.debug("ftp store: check connection =" + (t1 - t0) + ", cdPath = " + (t2 - t1) + ", store = " + (t3 - t2));
                 if (!success) throw new IOException("storage to path " + path + " was not successful");
                 return FTPStorageFactory.this;
             }
