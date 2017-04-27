@@ -78,8 +78,7 @@ public class ClientConnection {
     private static final byte CR = 13;
     public static final byte[] CRLF = {CR, LF};
 
-    public static PoolingHttpClientConnectionManager cm;
-    private static RequestConfig defaultRequestConfig = RequestConfig.custom()
+    public final static RequestConfig defaultRequestConfig = RequestConfig.custom()
             .setSocketTimeout(60000)
             .setConnectTimeout(60000)
             .setConnectionRequestTimeout(60000)
@@ -163,7 +162,7 @@ public class ClientConnection {
         this(urlstring, map, true);
     }
     
-    private static PoolingHttpClientConnectionManager getConnctionManager(boolean useAuthentication){
+    public static PoolingHttpClientConnectionManager getConnctionManager(boolean useAuthentication){
 
         boolean trustAllCerts = true; // well, yes now, maybe we change our opinion later
         
