@@ -4,7 +4,7 @@ apply plugin: 'application'
 apply plugin: 'eclipse'
 
 mainClassName = "net.yacy.grid.mcp.MCP"
-applicationDefaultJvmArgs = ["-Xmx96m"]
+applicationDefaultJvmArgs = ["-Xmx1024m"]
 
 group = 'net.yacy'
 version = '0.0.1-SNAPSHOT'
