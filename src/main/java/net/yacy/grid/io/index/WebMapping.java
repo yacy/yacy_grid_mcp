@@ -20,7 +20,11 @@
 
 package net.yacy.grid.io.index;
 
+import org.json.JSONObject;
+
 public enum WebMapping implements MappingDeclaration {
+    
+	//MappingType type, indexed, stored, multiValued, omitNorms, searchable, comment, mandatory) {
     
     // mandatory
     url_s(MappingType.string, true, true, false, true, true, "url of document", true), // a 'sku' is a stock-keeping unit, a unique identifier and a default field in unmodified solr.
@@ -90,12 +94,6 @@ public enum WebMapping implements MappingDeclaration {
     h4_txt(MappingType.text_general, true, true, true, false, true, "h4 header"),
     h5_txt(MappingType.text_general, true, true, true, false, true, "h5 header"),
     h6_txt(MappingType.text_general, true, true, true, false, true, "h6 header"),
-    
-    // unused, delete candidates
-    @Deprecated
-    md5_s(MappingType.string, true, true, false, false, false, "the md5 of the raw source"),// String md5();
-    @Deprecated
-    /**/httpstatus_redirect_s(MappingType.string, true, true, false, false, false, "redirect url if the error code is 299 < httpstatus_i < 310"), // TODO: delete candidate, not used so far (2014-12-26)
 
     // optional values, not part of standard YaCy handling (but useful for external applications)
     collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation to separate the search result into user-defined subsets"),
@@ -345,5 +343,42 @@ public enum WebMapping implements MappingDeclaration {
     public final boolean isMandatory() {
         return this.mandatory;
     }
+
+    @Override
+    public final JSONObject toJSON() {
+    	JSONObject json = new JSONObject();
+    	json.put("type", getType().elasticName());
+    	if (getType() == MappingType.string) json.put("index", "not_analyzed");
+    	json.put("include_in_all", isIndexed() || isSearchable() ? "true":"false");
+    	return json;
+    }
+
+	public static JSONObject elasticsearchMapping(String indexName) {
+		JSONObject properties = new JSONObject(true);
+		for (WebMapping mapping: WebMapping.values()) {
+			properties.put(mapping.name(), mapping.toJSON());
+		}
+		JSONObject index = new JSONObject().put("properties", properties);
+		JSONObject mappings = new JSONObject().put(indexName, index);
+		JSONObject json = new JSONObject().put("mappings", mappings);
+		return json;
+	}
+	
+	/**
+	 * helper main method to generate a mapping in elasticsearch.
+	 * To test this, upload the result of this main method to elasticsearch with the following line:
+	 * curl -XDELETE 'http://elastic:changeme@localhost:9200/web'
+     * curl -XPUT http://elastic:changeme@localhost:9200/web --data-binary "@mapping.json"
+     * that prepares the index to take a json index file which can be generated with i.e.
+     * curl -X POST -F "sourcebytes=@publicplan.de.warc.gz;type=application/octet-stream" -F "flatfile=true" -F "elastic=true" -o "publicplan.de.elastic"  http://127.0.0.1:8500/yacy/grid/parser/parser.json
+     * then, index the resulting file publicplan.de.elastic with:
+     * curl -s -XPOST http://elastic:changeme@localhost:9200/web/index/_bulk --data-binary "@publicplan.de.elastic"
+     * the number of documents in the index is then
+     * curl http://elastic:changeme@localhost:9200/web/_count
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		System.out.println(elasticsearchMapping("web").toString(2));
+	}
 }
 

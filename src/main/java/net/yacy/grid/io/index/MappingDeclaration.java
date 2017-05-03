@@ -20,6 +20,8 @@
 
 package net.yacy.grid.io.index;
 
+import org.json.JSONObject;
+
 public interface MappingDeclaration {
 
     /**
@@ -55,5 +57,7 @@ public interface MappingDeclaration {
     public boolean isMandatory();
 
     public void setSolrFieldName(String name);
+    
+    public JSONObject toJSON();
 
 }

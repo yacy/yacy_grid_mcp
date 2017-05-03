@@ -22,31 +22,36 @@
 package net.yacy.grid.io.index;
 
 public enum MappingType {
-    string("s", "sxt"),                  // The type is not analyzed, but indexed/stored verbatim
-    text_general("t", "txt"),            // tokenizes with StandardTokenizer, removes stop words from case-insensitive "stopwords.txt", down cases, applies synonyms.
-    text_en_splitting_tight(null, null), // can insert dashes in the wrong place and still match
-    location("p", null),                 // lat,lon - format: specialized field for geospatial search.
-    date("dt", "dts"),                   // date format as in http://www.w3.org/TR/xmlschema-2/#dateTime with trailing 'Z'
-    bool("b", "bs", "boolean"),
-    num_integer("i", "val", "int"),
-    num_long("l", "ls", "long"), 
-    num_float("f", "fs", "float"), 
-    num_double("d", "ds", "double"),
-    coordinate("coordinate", "coordinatex", "tdouble");
-    
-    private String printName, singlevalExt, multivalExt;
-    private MappingType(final String singlevalExt, final String multivalExt) {
+    string("keyword", "s", "sxt"),                 // The type is not analyzed, but indexed/stored verbatim
+    text_general("string", "t", "txt"),            // tokenizes with StandardTokenizer, removes stop words from case-insensitive "stopwords.txt", down cases, applies synonyms.
+    text_en_splitting_tight("string", null, null), // can insert dashes in the wrong place and still match
+    location("geo_point", "p", null),              // lat,lon - format: specialized field for geospatial search.
+    date("date", "dt", "dts"),                     // date format as in http://www.w3.org/TR/xmlschema-2/#dateTime with trailing 'Z'
+    bool("boolean", "b", "bs", "boolean"),
+    num_integer("integer", "i", "val", "int"),
+    num_long("long", "l", "ls", "long"), 
+    num_float("float", "f", "fs", "float"), 
+    num_double("double", "d", "ds", "double"),
+    coordinate("geo_point", "coordinate", "coordinatex", "tdouble");
+	
+    private String printName, singlevalExt, multivalExt, elasticName;
+    private MappingType(final String elasticName, final String singlevalExt, final String multivalExt) {
+    	this.elasticName = elasticName;
         this.printName = this.name();
         this.singlevalExt = singlevalExt;
         this.multivalExt = multivalExt;
     }
-    private MappingType(final String singlevalExt, final String multivalExt, final String printName) {
+    private MappingType(final String elasticName, final String singlevalExt, final String multivalExt, final String printName) {
+    	this.elasticName = elasticName;
         this.printName = printName;
         this.singlevalExt = singlevalExt;
         this.multivalExt = multivalExt;
     }
     public String printName() {
         return this.printName;
+    }
+    public String elasticName() {
+    	return this.elasticName;
     }
     public boolean appropriateName(final MappingDeclaration collectionSchema) {
         String field = collectionSchema.name();
