@@ -94,7 +94,8 @@ public enum WebMapping implements MappingDeclaration {
     h4_txt(MappingType.text_general, true, true, true, false, true, "h4 header"),
     h5_txt(MappingType.text_general, true, true, true, false, true, "h5 header"),
     h6_txt(MappingType.text_general, true, true, true, false, true, "h6 header"),
-
+    score_l(MappingType.num_long, true, true, false, false, false, "custom score"),
+    
     // optional values, not part of standard YaCy handling (but useful for external applications)
     collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation to separate the search result into user-defined subsets"),
     csscount_i(MappingType.num_integer, true, true, false, false, false, "number of entries in css_tag_txt and css_url_txt"),
