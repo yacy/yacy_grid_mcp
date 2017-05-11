@@ -124,6 +124,9 @@ public class SusiAction {
     public String getStringAttr(String attr) {
         return this.json.has(attr) ? this.json.getString(attr) : "";
     }
+    public JSONArray getArrayAttr(String attr) {
+        return this.json.has(attr) ? this.json.getJSONArray(attr) : new JSONArray();
+    }
     
     /**
      * If the action contains integer attributes, they can be retrieved here
