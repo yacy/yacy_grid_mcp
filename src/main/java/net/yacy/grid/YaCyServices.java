@@ -39,9 +39,9 @@ public enum YaCyServices implements Services {
     loader(8200),           // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
     crawler(8300),          // a crawler which loads a lot of documents from web or other network resources
     warcmanager(8400),      // a process which combines single WARC files to bigger ones to create archives
-    yacyparser(8500),       // a parser service which turns WARC into YaCy JSON
-    yacyenricher(8600),     // a semantic enricher for YaCy JSON objects
-    yacyindexer(8700),      // a loader which pushes parsed/enriched YaCy JSON content to a search index
+    parser(8500),           // a parser service which turns WARC into YaCy JSON
+    enricher(8600),         // a semantic enricher for YaCy JSON objects
+    indexer(8700),          // a loader which pushes parsed/enriched YaCy JSON content to a search index
     aggregation(8800),      // a search front-end which combines different index sources into one
     moderation(8900),       // a search front-end which for content moderation, i.e. search index account management
     successmessages(10100), // a service which handles the successful operation messages
