@@ -35,31 +35,43 @@ package net.yacy.grid;
  */
 public enum YaCyServices implements Services {
 
-    mcp(8100),              // the master connect program which orchestrates all other services
-    loader(8200),           // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
-    crawler(8300),          // a crawler which loads a lot of documents from web or other network resources
-    warcmanager(8400),      // a process which combines single WARC files to bigger ones to create archives
-    parser(8500),           // a parser service which turns WARC into YaCy JSON
-    enricher(8600),         // a semantic enricher for YaCy JSON objects
-    indexer(8700),          // a loader which pushes parsed/enriched YaCy JSON content to a search index
-    aggregation(8800),      // a search front-end which combines different index sources into one
-    moderation(8900),       // a search front-end which for content moderation, i.e. search index account management
-    successmessages(10100), // a service which handles the successful operation messages
-    errormessages(10200),   // a service which handles failure messages and broken action chains
-    ftp(2121),              // a FTP server to be used for mass data / file storage
-    samba(445),             // a SMB server to be used for mass data / file storage
-    rabbitmq(5672),         // a rabbitmq message queue server to be used for global messages, queues and stacks
-    elastic(9300);          // an elasticsearch server or main cluster address for global database storage
+    mcp(8100),                      // the master connect program which orchestrates all other services
+    loader(8200, "webloader"),      // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
+    crawler(8300, "webcrawler"),    // a crawler which loads a lot of documents from web or other network resources
+    warcmanager(8400),              // a process which combines single WARC files to bigger ones to create archives
+    parser(8500, "yacyparser"),     // a parser service which turns WARC into YaCy JSON
+    enricher(8600),                 // a semantic enricher for YaCy JSON objects
+    indexer(8700, "elasticsearch"), // a loader which pushes parsed/enriched YaCy JSON content to a search index
+    aggregation(8800),              // a search front-end which combines different index sources into one
+    moderation(8900),               // a search front-end which for content moderation, i.e. search index account management
+    successmessages(10100),         // a service which handles the successful operation messages
+    errormessages(10200),           // a service which handles failure messages and broken action chains
+    ftp(2121),                      // a FTP server to be used for mass data / file storage
+    samba(445),                     // a SMB server to be used for mass data / file storage
+    rabbitmq(5672),                 // a rabbitmq message queue server to be used for global messages, queues and stacks
+    elastic(9300);                  // an elasticsearch server or main cluster address for global database storage
 
     private int default_port;
-    
+    private String default_queue;
+
     private YaCyServices(int default_port) {
         this.default_port = default_port;
+        this.default_queue = null;
+    }
+    
+    private YaCyServices(int default_port, String default_queue) {
+        this.default_port = default_port;
+        this.default_queue = default_queue;
     }
 
     @Override
     public int getDefaultPort() {
         return this.default_port;
+    }
+
+    @Override
+    public String getDefaultQueue() {
+        return this.default_queue;
     }
     
 }

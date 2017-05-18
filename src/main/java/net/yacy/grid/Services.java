@@ -22,6 +22,8 @@ package net.yacy.grid;
 public interface Services {
 
     public int getDefaultPort();
+
+    public String getDefaultQueue();
     
     public String name();
     
