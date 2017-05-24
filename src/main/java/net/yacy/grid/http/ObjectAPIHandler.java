@@ -20,6 +20,7 @@
 package net.yacy.grid.http;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
@@ -57,7 +58,7 @@ public abstract class ObjectAPIHandler extends AbstractAPIHandler implements API
                 query.append(c == 0 ? '?' : '&');
                 query.append(key);
                 query.append('=');
-                query.append(params.get(key));
+                query.append(URLEncoder.encode(params.get(key).toString(), "UTF-8"));
                 c++;
             }
         }

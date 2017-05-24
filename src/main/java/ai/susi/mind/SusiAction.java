@@ -124,6 +124,18 @@ public class SusiAction {
     public String getStringAttr(String attr) {
         return this.json.has(attr) ? this.json.getString(attr) : "";
     }
+    public boolean getBooleanAttr(String attr) {
+        return this.json.has(attr) ? this.json.getBoolean(attr) : false;
+    }
+    public long getLongAttr(String attr) {
+        return this.json.has(attr) ? this.json.getLong(attr) : -1;
+    }
+    public double getDoubleAttr(String attr) {
+        return this.json.has(attr) ? this.json.getDouble(attr) : Double.NaN;
+    }
+    public JSONArray getArrayAttr(String attr) {
+        return this.json.has(attr) ? this.json.getJSONArray(attr) : new JSONArray();
+    }
     
     /**
      * If the action contains integer attributes, they can be retrieved here
