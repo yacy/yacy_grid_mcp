@@ -65,14 +65,16 @@ public enum Service {
             final YaCyServices serviceType,
             final String data_path,
             final String app_path,
+            final String html_path,
             final List<Class<? extends Servlet>> services) {
-        runService(serviceType.getDefaultPort(), data_path, app_path, services);
+        runService(serviceType.getDefaultPort(), data_path, app_path, html_path, services);
     }
 
     public static void runService(
             int port,
             final String data_path,
             final String app_path,
+            final String html_path,
             final List<Class<? extends Servlet>> services) {
         // run in headless mode
         System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
@@ -112,7 +114,7 @@ public enum Service {
             
             // open the server on available port
             boolean portForce = Boolean.getBoolean(config.get("port.force"));
-            port = APIServer.open(port, portForce);
+            port = APIServer.open(port, 600, html_path, portForce);
 
             // give positive feedback
             Data.logger.info("Service started at port " + port);

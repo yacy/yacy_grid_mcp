@@ -60,7 +60,7 @@ public class MCP {
     public static void main(String[] args) {
         List<Class<? extends Servlet>> services = new ArrayList<>();
         services.addAll(Arrays.asList(MCP_SERVICES));
-        Service.runService(SERVICE, DATA_PATH, APP_PATH, services);
+        Service.runService(SERVICE, DATA_PATH, APP_PATH, null, services);
     }
 
 }

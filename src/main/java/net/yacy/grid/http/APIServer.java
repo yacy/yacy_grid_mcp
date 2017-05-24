@@ -70,10 +70,10 @@ public class APIServer {
         return serviceMap.get(name);
     }
 
-    public static int open(int port, boolean force) throws IOException {
+    public static int open(int port, int expiresSeconds, String htmlPath, boolean force) throws IOException {
         while (true) {
             try {
-                open(port);
+                open(port, expiresSeconds, htmlPath);
                 return port;
             } catch (IOException e) {
                 if (force) throw e;
@@ -83,7 +83,7 @@ public class APIServer {
         }
     }
     
-    private static void open(int port) throws IOException {
+    private static void open(int port, int expiresSeconds, String htmlPath) throws IOException {
         try {
             QueuedThreadPool pool = new QueuedThreadPool();
             pool.setMaxThreads(500);
@@ -111,9 +111,17 @@ public class APIServer {
             ErrorHandler errorHandler = new ErrorHandler();
             errorHandler.setShowStacks(true);
             servletHandler.setErrorHandler(errorHandler);
-            
+
             HandlerList handlerlist2 = new HandlerList();
-            handlerlist2.setHandlers(new Handler[]{servletHandler, new DefaultHandler()});
+            if (htmlPath == null) {
+                handlerlist2.setHandlers(new Handler[]{servletHandler, new DefaultHandler()});
+            } else {
+                FileHandler fileHandler = new FileHandler(expiresSeconds);
+                fileHandler.setDirectoriesListed(true);
+                fileHandler.setWelcomeFiles(new String[]{"index.html"});
+                fileHandler.setResourceBase(htmlPath);
+                handlerlist2.setHandlers(new Handler[]{fileHandler, servletHandler, new DefaultHandler()});
+            }
             server.setHandler(handlerlist2);
             server.start();
         } catch (Throwable e) {
