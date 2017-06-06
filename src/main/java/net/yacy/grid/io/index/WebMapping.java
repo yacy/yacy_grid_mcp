@@ -364,7 +364,38 @@ public enum WebMapping implements MappingDeclaration {
 		JSONObject json = new JSONObject().put("mappings", mappings);
 		return json;
 	}
-	
+
+	/**
+	 * Graph attributes are used by the parser to create a copy of a document which contains only links and references
+	 * to the indexed document identification. That graph document is used by the crawler to move on with crawling.
+	 */
+    public final static WebMapping[] GRAPH_ATTRIBUTES = new WebMapping[]{
+        WebMapping.url_s,
+        WebMapping.url_protocol_s,
+        WebMapping.url_file_name_s,
+        WebMapping.url_file_ext_s,
+        WebMapping.inboundlinkscount_i,
+        WebMapping.inboundlinks_sxt,
+        WebMapping.inboundlinks_anchortext_txt,
+        WebMapping.inboundlinksnofollowcount_i,
+        WebMapping.outboundlinkscount_i,
+        WebMapping.outboundlinks_sxt,
+        WebMapping.outboundlinks_anchortext_txt,
+        WebMapping.outboundlinksnofollowcount_i,
+        WebMapping.imagescount_i,
+        WebMapping.images_sxt,
+        WebMapping.images_text_t,
+        WebMapping.images_alt_sxt,
+        WebMapping.images_height_val,
+        WebMapping.images_width_val,
+        WebMapping.images_pixel_val,
+        WebMapping.canonical_s,
+        WebMapping.frames_sxt,
+        WebMapping.framesscount_i,
+        WebMapping.iframes_sxt,
+        WebMapping.iframesscount_i
+    };
+    
 	/**
 	 * helper main method to generate a mapping in elasticsearch.
 	 * To test this, upload the result of this main method to elasticsearch with the following line:
