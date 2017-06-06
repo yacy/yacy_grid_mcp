@@ -53,6 +53,7 @@ public enum Service {
             "lastping"     // ISO 8601 Time of the latest contact of the service to the mcp
     });
     
+    public static YaCyServices type = null;
     private final Set<String> fields;
     
     Service(final String[] fields) {
@@ -67,10 +68,11 @@ public enum Service {
             final String app_path,
             final String html_path,
             final List<Class<? extends Servlet>> services) {
+        type = serviceType;
         runService(serviceType.getDefaultPort(), data_path, app_path, html_path, services);
     }
 
-    public static void runService(
+    private static void runService(
             int port,
             final String data_path,
             final String app_path,

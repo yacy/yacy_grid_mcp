@@ -28,6 +28,7 @@ import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.mcp.Service;
 import net.yacy.grid.tools.OS;
 
 public class StatusService extends ObjectAPIHandler implements APIHandler {
@@ -47,6 +48,7 @@ public class StatusService extends ObjectAPIHandler implements APIHandler {
         Runtime runtime = Runtime.getRuntime();
         JSONObject json = new JSONObject(true);
         JSONObject system = new JSONObject(true);
+        system.put("service", Service.type.name());
         system.put("assigned_memory", runtime.maxMemory());
         system.put("used_memory", runtime.totalMemory() - runtime.freeMemory());
         system.put("available_memory", runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory());
