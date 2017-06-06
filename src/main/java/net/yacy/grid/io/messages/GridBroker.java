@@ -55,7 +55,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.rabbitConnector = qc;
             return true;
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to the rabbitMQ broker at " + host + ":" + port + " failed");
+            Data.logger.debug("trying to connect to the rabbitMQ broker at " + host + ":" + port + " failed: " + e.getMessage(), e);
             return false;
         }
     }
