@@ -29,7 +29,6 @@ import org.json.JSONTokener;
 
 import ai.susi.mind.SusiAction;
 import ai.susi.mind.SusiThought;
-import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.messages.MessageContainer;
 
 public abstract class AbstractBrokerListener implements BrokerListener {
@@ -41,10 +40,10 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     @Override
     public void run() {
         while (shallRun) {
-            if (Data.gridBroker == null) {
+            if (Data.gridBroker == null || Service.type == null) {
                 try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             } else try {
-                MessageContainer<byte[]> mc = Data.gridBroker.receive(YaCyServices.parser.name(), YaCyServices.parser.getDefaultQueue(), 10000);
+                MessageContainer<byte[]> mc = Data.gridBroker.receive(Service.type.name(), Service.type.getDefaultQueue(), 10000);
                 if (mc == null || mc.getPayload() == null) continue;
                 JSONObject json = new JSONObject(new JSONTokener(new String(mc.getPayload(), StandardCharsets.UTF_8)));
                 final SusiThought process = new SusiThought(json);
@@ -64,7 +63,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     }
                     
                     // check if this is the correct queue
-                    if (!type.equals(YaCyServices.parser.name())) {
+                    if (!type.equals(Service.type.name())) {
                         Data.logger.info("wrong message in queue: " + type + ", continue");
                         try {
                             loadNextAction(a, process.getData()); // put that into the correct queue
