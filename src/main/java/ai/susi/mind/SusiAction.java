@@ -21,7 +21,6 @@ package ai.susi.mind;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -146,10 +145,6 @@ public class SusiAction {
         return this.json.has(attr) ? this.json.getInt(attr) : 0;
     }
 
-    final static Pattern visible_assignment = Pattern.compile("(?:(?:.*)[\\?\\!\\h,\\.;-])+([^\\^]+?)>([_a-zA-Z0-9]+)(?:[\\?\\!\\h,\\.;-](?:.*))?+");
-    final static Pattern blind_assignment = Pattern.compile("(?:.*)\\^(.*?)\\^>([_a-zA-Z0-9]+)(?:[\\?\\!\\h,\\.;-](?:.*))?+");
-    final static Pattern self_referrer = Pattern.compile(".*`([^`]*?)`.*");
-    
     /**
      * An action is backed with a JSON data structure. That can be retrieved here.
      * @return the json structure of the action
