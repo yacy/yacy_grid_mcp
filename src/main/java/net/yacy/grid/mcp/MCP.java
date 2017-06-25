@@ -19,12 +19,20 @@
 
 package net.yacy.grid.mcp;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
+
 import javax.servlet.Servlet;
 
+import org.json.JSONArray;
+
+import ai.susi.mind.SusiAction;
 import net.yacy.grid.YaCyServices;
+import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
 import net.yacy.grid.mcp.api.info.ServicesService;
@@ -56,8 +64,34 @@ public class MCP {
             StoreService.class,
             LoadService.class
     };
+
+    public static class IndexListener extends AbstractBrokerListener implements BrokerListener {
+
+       @Override
+       public boolean processAction(SusiAction action, JSONArray data) {
+           String sourceasset_path = action.getStringAttr("sourceasset");
+           if (sourceasset_path == null || sourceasset_path.length() == 0) return false;
+               
+           InputStream sourceStream = null;
+           try {
+               Asset<byte[]> asset = Data.gridStorage.load(sourceasset_path);
+               byte[] source = asset.getPayload();
+               sourceStream = new ByteArrayInputStream(source);
+               if (sourceasset_path.endsWith(".gz")) sourceStream = new GZIPInputStream(sourceStream);
+   
+   
+               Data.logger.info("processed message from queue and indexed asset " + sourceasset_path);
+               return true;
+           } catch (Throwable e) {
+               e.printStackTrace();
+               return false;
+           }
+       }
+    }
     
     public static void main(String[] args) {
+        BrokerListener brokerListener = new IndexListener();
+        new Thread(brokerListener).start();
         List<Class<? extends Servlet>> services = new ArrayList<>();
         services.addAll(Arrays.asList(MCP_SERVICES));
         Service.runService(SERVICE, DATA_PATH, APP_PATH, null, services);
