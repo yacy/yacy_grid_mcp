@@ -43,7 +43,8 @@ import net.yacy.grid.mcp.api.messages.SendService;
 
 public class MCP {
 
-    private final static YaCyServices SERVICE = YaCyServices.mcp;
+    private final static YaCyServices MCP_SERVICE = YaCyServices.mcp;
+    private final static YaCyServices INDEXER_SERVICE = YaCyServices.indexer;
     private final static String DATA_PATH = "data";
     private final static String APP_PATH = "mcp";
  
@@ -66,6 +67,10 @@ public class MCP {
     };
 
     public static class IndexListener extends AbstractBrokerListener implements BrokerListener {
+
+       public IndexListener(YaCyServices service) {
+			super(service, 1);
+		}
 
        @Override
        public boolean processAction(SusiAction action, JSONArray data) {
@@ -90,11 +95,11 @@ public class MCP {
     }
     
     public static void main(String[] args) {
-        BrokerListener brokerListener = new IndexListener();
+        BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);
         new Thread(brokerListener).start();
         List<Class<? extends Servlet>> services = new ArrayList<>();
         services.addAll(Arrays.asList(MCP_SERVICES));
-        Service.runService(SERVICE, DATA_PATH, APP_PATH, null, services);
+        Service.runService(MCP_SERVICE, DATA_PATH, APP_PATH, null, services);
     }
 
 }
