@@ -22,28 +22,53 @@ package net.yacy.grid.mcp;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import ai.susi.mind.SusiAction;
 import ai.susi.mind.SusiThought;
+import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.messages.MessageContainer;
 
 public abstract class AbstractBrokerListener implements BrokerListener {
     
-    public boolean shallRun = true;
+    public boolean shallRun;
+    private final String serviceName;
+    private final String queueName;
+    private final int threads;
+    private final ThreadPoolExecutor threadPool;
+
+    public AbstractBrokerListener(final YaCyServices service, final int threads) {
+    	this(service.name(), service.getDefaultQueue(), threads);
+    }
+    
+    public AbstractBrokerListener(final String serviceName, final String queueName, final int threads) {
+    	this.serviceName = serviceName;
+    	this.queueName = queueName;
+    	this.threads = threads;
+    	this.threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(this.threads);
+    	this.shallRun = true;
+    }
 
     public abstract boolean processAction(SusiAction action, JSONArray data);
     
     @Override
     public void run() {
         while (shallRun) {
-            if (Data.gridBroker == null || Service.type == null) {
+            if (Data.gridBroker == null) {
                 try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             } else try {
-                MessageContainer<byte[]> mc = Data.gridBroker.receive(Service.type.name(), Service.type.getDefaultQueue(), 10000);
+            	// wait until an execution thread is available
+            	while (this.threadPool.getActiveCount() >= this.threads)
+					try {Thread.sleep(100);} catch (InterruptedException e1) {}
+            	
+            	// wait until message arrives
+                MessageContainer<byte[]> mc = Data.gridBroker.receive(this.serviceName, this.queueName, 10000);
                 if (mc == null || mc.getPayload() == null) continue;
                 JSONObject json = new JSONObject(new JSONTokener(new String(mc.getPayload(), StandardCharsets.UTF_8)));
                 final SusiThought process = new SusiThought(json);
@@ -52,9 +77,9 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 
                 // loop though all actions
                 actionloop: for (int ac = 0; ac < actions.size(); ac++) {
-                    SusiAction a = actions.get(ac);
-                    String type = a.getStringAttr("type");
-                    String queue = a.getStringAttr("queue");
+                    SusiAction action = actions.get(ac);
+                    String type = action.getStringAttr("type");
+                    String queue = action.getStringAttr("queue");
 
                     // check if the credentials to execute the queue are valid
                     if (type == null || type.length() == 0 || queue == null || queue.length() == 0) {
@@ -63,34 +88,63 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     }
                     
                     // check if this is the correct queue
-                    if (!type.equals(Service.type.name())) {
+                    if (!type.equals(this.serviceName)) {
                         Data.logger.info("wrong message in queue: " + type + ", continue");
                         try {
-                            loadNextAction(a, process.getData()); // put that into the correct queue
+                            loadNextAction(action, process.getData()); // put that into the correct queue
                         } catch (Throwable e) {
                             e.printStackTrace();
                         }
                         continue actionloop;
                     }
 
-                    // process the action
-                    boolean processed = processAction(a, data);
-                    if (processed) {
-                        // send next embedded action(s) to queue
-                        JSONObject ao = a.toJSONClone();
-                        if (ao.has("actions")) {
-                            JSONArray embeddedActions = ao.getJSONArray("actions");
-                            for (int j = 0; j < embeddedActions.length(); j++) {
-                                loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), process.getData());
-                            }
-                        }
-                    }
+                    // process the action using the previously acquired execution thread
+                    this.threadPool.execute(new ActionProcess(action, data));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
                 try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             }
         }
+    }
+    
+    private final class ActionProcess implements Runnable {
+    	
+    	private final SusiAction action;
+    	private final JSONArray data;
+    	
+    	public ActionProcess(SusiAction action, JSONArray data) {
+    		this.action = action;
+    		this.data = data;
+    	}
+		
+    	@Override
+		public void run() {
+			boolean processed = processAction(action, data);
+	        if (processed) {
+	            // send next embedded action(s) to queue
+	            JSONObject ao = action.toJSONClone();
+	            if (ao.has("actions")) {
+	                JSONArray embeddedActions = ao.getJSONArray("actions");
+	                for (int j = 0; j < embeddedActions.length(); j++) {
+	                    try {
+							loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), data);
+						} catch (UnsupportedOperationException | JSONException e) {
+							e.printStackTrace();
+						} catch (IOException e) {
+							e.printStackTrace();
+							// do a re-try
+							try {Thread.sleep(10000);} catch (InterruptedException e1) {}
+							try {
+								loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), data);
+							} catch (UnsupportedOperationException | JSONException | IOException ee) {
+								e.printStackTrace();
+							}
+						}
+	                }
+	            }
+	        }
+		}	
     }
     
     private void loadNextAction(SusiAction action, JSONArray data) throws UnsupportedOperationException, IOException {
