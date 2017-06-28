@@ -80,7 +80,9 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
 
     @Override
     public String getConnectionURL() {
-        return PROTOCOL_PREFIX + this.getHost() + ((this.hasDefaultPort() ? "" : ":" + this.getPort()));
+    	return PROTOCOL_PREFIX +
+               (this.username != null && this.username.length() > 0 ? username + (this.password != null && this.password.length() > 0 ? ":" + this.password : "") + "@" : "") +
+               this.getHost() + ((this.hasDefaultPort() ? "" : ":" + this.getPort()));
     }
 
     @Override

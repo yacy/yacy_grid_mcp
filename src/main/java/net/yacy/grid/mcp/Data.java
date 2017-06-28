@@ -118,17 +118,17 @@ public class Data {
         
     }
 
-    private static String getHost(String address) {
+    public static String getHost(String address) {
         String hp = t(address, '@', address);
         return h(hp, ':', hp);
     }
-    private static int getPort(String address, String defaultPort) {
+    public static int getPort(String address, String defaultPort) {
         return Integer.parseInt(t(t(address, '@', address), ':', defaultPort));
     }
-    private static String getUser(String address, String defaultUser) {
+    public static String getUser(String address, String defaultUser) {
         return h(h(address, '@', ""), ':', defaultUser);
     }
-    private static String getPassword(String address, String defaultPassword) {
+    public static String getPassword(String address, String defaultPassword) {
         return t(h(address, '@', ""), ':', defaultPassword);
     }
     

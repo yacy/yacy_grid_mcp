@@ -73,6 +73,7 @@ public class StackQueue<A> implements Queue<A> {
         try {
             this.stack.close();
         } catch (IOException e) {
+        	e.printStackTrace();
         }
     }
 }

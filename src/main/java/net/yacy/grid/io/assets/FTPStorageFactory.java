@@ -138,7 +138,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
     @Override
     public String getConnectionURL() {
         return "ftp://" +
-                (this.username.length() > 0 ? username + (this.password.length() > 0 ? ":" + this.password : "") + "@" : "") +
+                (this.username != null && this.username.length() > 0 ? username + (this.password != null && this.password.length() > 0 ? ":" + this.password : "") + "@" : "") +
                 this.getHost() + ((this.hasDefaultPort() ? "" : ":" + this.getPort()));
     }
 
