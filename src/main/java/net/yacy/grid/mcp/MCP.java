@@ -95,8 +95,8 @@ public class MCP {
     }
     
     public static void main(String[] args) {
-        BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);
-        new Thread(brokerListener).start();
+        //BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);
+        //new Thread(brokerListener).start();
         List<Class<? extends Servlet>> services = new ArrayList<>();
         services.addAll(Arrays.asList(MCP_SERVICES));
         Service.runService(MCP_SERVICE, DATA_PATH, APP_PATH, null, services);
