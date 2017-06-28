@@ -90,7 +90,9 @@ public class MapStack<A> implements Stack<A> {
         if (map instanceof Closeable)
             try {
                 ((Closeable) this.map).close();
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            	e.printStackTrace();
+            }
     }
     
     public static void main(String[] args) {

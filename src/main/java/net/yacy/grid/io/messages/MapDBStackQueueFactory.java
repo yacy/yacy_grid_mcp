@@ -94,4 +94,23 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
         this.queues.values().forEach(queue -> queue.close());
     }
 
+    public static void main(String[] args) {
+    	File location = new File("/tmp/queuetest");
+    	location.mkdirs();
+    	try {
+			StackQueue<byte[]> queue = new StackQueue<byte[]>(new MapStack<byte[]>(MapDBTreeMap.newLongMap(new File(location, "testqueue"))));
+			for (int i = 0; i < 10; i++) {
+				queue.send(("x" + i).getBytes());
+			}
+			queue.close();
+			queue = new StackQueue<byte[]>(new MapStack<byte[]>(MapDBTreeMap.newLongMap(new File(location, "testqueue"))));
+			while (queue.available() > 0) {
+				System.out.println(new String(queue.receive(1000)));
+			}
+			queue.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
+    
 }

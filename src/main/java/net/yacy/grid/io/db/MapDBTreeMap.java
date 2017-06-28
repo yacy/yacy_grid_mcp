@@ -83,22 +83,28 @@ public class MapDBTreeMap<K> implements SortedMap<K, byte[]>, NavigableMap<K, by
 
     @Override
     public byte[] put(K key, byte[] value) {
-        return this.treeMap.put(key, value);
+        byte[] b = this.treeMap.put(key, value);
+    	this.db.commit();
+    	return b;
     }
 
     @Override
     public byte[] remove(Object key) {
-        return this.treeMap.remove(key);
+    	byte[] b = this.treeMap.remove(key);
+    	this.db.commit();
+    	return b;
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends byte[]> m) {
         this.treeMap.putAll(m);
+    	this.db.commit();
     }
 
     @Override
     public void clear() {
         this.treeMap.clear();
+    	this.db.commit();
     }
 
     @SuppressWarnings("unchecked")
@@ -241,8 +247,28 @@ public class MapDBTreeMap<K> implements SortedMap<K, byte[]>, NavigableMap<K, by
 
     @Override
     public void close() throws IOException {
+    	this.db.commit();
         this.treeMap.close();
         this.db.close();
     }
-    
+
+    public static void main(String[] args) {
+    	File location = new File("/tmp/mapdbtest");
+    	location.mkdirs();
+    	try {
+    		MapDBTreeMap<Long> map = MapDBTreeMap.newLongMap(new File(location, "testdb"));
+			for (int i = 0; i < 10; i++) {
+				map.put((long) i, ("x" + i).getBytes());
+			}
+			map.close();
+    		map = MapDBTreeMap.newLongMap(new File(location, "testdb"));
+			while (map.size() > 0) {
+				Map.Entry<Long, byte[]> entry = map.pollFirstEntry();
+				System.out.println(new String(entry.getValue()));
+			}
+			map.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
 }
