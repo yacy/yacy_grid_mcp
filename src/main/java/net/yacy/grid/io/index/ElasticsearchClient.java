@@ -103,7 +103,7 @@ public class ElasticsearchClient {
         Settings.Builder settings = Settings.builder()
                 .put("cluster.name", clusterName)
                 .put("cluster.routing.allocation.enable", "all")
-                .put("cluster.routing.allocation.allow_rebalance", "true");
+                .put("cluster.routing.allocation.allow_rebalance", "always");
         // create a client
         TransportClient tc = new PreBuiltTransportClient(settings.build());
 
@@ -801,5 +801,12 @@ public class ElasticsearchClient {
         }
 
         return result;
+    }
+    
+    public static void main(String[] args) {
+    	ElasticsearchClient client = new ElasticsearchClient(new String[]{"searchlab.eu:9200"}, "index");
+    	client.createIndexIfNotExists("test", 1, 0);
+    	System.out.println(client.count("test"));
+    	client.close();
     }
 }
