@@ -93,10 +93,14 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public MessageContainer<byte[]> receive(String serviceName, String queueName, long timeout) throws IOException {
         if (this.rabbitConnector != null) try {
             return new MessageContainer<byte[]>(this.rabbitConnector, this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).receive(timeout));
-        } catch (IOException e) {}
+        } catch (IOException e) {
+            Data.logger.debug("rabbitmq fail", e);
+        }
         if (this.mcpConnector != null) try {
             return new MessageContainer<byte[]>(this.mcpConnector, this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).receive(timeout));
-        } catch (IOException e) {}
+        } catch (IOException e) {
+            Data.logger.debug("mcp fail", e);
+        }
         return super.receive(serviceName, queueName, timeout);
     }
 
@@ -104,10 +108,14 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public AvailableContainer available(String serviceName, String queueName) throws IOException {
         if (this.rabbitConnector != null) try {
             return new AvailableContainer(this.rabbitConnector, this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).available());
-        } catch (IOException e) {}
+        } catch (IOException e) {
+            Data.logger.debug("rabbitmq fail", e);
+        }
         if (this.mcpConnector != null) try {
             return new AvailableContainer(this.mcpConnector, this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).available());
-        } catch (IOException e) {}
+        } catch (IOException e) {
+            Data.logger.debug("mcp fail", e);
+        }
         return super.available(serviceName, queueName);
     }
     

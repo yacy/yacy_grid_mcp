@@ -1,5 +1,5 @@
 /**
- *  RemoteAccess
+ *  ServiceResponse
  *  Copyright 16.01.2017 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or

@@ -24,6 +24,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import net.yacy.grid.io.db.Stack;
+import net.yacy.grid.mcp.Data;
 
 /**
  * A (Message-) Queue based on a stack
@@ -60,6 +61,7 @@ public class StackQueue<A> implements Queue<A> {
             }
             return this.stack.pot();
         } catch (InterruptedException e) {
+            Data.logger.debug("StackQueue: receive interrupted", e);
         }
         return null;
     }
@@ -73,7 +75,7 @@ public class StackQueue<A> implements Queue<A> {
         try {
             this.stack.close();
         } catch (IOException e) {
-        	e.printStackTrace();
+            Data.logger.debug("StackQueue: close error", e);
         }
     }
 }

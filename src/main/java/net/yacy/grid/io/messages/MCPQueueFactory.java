@@ -108,7 +108,7 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                     connectMCP(response);
                     if (response.has(ObjectAPIHandler.MESSAGE_KEY)) {
                         String message = response.getString(ObjectAPIHandler.MESSAGE_KEY);
-                        return message.getBytes(StandardCharsets.UTF_8);
+                        return message == null ? null : message.getBytes(StandardCharsets.UTF_8);
                     }
                     throw new IOException("bad response from MCP: success but no message key");
                 } else {

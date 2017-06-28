@@ -42,8 +42,9 @@ public interface Queue<A> {
     
     /**
      * receive a message from the queue. The method blocks until a message is available
-     * @param timeout for blocking in milliseconds. if negaive the method blocks forever or until a message is submitted
-     * @return the message
+     * @param timeout for blocking in milliseconds. if negative the method blocks forever
+     * or until a message is submitted. 
+     * @return the message or null if a timeout occurred
      * @throws IOException
      */
     public A receive(long timeout) throws IOException;

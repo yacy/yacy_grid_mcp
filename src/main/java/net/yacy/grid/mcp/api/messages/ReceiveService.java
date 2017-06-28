@@ -56,10 +56,17 @@ public class ReceiveService extends ObjectAPIHandler implements APIHandler {
         if (serviceName.length() > 0 && queueName.length() > 0) {
             try {
                 MessageContainer<byte[]> message = Data.gridBroker.receive(serviceName, queueName, timeout);
-                String url = message.getFactory().getConnectionURL();
-                json.put(ObjectAPIHandler.MESSAGE_KEY, new String(message.getPayload(), StandardCharsets.UTF_8));
-                json.put(ObjectAPIHandler.SUCCESS_KEY, true);
-                if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
+                // message can be null if a timeout occurred
+                if (message == null) {
+                    json.put(ObjectAPIHandler.SUCCESS_KEY, false);
+                    json.put(ObjectAPIHandler.COMMENT_KEY, "timeout");
+                } else {
+                    String url = message.getFactory().getConnectionURL();
+                    byte[] payload = message.getPayload();
+                    json.put(ObjectAPIHandler.MESSAGE_KEY, payload == null ? "" : new String(payload, StandardCharsets.UTF_8));
+                    json.put(ObjectAPIHandler.SUCCESS_KEY, true);
+                    if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
+                }
             } catch (IOException e) {
                 json.put(ObjectAPIHandler.SUCCESS_KEY, false);
                 json.put(ObjectAPIHandler.COMMENT_KEY, e.getMessage());
