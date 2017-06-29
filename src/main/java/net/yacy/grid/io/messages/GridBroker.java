@@ -120,9 +120,9 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
     
     public void close() {
-        if (this.rabbitConnector != null) this.rabbitConnector.close();
-        if (this.mcpConnector != null) this.mcpConnector.close();
-        super.close();
+        if (this.rabbitConnector != null) try {this.rabbitConnector.close();} catch (Throwable e) {}
+        if (this.mcpConnector != null) try {this.mcpConnector.close();} catch (Throwable e) {}
+        try{super.close();} catch (Throwable e) {}
     }
     
 }

@@ -51,7 +51,9 @@ public class PeerDatabase implements Database {
     
     @Override
     public void close() {
-        this.dbConnector.values().forEach(db -> db.close());
+        this.dbConnector.values().forEach(db -> {
+            try {db.close();} catch (Throwable e){}
+        });
     }
 
     @Override

@@ -70,7 +70,9 @@ public class PeerBroker implements Broker<byte[]> {
 
     @Override
     public void close() {
-        this.clientConnector.values().forEach(connector -> connector.close());
+        this.clientConnector.values().forEach(connector -> {
+            try {connector.close();} catch (Throwable e) {}
+        });
     }
     
 }

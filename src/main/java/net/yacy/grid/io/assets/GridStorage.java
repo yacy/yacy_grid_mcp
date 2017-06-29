@@ -107,8 +107,8 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
 
     @Override
     public void close() {
-        if (this.ftp != null) this.ftp.close();
-        super.close();
+        if (this.ftp != null) try {this.ftp.close();} catch (Throwable e) {}
+        try {super.close();} catch (Throwable e) {}
     }
 
 }
