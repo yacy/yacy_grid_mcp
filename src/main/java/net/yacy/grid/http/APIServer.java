@@ -77,7 +77,10 @@ public class APIServer {
                 open(port + ap, expiresSeconds, htmlPath);
                 return port + ap;
             } catch (IOException e) {
-                if (force || ap >= 16) throw e;
+                if (force || ap >= 16) {
+                    e.printStackTrace();
+                    throw e;
+                }
                 ap++;
                 continue;
             }
