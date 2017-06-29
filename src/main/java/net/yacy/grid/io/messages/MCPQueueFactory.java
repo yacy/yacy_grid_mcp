@@ -79,7 +79,8 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
             @Override
             public void checkConnection() throws IOException {
                 String protocolhostportstub = MCPQueueFactory.this.getConnectionURL();
-                ServiceResponse sr = APIServer.getAPI(StatusService.NAME).serviceImpl(protocolhostportstub, params);
+                APIHandler apiHandler = APIServer.getAPI(StatusService.NAME);
+                ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
                 if (!sr.getObject().has("system")) throw new IOException("MCP does not respond properly");
                 available(); // check on service level again
             }

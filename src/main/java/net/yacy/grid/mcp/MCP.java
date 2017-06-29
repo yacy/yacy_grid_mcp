@@ -19,8 +19,11 @@
 
 package net.yacy.grid.mcp;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,10 +32,14 @@ import java.util.zip.GZIPInputStream;
 import javax.servlet.Servlet;
 
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import ai.susi.mind.SusiAction;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.assets.Asset;
+import net.yacy.grid.io.index.ElasticsearchClient.BulkEntry;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
 import net.yacy.grid.mcp.api.info.ServicesService;
@@ -46,7 +53,6 @@ public class MCP {
     private final static YaCyServices MCP_SERVICE = YaCyServices.mcp;
     private final static YaCyServices INDEXER_SERVICE = YaCyServices.indexer;
     private final static String DATA_PATH = "data";
-    private final static String APP_PATH = "mcp";
  
     // define services
     @SuppressWarnings("unchecked")
@@ -74,6 +80,7 @@ public class MCP {
 
        @Override
        public boolean processAction(SusiAction action, JSONArray data) {
+           
            String sourceasset_path = action.getStringAttr("sourceasset");
            if (sourceasset_path == null || sourceasset_path.length() == 0) return false;
                
@@ -83,9 +90,23 @@ public class MCP {
                byte[] source = asset.getPayload();
                sourceStream = new ByteArrayInputStream(source);
                if (sourceasset_path.endsWith(".gz")) sourceStream = new GZIPInputStream(sourceStream);
-   
-   
-               Data.logger.info("processed message from queue and indexed asset " + sourceasset_path);
+               
+               BufferedReader br = new BufferedReader(new InputStreamReader(sourceStream, StandardCharsets.UTF_8));
+               String line;
+               List<BulkEntry> bulk = new ArrayList<>();
+               indexloop: while ((line = br.readLine()) != null) try {
+                   JSONObject json = new JSONObject(new JSONTokener(line));
+                   if (json.has("index")) continue indexloop; // this is an elasticsearch index directive, we just skip that
+
+                   String date = null;
+                   if (date == null && json.has("last_modified")) date = "last_modified";
+                   if (date == null && json.has("load_date_dt")) date = "load_date_dt";
+                   if (date == null && json.has("fresh_date_dt")) date = "fresh_date_dt";
+                   BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
+                   bulk.add(be);
+               } catch (JSONException je) {}
+               Data.index.writeMapBulk("web", bulk);
+               Data.logger.info("processed indexing message from queue: " + sourceasset_path);
                return true;
            } catch (Throwable e) {
                e.printStackTrace();
@@ -95,11 +116,19 @@ public class MCP {
     }
     
     public static void main(String[] args) {
-        //BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);
-        //new Thread(brokerListener).start();
+        // initialize environment variables
         List<Class<? extends Servlet>> services = new ArrayList<>();
         services.addAll(Arrays.asList(MCP_SERVICES));
-        Service.runService(MCP_SERVICE, DATA_PATH, APP_PATH, null, services);
+        Service.initEnvironment(MCP_SERVICE, services, DATA_PATH);
+        
+        // start listener
+        if (Data.index != null) {
+            BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);
+            new Thread(brokerListener).start();
+        }
+        
+        // start server
+        Service.runService(null);
     }
 
 }

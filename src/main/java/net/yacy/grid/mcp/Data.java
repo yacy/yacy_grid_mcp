@@ -20,8 +20,12 @@
 package net.yacy.grid.mcp;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 
+import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +33,7 @@ import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.assets.GridStorage;
 import net.yacy.grid.io.db.JSONDatabase;
 import net.yacy.grid.io.db.PeerDatabase;
+import net.yacy.grid.io.index.ElasticsearchClient;
 import net.yacy.grid.io.messages.GridBroker;
 import net.yacy.grid.io.messages.PeerBroker;
 
@@ -42,6 +47,7 @@ public class Data {
     public static GridStorage gridStorage;
     public static Logger logger;
     public static Map<String, String> config;
+    public static ElasticsearchClient index;
     
     //public static Swagger swagger;
     
@@ -76,6 +82,21 @@ public class Data {
         File assetsPath = new File(gridServicePath, "assets");
         gridStorage = new GridStorage(assetsPath);
  
+        // create index
+        String elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "localhost:9300");
+        String elasticsearchClusterName = config.getOrDefault("grid.elasticsearch.clusterName", "");
+        String elasticsearchWebIndexName= config.getOrDefault("grid.elasticsearch.webIndexName", "web");
+        index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName);
+        try {
+            index.createIndexIfNotExists(elasticsearchWebIndexName, 1 /*shards*/, 1 /*replicas*/);
+            String mapping = new String(Files.readAllBytes(Paths.get("conf/mappings/web.json")));
+            index.setMapping("test", mapping);
+            Data.logger.info("Connected elasticsearch at " + getHost(elasticsearchAddress));
+        } catch (IOException | NoNodeAvailableException e) {
+            index = null; // index not available
+            Data.logger.info("Failed connecting elasticsearch at " + getHost(elasticsearchAddress));
+        }
+        
         // connect outside services
         // first try to connect to the configured MCPs.
         // if that fails, try to make all connections self

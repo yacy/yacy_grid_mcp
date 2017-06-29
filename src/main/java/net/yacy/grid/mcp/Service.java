@@ -61,23 +61,12 @@ public enum Service {
         for (String field: fields) this.fields.add(field);
     }
     
-
-    public static void runService(
+    public static void initEnvironment(
             final YaCyServices serviceType,
-            final String data_path,
-            final String app_path,
-            final String html_path,
-            final List<Class<? extends Servlet>> services) {
+            final List<Class<? extends Servlet>> services,
+            final String data_path) {
         type = serviceType;
-        runService(serviceType.getDefaultPort(), data_path, app_path, html_path, services);
-    }
-
-    private static void runService(
-            int port,
-            final String data_path,
-            final String app_path,
-            final String html_path,
-            final List<Class<? extends Servlet>> services) {
+        
         // run in headless mode
         System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
 
@@ -86,7 +75,7 @@ public enum Service {
         
         // load the config file(s);
         File conf_dir = FileSystems.getDefault().getPath("conf").toFile();
-        File dataFile = new File(new File(FileSystems.getDefault().getPath(data_path).toFile(), app_path + "-" + port), "conf");
+        File dataFile = new File(new File(FileSystems.getDefault().getPath(data_path).toFile(), type.name() + "-" + type.getDefaultPort()), "conf");
         String confFileName = "config.properties";
         Map<String, String> config = null;
         try {
@@ -97,32 +86,43 @@ public enum Service {
         }
         
         // read the port again and then read also the configuration again because the path of the custom settings may have moved
-        port = Integer.parseInt(config.get("port"));
-        dataFile = new File(new File(FileSystems.getDefault().getPath(data_path).toFile(), app_path + "-" + port), "conf");
+        int port = Integer.parseInt(config.get("port"));
+        dataFile = new File(new File(FileSystems.getDefault().getPath(data_path).toFile(), type.name() + "-" + port), "conf");
         try {
             config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
         } catch (IOException e1) {
             e1.printStackTrace();
             System.exit(-1);
         }
-        
-        // start server
+
+        // define services
         services.forEach(service -> APIServer.addService(service));
+        
+        // find data path
+        File data = FileSystems.getDefault().getPath("data").toFile();
+        Data.init(new File(data, type.name() + "-" + port), config);
+    }
+    
+    public static void runService(final String html_path) {
+        
+        // read the port again and then read also the configuration again because the path of the custom settings may have moved
+        int port = Integer.parseInt(Data.config.get("port"));
+
+        // start server
         try {
             
             // find data path
             File data = FileSystems.getDefault().getPath("data").toFile();
-            Data.init(new File(data, app_path + "-" + port), config);
             
             // open the server on available port
-            boolean portForce = Boolean.getBoolean(config.get("port.force"));
+            boolean portForce = Boolean.getBoolean(Data.config.get("port.force"));
             port = APIServer.open(port, 600, html_path, portForce);
 
             // give positive feedback
             Data.logger.info("Service started at port " + port);
 
             // prepare shutdown signal
-            File pid = new File(data, app_path + "-" + port + ".pid");
+            File pid = new File(data, type.name() + "-" + port + ".pid");
             if (pid.exists()) pid.delete(); // clean up rubbish
             pid.createNewFile();
             pid.deleteOnExit();
