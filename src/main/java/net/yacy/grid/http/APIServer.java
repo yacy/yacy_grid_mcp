@@ -71,13 +71,14 @@ public class APIServer {
     }
 
     public static int open(int port, int expiresSeconds, String htmlPath, boolean force) throws IOException {
+        int ap = 0;
         while (true) {
             try {
-                open(port, expiresSeconds, htmlPath);
-                return port;
+                open(port + ap, expiresSeconds, htmlPath);
+                return port + ap;
             } catch (IOException e) {
-                if (force) throw e;
-                port++;
+                if (force || ap >= 16) throw e;
+                ap++;
                 continue;
             }
         }
