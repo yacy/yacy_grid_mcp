@@ -115,10 +115,10 @@ public class FileHandler extends ResourceHandler implements Handler {
 
     @Override
     public Resource getResource(String path) {
-        Resource resource = super.getResource(path);
-        if (resource == null) return null;
-        if (!(resource instanceof PathResource) || !resource.exists()) return resource;
         try {
+            Resource resource = super.getResource(path);
+            if (resource == null) return null;
+            if (!(resource instanceof PathResource) || !resource.exists()) return resource;
             File f = resource.getFile();
             if (f.isDirectory() && !path.equals("/")) return resource;
             CacheResource cache = resourceCache.get(f);
@@ -128,10 +128,11 @@ public class FileHandler extends ResourceHandler implements Handler {
                 resourceCache.put(f, cache);
                 return cache;
             }
+            return resource;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return resource;
+        return null;
     }
 
     private final Map<File, CacheResource> resourceCache = new ConcurrentHashMap<>();
