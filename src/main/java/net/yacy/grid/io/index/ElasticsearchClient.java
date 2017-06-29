@@ -25,6 +25,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -60,6 +61,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
@@ -101,9 +103,10 @@ public class ElasticsearchClient {
     public ElasticsearchClient(final String[] addresses, final String clusterName) {
         // create default settings and add cluster name
         Settings.Builder settings = Settings.builder()
-                .put("cluster.name", clusterName)
                 .put("cluster.routing.allocation.enable", "all")
                 .put("cluster.routing.allocation.allow_rebalance", "always");
+        if (clusterName != null) settings.put("cluster.name", clusterName);
+        
         // create a client
         TransportClient tc = new PreBuiltTransportClient(settings.build());
 
@@ -151,7 +154,14 @@ public class ElasticsearchClient {
         return is_ready;
     }
     
-    public void createIndexIfNotExists(String indexName, final int shards, final int replicas) {
+    /**
+     * create a new index. This method must be called to ensure that an elasticsearch index is available and can be used.
+     * @param indexName
+     * @param shards
+     * @param replicas
+     * @throws NoNodeAvailableException in case that no elasticsearch server can be contacted.
+     */
+    public void createIndexIfNotExists(String indexName, final int shards, final int replicas) throws NoNodeAvailableException {
         // create an index if not existent
         if (!this.elasticsearchClient.admin().indices().prepareExists(indexName).execute().actionGet().isExists()) {
             Settings.Builder settings = Settings.builder()
@@ -804,9 +814,18 @@ public class ElasticsearchClient {
     }
     
     public static void main(String[] args) {
-    	ElasticsearchClient client = new ElasticsearchClient(new String[]{"searchlab.eu:9200"}, "index");
+    	ElasticsearchClient client = new ElasticsearchClient(new String[]{"localhost:9300"}, "");
+    	// check access
     	client.createIndexIfNotExists("test", 1, 0);
     	System.out.println(client.count("test"));
+    	// upload a schema
+    	try {
+            String mapping = new String(Files.readAllBytes(Paths.get("conf/mappings/web.json")));
+            client.setMapping("test", mapping);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    	
     	client.close();
     }
 }

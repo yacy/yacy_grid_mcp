@@ -1,4 +1,6 @@
-{"mappings": {"web": {"properties": {
+{
+"_all": {"enabled": false},
+"properties": {
   "url_s": {
     "include_in_all": "true",
     "index": "not_analyzed",
@@ -681,4 +683,4 @@
     "index": "not_analyzed",
     "type": "keyword"
   }
-}}}}
+}}
