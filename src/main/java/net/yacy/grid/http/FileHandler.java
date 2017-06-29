@@ -69,6 +69,7 @@ public class FileHandler extends ResourceHandler implements Handler {
         super.handle(target, baseRequest, request, response);
     }
 
+    /*
     @Override
     protected void doResponseHeaders(HttpServletResponse response, Resource resource, String mimeType) {
 	if (mimeType == null && resource.getName().endsWith(".css")) mimeType = "text/css";
@@ -76,6 +77,7 @@ public class FileHandler extends ResourceHandler implements Handler {
         // modify the caching strategy of ResourceHandler
         setCaching(response, this.expiresSeconds);
     }
+    */
     
     public static void setCaching(final HttpServletResponse response, final int expiresSeconds) {
         if (response instanceof org.eclipse.jetty.server.Response) {
