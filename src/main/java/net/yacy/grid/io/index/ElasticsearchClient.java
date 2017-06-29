@@ -550,10 +550,12 @@ public class ElasticsearchClient {
         boolean created = r.status() == RestStatus.CREATED; // true means created, false means updated
         long duration = Math.max(1, System.currentTimeMillis() - start);
         long regulator = 0;
+        /*
         if (duration > throttling_time_threshold) {
             regulator = (long) (throttling_factor * duration);
             try {Thread.sleep(regulator);} catch (InterruptedException e) {}
         }
+        */
         Log.getLog().info("elastic write entry to index " + indexName + ": " + (created ? "created":"updated") + ", " + duration + " ms" + (regulator == 0 ? "" : ", throttled with " + regulator + " ms"));
         return created;
     }
@@ -594,7 +596,8 @@ public class ElasticsearchClient {
         }
         long duration = Math.max(1, System.currentTimeMillis() - start);
         long regulator = 0;
-        long ops = result.created.size() * 1000 / duration;
+        int created = result.created.size();
+        long ops = created * 1000 / duration;
         if (duration > throttling_time_threshold && ops < throttling_ops_threshold) {
             regulator = (long) (throttling_factor * duration);
             try {Thread.sleep(regulator);} catch (InterruptedException e) {}

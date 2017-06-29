@@ -80,6 +80,7 @@ public class MCP {
 
        @Override
        public boolean processAction(SusiAction action, JSONArray data) {
+           // find result of indexing with http://localhost:9200/web/crawler/_search?q=text_t:*
            
            String sourceasset_path = action.getStringAttr("sourceasset");
            if (sourceasset_path == null || sourceasset_path.length() == 0) return false;
@@ -93,7 +94,7 @@ public class MCP {
                
                BufferedReader br = new BufferedReader(new InputStreamReader(sourceStream, StandardCharsets.UTF_8));
                String line;
-               List<BulkEntry> bulk = new ArrayList<>();
+               //List<BulkEntry> bulk = new ArrayList<>();
                indexloop: while ((line = br.readLine()) != null) try {
                    JSONObject json = new JSONObject(new JSONTokener(line));
                    if (json.has("index")) continue indexloop; // this is an elasticsearch index directive, we just skip that
@@ -102,10 +103,13 @@ public class MCP {
                    if (date == null && json.has("last_modified")) date = "last_modified";
                    if (date == null && json.has("load_date_dt")) date = "load_date_dt";
                    if (date == null && json.has("fresh_date_dt")) date = "fresh_date_dt";
-                   BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
-                   bulk.add(be);
+                   String url = json.getString("url_s");
+                   boolean created = Data.index.writeMap("web", json.toMap(), "crawler", url);
+                   Data.logger.info("indexed (" + (created ? "created" : "updated")+ "): " + url);
+                   //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
+                   //bulk.add(be);
                } catch (JSONException je) {}
-               Data.index.writeMapBulk("web", bulk);
+               //Data.index.writeMapBulk("web", bulk);
                Data.logger.info("processed indexing message from queue: " + sourceasset_path);
                return true;
            } catch (Throwable e) {
