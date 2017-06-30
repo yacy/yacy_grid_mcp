@@ -19,14 +19,20 @@
 
 package net.yacy.grid.mcp.api.index;
 
+import java.util.List;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletResponse;
 
+import org.elasticsearch.index.query.Operator;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.mcp.Data;
 
 /**
  * test: call
@@ -56,22 +62,20 @@ public class SearchService extends ObjectAPIHandler implements APIHandler {
         long timeout = call.get("timeout", -1);
         JSONObject json = new JSONObject(true);
         
-        /*
-        if (serviceName.length() > 0 && queueName.length() > 0) {
-            try {
-                MessageContainer<byte[]> message = Data.gridBroker.receive(serviceName, queueName, timeout);
-                String url = message.getFactory().getConnectionURL();
-                json.put(ObjectAPIHandler.MESSAGE_KEY, new String(message.getPayload(), StandardCharsets.UTF_8));
-                json.put(ObjectAPIHandler.SUCCESS_KEY, true);
-                if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
-            } catch (IOException e) {
-                json.put(ObjectAPIHandler.SUCCESS_KEY, false);
-                json.put(ObjectAPIHandler.COMMENT_KEY, e.getMessage());
-            }
-        } else {
-            json.put(ObjectAPIHandler.SUCCESS_KEY, false);
-            json.put(ObjectAPIHandler.COMMENT_KEY, "the request must contain a serviceName and a queueName");
-        }*/
+        List<Map<String, Object>> result = Data.index.query("web", query, Operator.AND, 0, 10);
+
+        JSONArray channels = new JSONArray();
+        json.put("channels", channels);
+        JSONObject channel = new JSONObject();
+        channels.put(channel);
+        JSONArray items = new JSONArray();
+        channel.put("items", items);
+        result.forEach(map -> {
+            map.forEach((key, value) -> {
+                JSONObject hit = new JSONObject();
+                hit.put("link", key);
+            });
+        });
         return new ServiceResponse(json);
     }
     

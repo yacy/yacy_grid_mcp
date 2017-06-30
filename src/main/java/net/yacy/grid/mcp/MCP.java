@@ -39,9 +39,9 @@ import org.json.JSONTokener;
 import ai.susi.mind.SusiAction;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.assets.Asset;
-import net.yacy.grid.io.index.ElasticsearchClient.BulkEntry;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
+import net.yacy.grid.mcp.api.index.SearchService;
 import net.yacy.grid.mcp.api.info.ServicesService;
 import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
@@ -69,7 +69,10 @@ public class MCP {
             // asset services
             //RetrieveService.class,
             StoreService.class,
-            LoadService.class
+            LoadService.class,
+            
+            // search services
+            SearchService.class
     };
 
     public static class IndexListener extends AbstractBrokerListener implements BrokerListener {
