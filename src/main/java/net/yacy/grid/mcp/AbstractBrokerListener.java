@@ -165,7 +165,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         JSONObject nextProcess = new JSONObject()
                 .put("data", data)
                 .put("actions", new JSONArray().put(action.toJSONClone()));
-        byte[] b = nextProcess.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] b = nextProcess.toString(2).getBytes(StandardCharsets.UTF_8);
         Data.gridBroker.send(type, queue, b);
     }
 
