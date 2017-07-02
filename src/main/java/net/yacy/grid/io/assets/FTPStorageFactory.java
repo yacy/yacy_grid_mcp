@@ -90,6 +90,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                 long t1 = System.currentTimeMillis();
                 String file = cdPath(path);
                 long t2 = System.currentTimeMillis();
+                FTPStorageFactory.this.ftp.enterLocalPassiveMode();
                 boolean success = FTPStorageFactory.this.ftp.storeFile(file, new ByteArrayInputStream(asset));
                 long t3 = System.currentTimeMillis();
                 Data.logger.debug("ftp store: check connection =" + (t1 - t0) + ", cdPath = " + (t2 - t1) + ", store = " + (t3 - t2));

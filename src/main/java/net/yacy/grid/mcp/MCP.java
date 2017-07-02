@@ -48,6 +48,7 @@ import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
 import net.yacy.grid.mcp.api.messages.ReceiveService;
 import net.yacy.grid.mcp.api.messages.SendService;
+import net.yacy.grid.tools.Digest;
 
 /**
  * The Master Connect Program
@@ -113,7 +114,8 @@ public class MCP {
                    if (date == null && json.has(WebMapping.load_date_dt.getSolrFieldName())) date = WebMapping.load_date_dt.getSolrFieldName();
                    if (date == null && json.has(WebMapping.fresh_date_dt.getSolrFieldName())) date = WebMapping.fresh_date_dt.getSolrFieldName();
                    String url = json.getString(WebMapping.url_s.getSolrFieldName());
-                   boolean created = Data.index.writeMap("web", json.toMap(), "crawler", url);
+                   String id = Digest.encodeMD5Hex(url);
+                   boolean created = Data.index.writeMap("web", json.toMap(), "crawler", id);
                    Data.logger.info("indexed (" + (created ? "created" : "updated")+ "): " + url);
                    //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
                    //bulk.add(be);
