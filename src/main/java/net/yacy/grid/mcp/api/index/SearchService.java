@@ -37,7 +37,9 @@ import net.yacy.grid.mcp.Data;
 
 /**
  * test: call
- * http://127.0.0.1:8100/yacy/grid/mcp/index/search.json?serviceName=testService&queueName=testQueue
+ * http://127.0.0.1:8100/yacy/grid/mcp/index/search.json?query=*
+ * compare with
+ * http://localhost:9200/web/crawler/_search?q=*:*
  */
 public class SearchService extends ObjectAPIHandler implements APIHandler {
 
@@ -78,16 +80,28 @@ public class SearchService extends ObjectAPIHandler implements APIHandler {
         channel.put("items", items);
         result.forEach(map -> {
             JSONObject hit = new JSONObject(true);
-            hit.put("title", map.get(WebMapping.title.getSolrFieldName()));
-            hit.put("link", map.get(WebMapping.url_s.getSolrFieldName()));
-            hit.put("description", map.get(WebMapping.description_txt.getSolrFieldName()));
-            hit.put("pubDate", map.get(WebMapping.last_modified.getSolrFieldName()));
-            hit.put("size", map.get(WebMapping.size_i.getSolrFieldName()));
-            hit.put("sizename", map.get(WebMapping.size_i.getSolrFieldName()));
-            hit.put("host", map.get(WebMapping.host_s.getSolrFieldName()));
+            Object title = map.get(WebMapping.title.getSolrFieldName());
+            Object link = map.get(WebMapping.url_s.getSolrFieldName());
+            Object description = map.get(WebMapping.description_txt.getSolrFieldName());
+            Object last_modified = map.get(WebMapping.last_modified.getSolrFieldName());
+            Object size = map.get(WebMapping.size_i.getSolrFieldName());
+            Object host = map.get(WebMapping.host_s.getSolrFieldName());
+            hit.put("title", eval(title));
+            hit.put("link", eval(link));
+            hit.put("description", eval(description));
+            hit.put("pubDate", eval(last_modified));
+            hit.put("size", eval(size));
+            hit.put("sizename", eval(size));
+            hit.put("host", eval(host));
             items.put(hit);
         });
         return new ServiceResponse(json);
+    }
+    
+    private static String eval(Object o) {
+        if (o instanceof JSONObject) return ((JSONObject) o).toString();
+        if (o instanceof JSONArray) return eval(((JSONArray) o).get(0));
+        return o.toString();
     }
     
     /*
