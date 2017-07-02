@@ -59,7 +59,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     
     @Override
     public void run() {
-        while (shallRun) {
+        runloop: while (shallRun) {
             if (Data.gridBroker == null) {
                 try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             } else try {
@@ -69,7 +69,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
             	
             	// wait until message arrives
                 MessageContainer<byte[]> mc = Data.gridBroker.receive(this.serviceName, this.queueName, 10000);
-                if (mc == null || mc.getPayload() == null) continue;
+                if (mc == null || mc.getPayload() == null) continue runloop;
                 JSONObject json = new JSONObject(new JSONTokener(new String(mc.getPayload(), StandardCharsets.UTF_8)));
                 final SusiThought process = new SusiThought(json);
                 final JSONArray data = process.getData();
@@ -101,9 +101,17 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     // process the action using the previously acquired execution thread
                     this.threadPool.execute(new ActionProcess(action, data));
                 }
+            } catch (JSONException e) {
+                // happens if the payload has a wrong form
+                Data.logger.info("message syntax error in queue: " + e.getMessage(), e);
+                continue runloop;
             } catch (IOException e) {
-                e.printStackTrace();
+                Data.logger.info("IOException: " + e.getMessage(), e);
                 try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+                continue runloop;
+            } catch (Throwable e) {
+                Data.logger.info("error: " + e.getMessage(), e);
+                continue runloop;
             }
         }
     }
