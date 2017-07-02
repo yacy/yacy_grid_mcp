@@ -160,6 +160,14 @@ public class SusiAction {
     }
     
     /**
+     * actions may have actions embedded, which act as follow-up actions.
+     * @return the action inside that action, not a clone!
+     */
+    public JSONArray getEmbeddedActions() {
+        return this.json.getJSONArray("actions");
+    }
+    
+    /**
      * toString
      * @return return the json representation of the object as a string
      */
