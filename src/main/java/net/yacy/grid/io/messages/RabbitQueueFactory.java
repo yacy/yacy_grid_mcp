@@ -22,6 +22,9 @@ package net.yacy.grid.io.messages;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
+
+import net.yacy.grid.mcp.Data;
+
 import com.rabbitmq.client.Connection;
 
 import java.io.IOException;
@@ -142,8 +145,13 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             if (timeout <= 0) timeout = Long.MAX_VALUE;
             long termination = timeout <= 0 || timeout == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeout;
             while (System.currentTimeMillis() < termination) {
-                GetResponse response = channel.basicGet(this.queueName, true);
-                if (response != null) return response.getBody();
+                try {
+                    GetResponse response = channel.basicGet(this.queueName, true);
+                    if (response != null) return response.getBody();
+                    Data.logger.warn("receive failed: response empty");
+                } catch (Throwable e) {
+                    Data.logger.warn("receive failed: " + e.getMessage(), e);
+                }
                 try {Thread.sleep(1000);} catch (InterruptedException e) {return null;}
             }
             return null;
