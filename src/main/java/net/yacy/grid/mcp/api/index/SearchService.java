@@ -32,6 +32,7 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.mcp.Data;
 
 /**
@@ -62,19 +63,29 @@ public class SearchService extends ObjectAPIHandler implements APIHandler {
         long timeout = call.get("timeout", -1);
         JSONObject json = new JSONObject(true);
         
-        List<Map<String, Object>> result = Data.index.query("web", query, Operator.AND, 0, 10);
+        List<Map<String, Object>> result = Data.index.query("web", query, Operator.AND, 0, 10, "text_t");
 
         JSONArray channels = new JSONArray();
         json.put("channels", channels);
         JSONObject channel = new JSONObject();
         channels.put(channel);
         JSONArray items = new JSONArray();
+        channel.put("title", "Search for " + query);
+        channel.put("description", "Search for " + query);
+        channel.put("startIndex", "" + startRecord);
+        channel.put("itemsPerPage", "" + items.length());
+        channel.put("searchTerms", query);
         channel.put("items", items);
         result.forEach(map -> {
-            map.forEach((key, value) -> {
-                JSONObject hit = new JSONObject();
-                hit.put("link", key);
-            });
+            JSONObject hit = new JSONObject(true);
+            hit.put("title", map.get(WebMapping.title.getSolrFieldName()));
+            hit.put("link", map.get(WebMapping.url_s.getSolrFieldName()));
+            hit.put("description", map.get(WebMapping.description_txt.getSolrFieldName()));
+            hit.put("pubDate", map.get(WebMapping.last_modified.getSolrFieldName()));
+            hit.put("size", map.get(WebMapping.size_i.getSolrFieldName()));
+            hit.put("sizename", map.get(WebMapping.size_i.getSolrFieldName()));
+            hit.put("host", map.get(WebMapping.host_s.getSolrFieldName()));
+            items.put(hit);
         });
         return new ServiceResponse(json);
     }

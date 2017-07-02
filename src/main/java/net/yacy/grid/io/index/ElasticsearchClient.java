@@ -665,11 +665,11 @@ public class ElasticsearchClient {
      *            the number of documents to be returned
      * @return a list of json objects, mapped as Map<String,Object> for each json
      */
-    public List<Map<String, Object>> query(final String indexName, final String q, final Operator operator, final int offset, final int count) {
+    public List<Map<String, Object>> query(final String indexName, final String q, final Operator operator, final int offset, final int count, String... fieldNames) {
         assert count > 1; // for smaller amounts, use the next method
         SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName)
             // .addFields("_all")
-            .setQuery(QueryBuilders.multiMatchQuery(q, "_all").operator(operator).zeroTermsQuery(ZeroTermsQuery.ALL)).setFrom(offset).setSize(count);
+            .setQuery(QueryBuilders.multiMatchQuery(q, fieldNames).operator(operator).zeroTermsQuery(ZeroTermsQuery.ALL)).setFrom(offset).setSize(count);
         SearchResponse response = request.execute().actionGet();
         SearchHit[] hits = response.getHits().getHits();
         ArrayList<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
