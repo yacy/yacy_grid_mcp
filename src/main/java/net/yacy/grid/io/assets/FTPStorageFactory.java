@@ -48,7 +48,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
         this.ftpClient = new Storage<byte[]>() {
             public void checkConnection() throws IOException {
                 // check if there was any first initialization
-                if (FTPStorageFactory.this.ftp == null) {
+                if (FTPStorageFactory.this.ftp == null || !FTPStorageFactory.this.ftp.isConnected()) {
                     initConnection();
                 }
                 // try to send a command
@@ -56,6 +56,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                     FTPStorageFactory.this.ftp.cwd("/");
                 } catch (Exception e) {
                     // in case that the command causes an exception, try to re-connect
+                    if (FTPStorageFactory.this.ftp != null) try {FTPStorageFactory.this.ftp.disconnect();} catch (Throwable ee) {}
                     initConnection();
                     // with a connection established, test again a command
                     FTPStorageFactory.this.ftp.cwd("/");
@@ -72,11 +73,11 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                 FTPStorageFactory.this.ftp.enterLocalPassiveMode(); // the server opens a data port to which the client conducts data transfers
                 int reply = ftp.getReplyCode();
                 if(!FTPReply.isPositiveCompletion(reply)) {
-                    ftp.disconnect();
+                    if (FTPStorageFactory.this.ftp != null) try {FTPStorageFactory.this.ftp.disconnect();} catch (Throwable ee) {}
                     throw new IOException("bad connection to ftp server: " + reply);
                 }
                 if (!FTPStorageFactory.this.ftp.login(FTPStorageFactory.this.username, FTPStorageFactory.this.password)) {
-                    ftp.disconnect();
+                    if (FTPStorageFactory.this.ftp != null) try {FTPStorageFactory.this.ftp.disconnect();} catch (Throwable ee) {}
                     throw new IOException("login failure");
                 }
                 FTPStorageFactory.this.ftp.setFileType(FTP.BINARY_FILE_TYPE);
@@ -95,6 +96,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                 long t3 = System.currentTimeMillis();
                 Data.logger.debug("ftp store: check connection =" + (t1 - t0) + ", cdPath = " + (t2 - t1) + ", store = " + (t3 - t2));
                 if (!success) throw new IOException("storage to path " + path + " was not successful");
+                if (FTPStorageFactory.this.ftp != null) try {FTPStorageFactory.this.ftp.disconnect();} catch (Throwable ee) {}
                 return FTPStorageFactory.this;
             }
 
@@ -104,6 +106,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                 String file = cdPath(path);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 FTPStorageFactory.this.ftp.retrieveFile(file, baos);
+                if (FTPStorageFactory.this.ftp != null) try {FTPStorageFactory.this.ftp.disconnect();} catch (Throwable ee) {}
                 return new Asset<byte[]>(FTPStorageFactory.this, baos.toByteArray());
             }
 
@@ -111,12 +114,13 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             public void close() {
                 try {
                     FTPStorageFactory.this.ftp.disconnect();
-                } catch (IOException e) {
+                } catch (Throwable e) {
                 }
             }
             private String cdPath(String path) throws IOException {
                 int success_code = FTPStorageFactory.this.ftp.cwd("/");
-                if (path.length() == 0) return path;
+                if (success_code >= 300) throw new IOException("cannot cd into " + path + ": " + success_code);
+                if (path.length() == 0 || path.equals("/")) return "";
                 if (path.charAt(0) == '/') path = path.substring(1); // we consider that all paths are absolute to / (home)
                 int p;
                 while ((p = path.indexOf('/')) > 0) {
