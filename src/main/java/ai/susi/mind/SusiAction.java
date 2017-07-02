@@ -20,10 +20,13 @@
 package ai.susi.mind;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import net.yacy.grid.mcp.Data;
 
 /**
  * An action is an application on the information deduced during inferences on mind states
@@ -165,6 +168,32 @@ public class SusiAction {
      */
     public JSONArray getEmbeddedActions() {
         return this.json.getJSONArray("actions");
+    }
+    
+    // attach a binary asset to the action
+    public SusiAction setBinaryAsset(String name, byte[] b) {
+        JSONObject asset;
+        if (this.json.has("assets")) asset = this.json.getJSONObject("asset"); else {
+            asset = new JSONObject();
+            this.json.put("assets", asset);
+        }
+        JSONObject base64;
+        if (asset.has("base64")) base64 = asset.getJSONObject("base64"); else {
+            base64 = new JSONObject();
+            asset.put("base64", asset);
+        }
+        final String bAsBase64 = Base64.getEncoder().encodeToString(b);
+        base64.put(name, bAsBase64);
+        return this;
+    }
+    
+    // read a binary asset from the action
+    public byte[] getBinaryAsset(String name) {
+        if (!this.json.has("assets")) return null;
+        JSONObject assets = this.json.getJSONObject("assets");
+        if (!assets.has("base64")) return null;
+        String bAsBase64 = assets.getString(name);
+        return Base64.getDecoder().decode(bAsBase64);
     }
     
     /**
