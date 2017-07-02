@@ -94,6 +94,21 @@ Maven and Gradle tools should be installed. To refresh gradle settings in eclips
 - set a home path for the user, i.e.
 
     ftpserver.user.anonymous.homedirectory=/Users/admin/Downloads/ftphome
+
+- set a high number of allowed connections for `maxloginnumber` and `maxloginperip`
+
+  The complete configuration may then look like
+  ```
+ftpserver.user.yacygrid.userpassword=<here is the md5sum>
+ftpserver.user.yacygrid.homedirectory=./res/home
+ftpserver.user.yacygrid.enableflag=true
+ftpserver.user.yacygrid.writepermission=true
+ftpserver.user.yacygrid.maxloginnumber=2000
+ftpserver.user.yacygrid.maxloginperip=2000
+ftpserver.user.yacygrid.idletime=300
+ftpserver.user.yacygrid.uploadrate=0
+ftpserver.user.yacygrid.downloadrate=0
+```
     
 - edit the file apache-ftpserver-1.1.0/bin/ftpd.sh and set JAVA_HOME according to your system, i.e. on a Mac you set
 
