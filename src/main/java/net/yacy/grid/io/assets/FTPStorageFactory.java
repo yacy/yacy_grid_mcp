@@ -121,12 +121,12 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                 while ((p = path.indexOf('/')) > 0) {
                     String dir = path.substring(0, p);
                     int code = FTPStorageFactory.this.ftp.cwd(dir);
-                    if (code != success_code) {
+                    if (code >= 300) {
                         // path may not exist, try to create the path
                         boolean success = FTPStorageFactory.this.ftp.makeDirectory(dir);
                         if (!success) throw new IOException("unable to create directory " + dir + " for path " + path);
                         code = FTPStorageFactory.this.ftp.cwd(dir);
-                        if (code != success_code) throw new IOException("unable to cwd into directory " + dir + " for path " + path);
+                        if (code >= 300) throw new IOException("unable to cwd into directory " + dir + " for path " + path);
                     }
                     path = path.substring(p + 1);
                 }
