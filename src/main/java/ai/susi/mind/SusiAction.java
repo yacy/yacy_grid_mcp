@@ -197,15 +197,14 @@ public class SusiAction {
         	assets = new JSONObject();
             this.json.put("assets", assets);
         }
-        final String jsonlist = list.toString();
-        assets.put(name, jsonlist);
+        assets.put(name, list.toArray());
     	return this;
     }
     
     public JSONList getJSONListAsset(String name) {
         if (!this.json.has("assets")) return null;
         JSONObject assets = this.json.getJSONObject("assets");
-        String jsonlist = assets.getString(name);
+        JSONArray jsonlist = assets.getJSONArray(name);
         try {
 			return new JSONList(jsonlist);
 		} catch (IOException e) {
