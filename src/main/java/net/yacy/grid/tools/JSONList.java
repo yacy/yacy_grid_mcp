@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -51,11 +52,15 @@ public class JSONList implements Iterable<Object> {
         this();
         BufferedReader br = new BufferedReader(new InputStreamReader(sourceStream, StandardCharsets.UTF_8));
         String line;
-        while ((line = br.readLine()) != null) {
-        	line = line.trim();
-        	if (line.length() == 0) continue;
-            JSONObject json = new JSONObject(new JSONTokener(line));
-            this.add(json);
+        try {
+	        while ((line = br.readLine()) != null) {
+	        	line = line.trim();
+	        	if (line.length() == 0) continue;
+	            JSONObject json = new JSONObject(new JSONTokener(line));
+	            this.add(json);
+	        }
+        } catch (JSONException e) {
+        	throw new IOException(e);
         }
 	}
 
@@ -68,6 +73,10 @@ public class JSONList implements Iterable<Object> {
 	
 	public JSONList(byte[] b) throws IOException {
 		this(new ByteArrayInputStream(b));
+	}
+	
+	public JSONList(String jsonlist) throws IOException {
+		this(jsonlist.getBytes(StandardCharsets.UTF_8));
 	}
 	
 	public JSONList add(JSONObject object) {

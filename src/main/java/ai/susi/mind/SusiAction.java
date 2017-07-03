@@ -19,6 +19,7 @@
 
 package ai.susi.mind;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -26,7 +27,7 @@ import java.util.Collection;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.tools.JSONList;
 
 /**
  * An action is an application on the information deduced during inferences on mind states
@@ -172,18 +173,13 @@ public class SusiAction {
     
     // attach a binary asset to the action
     public SusiAction setBinaryAsset(String name, byte[] b) {
-        JSONObject asset;
-        if (this.json.has("assets")) asset = this.json.getJSONObject("asset"); else {
-            asset = new JSONObject();
-            this.json.put("assets", asset);
-        }
-        JSONObject base64;
-        if (asset.has("base64")) base64 = asset.getJSONObject("base64"); else {
-            base64 = new JSONObject();
-            asset.put("base64", asset);
+        JSONObject assets;
+        if (this.json.has("assets")) assets = this.json.getJSONObject("assets"); else {
+        	assets = new JSONObject();
+            this.json.put("assets", assets);
         }
         final String bAsBase64 = Base64.getEncoder().encodeToString(b);
-        base64.put(name, bAsBase64);
+        assets.put(name, bAsBase64);
         return this;
     }
     
@@ -191,9 +187,31 @@ public class SusiAction {
     public byte[] getBinaryAsset(String name) {
         if (!this.json.has("assets")) return null;
         JSONObject assets = this.json.getJSONObject("assets");
-        if (!assets.has("base64")) return null;
         String bAsBase64 = assets.getString(name);
         return Base64.getDecoder().decode(bAsBase64);
+    }
+
+    public SusiAction setJSONListAsset(String name, JSONList list) {
+    	JSONObject assets;
+        if (this.json.has("assets")) assets = this.json.getJSONObject("assets"); else {
+        	assets = new JSONObject();
+            this.json.put("assets", assets);
+        }
+        final String jsonlist = list.toString();
+        assets.put(name, jsonlist);
+    	return this;
+    }
+    
+    public JSONList getJSONListAsset(String name) {
+        if (!this.json.has("assets")) return null;
+        JSONObject assets = this.json.getJSONObject("assets");
+        String jsonlist = assets.getString(name);
+        try {
+			return new JSONList(jsonlist);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
     }
     
     /**
