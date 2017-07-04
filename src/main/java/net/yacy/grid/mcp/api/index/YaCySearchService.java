@@ -41,10 +41,10 @@ import net.yacy.grid.mcp.Data;
  * compare with
  * http://localhost:9200/web/crawler/_search?q=*:*
  */
-public class SearchService extends ObjectAPIHandler implements APIHandler {
+public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578478303031749975L;
-    public static final String NAME = "search";
+    public static final String NAME = "yacysearch";
     
     @Override
     public String getAPIPath() {
