@@ -87,7 +87,9 @@ public class ServiceResponse {
     
     public String getMimeType() {
         if (isObject() || isArray()) return "application/javascript";
-        if (isString()) return "text/plain";
+        if (isString()) {
+        	return getString().startsWith("<?xml") ? "application/xml" : "text/plain";
+        }
         return "application/octet-stream";
     }
     

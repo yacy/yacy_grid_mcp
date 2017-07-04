@@ -19,22 +19,17 @@
 
 package net.yacy.grid.mcp;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
 
 import javax.servlet.Servlet;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import ai.susi.mind.SusiAction;
 import net.yacy.grid.YaCyServices;
@@ -42,13 +37,15 @@ import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
-import net.yacy.grid.mcp.api.index.SearchService;
+import net.yacy.grid.mcp.api.index.GSASearchService;
+import net.yacy.grid.mcp.api.index.YaCySearchService;
 import net.yacy.grid.mcp.api.info.ServicesService;
 import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
 import net.yacy.grid.mcp.api.messages.ReceiveService;
 import net.yacy.grid.mcp.api.messages.SendService;
 import net.yacy.grid.tools.Digest;
+import net.yacy.grid.tools.JSONList;
 
 /**
  * The Master Connect Program
@@ -79,13 +76,14 @@ public class MCP {
             LoadService.class,
             
             // search services
-            SearchService.class
+            YaCySearchService.class,
+            GSASearchService.class
     };
 
     public static class IndexListener extends AbstractBrokerListener implements BrokerListener {
 
        public IndexListener(YaCyServices service) {
-			super(service, 1);
+			super(service, Runtime.getRuntime().availableProcessors());
 		}
 
        @Override
@@ -94,19 +92,26 @@ public class MCP {
            
            String sourceasset_path = action.getStringAttr("sourceasset");
            if (sourceasset_path == null || sourceasset_path.length() == 0) return false;
-               
-           InputStream sourceStream = null;
+            
            try {
-               Asset<byte[]> asset = Data.gridStorage.load(sourceasset_path);
-               byte[] source = asset.getPayload();
-               sourceStream = new ByteArrayInputStream(source);
-               if (sourceasset_path.endsWith(".gz")) sourceStream = new GZIPInputStream(sourceStream);
-               
-               BufferedReader br = new BufferedReader(new InputStreamReader(sourceStream, StandardCharsets.UTF_8));
-               String line;
-               //List<BulkEntry> bulk = new ArrayList<>();
-               indexloop: while ((line = br.readLine()) != null) try {
-                   JSONObject json = new JSONObject(new JSONTokener(line));
+
+               JSONList jsonlist = null;
+        	   try {
+        		   Asset<byte[]> asset = Data.gridStorage.load(sourceasset_path);
+        		   byte[] source = asset.getPayload();
+        		   jsonlist = new JSONList(new ByteArrayInputStream(source));
+        	   } catch (IOException e) {
+        		   e.printStackTrace();
+        		   Data.logger.warn("could not read asset from storage, using embedded action asset: " + sourceasset_path);
+           			jsonlist = action.getJSONListAsset(sourceasset_path);
+           			if (jsonlist == null) {
+           				Data.logger.info("Fail: cannot read sourceasset of Action from action asset: " + action.toString());
+           				return false;
+           			}
+        	   }
+        	   
+        	   indexloop: for (int line = 0; line < jsonlist.length(); line++) try {
+        		   JSONObject json = jsonlist.get(line);
                    if (json.has("index")) continue indexloop; // this is an elasticsearch index directive, we just skip that
 
                    String date = null;
@@ -119,7 +124,9 @@ public class MCP {
                    Data.logger.info("indexed (" + (created ? "created" : "updated")+ "): " + url);
                    //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
                    //bulk.add(be);
-               } catch (JSONException je) {}
+               } catch (JSONException je) {
+            	   je.printStackTrace();
+               }
                //Data.index.writeMapBulk("web", bulk);
                Data.logger.info("processed indexing message from queue: " + sourceasset_path);
                return true;

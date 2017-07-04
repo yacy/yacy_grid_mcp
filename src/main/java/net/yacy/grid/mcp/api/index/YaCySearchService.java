@@ -1,6 +1,6 @@
 /**
- *  SearchService
- *  Copyright 28.1.2017 by Michael Peter Christen, @0rb1t3r
+ *  YaCySearchService
+ *  Copyright 05.06.2017 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 
 package net.yacy.grid.mcp.api.index;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -34,10 +35,11 @@ import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.mcp.Data;
+import net.yacy.grid.tools.DateParser;
 
 /**
  * test: call
- * http://127.0.0.1:8100/yacy/grid/mcp/index/search.json?query=*
+ * http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=*
  * compare with
  * http://localhost:9200/web/crawler/_search?q=*:*
  */
@@ -80,28 +82,28 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         channel.put("items", items);
         result.forEach(map -> {
             JSONObject hit = new JSONObject(true);
-            Object title = map.get(WebMapping.title.getSolrFieldName());
+            List<?> title = (List<?>) map.get(WebMapping.title.getSolrFieldName());
+            String titleString = title == null || title.isEmpty() ? "" : title.iterator().next().toString();
             Object link = map.get(WebMapping.url_s.getSolrFieldName());
-            Object description = map.get(WebMapping.description_txt.getSolrFieldName());
-            Object last_modified = map.get(WebMapping.last_modified.getSolrFieldName());
-            Object size = map.get(WebMapping.size_i.getSolrFieldName());
-            Object host = map.get(WebMapping.host_s.getSolrFieldName());
-            hit.put("title", eval(title));
-            hit.put("link", eval(link));
-            hit.put("description", eval(description));
-            hit.put("pubDate", eval(last_modified));
-            hit.put("size", eval(size));
-            hit.put("sizename", eval(size));
-            hit.put("host", eval(host));
+            List<?> description = (List<?>) map.get(WebMapping.description_txt.getSolrFieldName());
+            String descriptionString = description == null || description.isEmpty() ? "" : description.iterator().next().toString();
+            String last_modified = (String) map.get(WebMapping.last_modified.getSolrFieldName());
+            Date last_modified_date = DateParser.iso8601MillisParser(last_modified);
+            Integer size = (Integer) map.get(WebMapping.size_i.getSolrFieldName());
+            int sizekb = size / 1024;
+            int sizemb = sizekb / 1024;
+            String size_string = sizemb > 0 ? (Integer.toString(sizemb) + " mbyte") : sizekb > 0 ? (Integer.toString(sizekb) + " kbyte") : (Integer.toString(size) + " byte");
+            String host = (String) map.get(WebMapping.host_s.getSolrFieldName());
+	        hit.put("title", titleString);
+            hit.put("link", link.toString());
+            hit.put("description", descriptionString);
+            hit.put("pubDate", DateParser.formatRFC1123(last_modified_date));
+            hit.put("size", size.toString());
+            hit.put("sizename", size_string);
+            hit.put("host", host);
             items.put(hit);
         });
         return new ServiceResponse(json);
-    }
-    
-    private static String eval(Object o) {
-        if (o instanceof JSONObject) return ((JSONObject) o).toString();
-        if (o instanceof JSONArray) return eval(((JSONArray) o).get(0));
-        return o.toString();
     }
     
     /*

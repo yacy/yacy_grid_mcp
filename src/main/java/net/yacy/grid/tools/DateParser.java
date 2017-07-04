@@ -85,6 +85,14 @@ public class DateParser {
         return cal;
     }
     
+    public static Date iso8601MillisParser(String date) {
+    	try {
+			return iso8601MillisFormat.parse(date);
+		} catch (ParseException e) {
+			return new Date();
+		}
+    }
+    
     public static String toPostDate(Date d) {
         return secondDateFormat.format(d).replace(' ', '_');
     }
@@ -105,6 +113,25 @@ public class DateParser {
 
     public static Date oneWeekAgo() {
         return new Date(System.currentTimeMillis() - WEEK_MILLIS);
+    }
+    
+    private static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss Z"; // with numeric time zone indicator as defined in RFC5322
+    public  static final SimpleDateFormat FORMAT_RFC1123 = new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
+    private static long lastRFC1123long = 0;
+    private static String lastRFC1123string = "";
+
+    public static final String formatRFC1123(final Date date) {
+        if (date == null) return "";
+        if (Math.abs(date.getTime() - lastRFC1123long) < 1000) {
+            //System.out.println("date cache hit - " + lastRFC1123string);
+            return lastRFC1123string;
+        }
+        synchronized (FORMAT_RFC1123) {
+            final String s = FORMAT_RFC1123.format(date);
+            lastRFC1123long = date.getTime();
+            lastRFC1123string = s;
+            return s;
+        }
     }
     
     public static void main(String[] args) {
