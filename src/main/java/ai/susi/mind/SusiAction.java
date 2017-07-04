@@ -170,6 +170,12 @@ public class SusiAction {
     public JSONArray getEmbeddedActions() {
         return this.json.getJSONArray("actions");
     }
+
+    public boolean hasAsset(String name) {
+        if (!this.json.has("assets")) return false;
+        JSONObject assets = this.json.getJSONObject("assets");
+        return assets.has(name);
+    }
     
     // attach a binary asset to the action
     public SusiAction setBinaryAsset(String name, byte[] b) {
