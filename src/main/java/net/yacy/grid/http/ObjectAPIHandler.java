@@ -87,6 +87,7 @@ public abstract class ObjectAPIHandler extends AbstractAPIHandler implements API
         Charset charset = connection.getContentType().getCharset();
         String mime = connection.getContentType().getMimeType(); //application/javascript, application/octet-stream
         byte[] b = connection.load();
+        if (b.length == 0) throw new IOException("response empty");
         if (mime.indexOf("javascript") >= 0) {
             if (b.length > 0 && b[0] == (byte) '[') {
                 JSONArray json = new JSONArray(new JSONTokener(new String(b, charset == null ? StandardCharsets.UTF_8 : charset)));
