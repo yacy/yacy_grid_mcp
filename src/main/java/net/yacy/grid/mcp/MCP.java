@@ -96,18 +96,17 @@ public class MCP {
            try {
 
                JSONList jsonlist = null;
-        	   try {
+               if (action.hasAsset(sourceasset_path)) {
+            	   jsonlist = action.getJSONListAsset(sourceasset_path);
+           	   }
+               if (jsonlist == null) try {
         		   Asset<byte[]> asset = Data.gridStorage.load(sourceasset_path);
         		   byte[] source = asset.getPayload();
         		   jsonlist = new JSONList(new ByteArrayInputStream(source));
         	   } catch (IOException e) {
         		   e.printStackTrace();
-        		   Data.logger.warn("could not read asset from storage, using embedded action asset: " + sourceasset_path);
-           			jsonlist = action.getJSONListAsset(sourceasset_path);
-           			if (jsonlist == null) {
-           				Data.logger.info("Fail: cannot read sourceasset of Action from action asset: " + action.toString());
-           				return false;
-           			}
+        		   Data.logger.warn("could not read asset from storage: " + sourceasset_path);
+        		   return false;
         	   }
         	   
         	   indexloop: for (int line = 0; line < jsonlist.length(); line++) try {
