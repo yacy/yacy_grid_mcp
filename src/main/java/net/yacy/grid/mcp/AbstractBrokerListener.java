@@ -70,7 +70,10 @@ public abstract class AbstractBrokerListener implements BrokerListener {
             	
             	// wait until message arrives
                 MessageContainer<byte[]> mc = Data.gridBroker.receive(this.serviceName, this.queueName, 10000);
-                if (mc == null || mc.getPayload() == null) continue runloop;
+                if (mc == null || mc.getPayload() == null || mc.getPayload().length == 0) {
+                    try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+                	continue runloop;
+                }
                 payload = new String(mc.getPayload(), StandardCharsets.UTF_8);
                 JSONObject json = new JSONObject(new JSONTokener(payload));
                 final SusiThought process = new SusiThought(json);
