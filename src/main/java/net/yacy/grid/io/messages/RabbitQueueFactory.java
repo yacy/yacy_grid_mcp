@@ -148,7 +148,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                 try {
                     GetResponse response = channel.basicGet(this.queueName, true);
                     if (response != null) return response.getBody();
-                    Data.logger.warn("receive failed: response empty");
+                    //Data.logger.warn("receive failed: response empty");
                 } catch (Throwable e) {
                     Data.logger.warn("receive failed: " + e.getMessage(), e);
                 }
