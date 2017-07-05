@@ -94,7 +94,8 @@ public class Data {
             Data.logger.info("Connected elasticsearch at " + getHost(elasticsearchAddress));
         } catch (IOException | NoNodeAvailableException e) {
             index = null; // index not available
-            Data.logger.info("Failed connecting elasticsearch at " + getHost(elasticsearchAddress));
+            e.printStackTrace();
+            Data.logger.info("Failed connecting elasticsearch at " + getHost(elasticsearchAddress) + ": " + e.getMessage(), e);
         }
         
         // connect outside services
