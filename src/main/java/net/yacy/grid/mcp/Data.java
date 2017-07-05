@@ -86,11 +86,12 @@ public class Data {
         String elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "localhost:9300");
         String elasticsearchClusterName = config.getOrDefault("grid.elasticsearch.clusterName", "");
         String elasticsearchWebIndexName= config.getOrDefault("grid.elasticsearch.webIndexName", "web");
-        index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName);
+        //index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName);
+        index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName.length() == 0 ? null : elasticsearchClusterName);
         try {
             index.createIndexIfNotExists(elasticsearchWebIndexName, 1 /*shards*/, 1 /*replicas*/);
             String mapping = new String(Files.readAllBytes(Paths.get("conf/mappings/web.json")));
-            index.setMapping("test", mapping);
+            index.setMapping("web", mapping);
             Data.logger.info("Connected elasticsearch at " + getHost(elasticsearchAddress));
         } catch (IOException | NoNodeAvailableException e) {
             index = null; // index not available
