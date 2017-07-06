@@ -98,7 +98,8 @@ Maven and Gradle tools should be installed. To refresh gradle settings in eclips
 - set a high number of allowed connections for `maxloginnumber` and `maxloginperip`
 
   The complete configuration may then look like
-  ```
+
+```
 ftpserver.user.yacygrid.userpassword=<here is the md5sum>
 ftpserver.user.yacygrid.homedirectory=./res/home
 ftpserver.user.yacygrid.enableflag=true
