@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -65,12 +66,29 @@ public abstract class ObjectAPIHandler extends AbstractAPIHandler implements API
         return query.toString();
     }
     
+    public static Map<String, byte[]> json2map(final JSONObject params) throws IOException {
+        HashMap<String, byte[]> map = new HashMap<>();
+        if (params != null) {
+            Iterator<String> i = params.keys();
+            while (i.hasNext()) {
+                String key = i.next();
+                map.put(key, params.get(key).toString().getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        return map;
+    }
+    
     /**
-     * GET request
+     * POST request
      */
     public ServiceResponse serviceImpl(final String protocolhostportstub, JSONObject params) throws IOException {
+        /*
         String urlstring = protocolhostportstub + this.getAPIPath() + json2url(params);
         ClientConnection connection = new ClientConnection(urlstring);
+        return doConnection(connection);
+        */
+        String urlstring = protocolhostportstub + this.getAPIPath();
+        ClientConnection connection = new ClientConnection(urlstring, json2map(params));
         return doConnection(connection);
     }
     
