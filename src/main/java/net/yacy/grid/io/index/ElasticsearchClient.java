@@ -759,7 +759,7 @@ public class ElasticsearchClient {
             this.aggregations = new HashMap<>();
             for (String field: aggregationFields) {
                 Terms fieldCounts = response.getAggregations().get(field);
-                List<Bucket> buckets = fieldCounts.getBuckets();
+                List<? extends Bucket> buckets = fieldCounts.getBuckets();
                 // aggregate double-tokens (matching lowercase)
                 Map<String, Long> checkMap = new HashMap<>();
                 for (Bucket bucket: buckets) {
