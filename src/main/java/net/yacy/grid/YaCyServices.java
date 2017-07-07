@@ -36,12 +36,12 @@ package net.yacy.grid;
 public enum YaCyServices implements Services {
 
     mcp(8100),                      // the master connect program which orchestrates all other services
-    loader(8200, "webloader"),      // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
-    crawler(8300, "webcrawler"),    // a crawler which loads a lot of documents from web or other network resources
+    loader(8200, new String[]{"webloader"}),      // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
+    crawler(8300, new String[]{"webcrawler"}),    // a crawler which loads a lot of documents from web or other network resources
     warcmanager(8400),              // a process which combines single WARC files to bigger ones to create archives
-    parser(8500, "yacyparser"),     // a parser service which turns WARC into YaCy JSON
+    parser(8500, new String[]{"yacyparser"}),     // a parser service which turns WARC into YaCy JSON
     enricher(8600),                 // a semantic enricher for YaCy JSON objects
-    indexer(8700, "elasticsearch"), // a loader which pushes parsed/enriched YaCy JSON content to a search index
+    indexer(8700, new String[]{"elasticsearch"}), // a loader which pushes parsed/enriched YaCy JSON content to a search index
     aggregation(8800),              // a search front-end which combines different index sources into one
     moderation(8900),               // a search front-end which for content moderation, i.e. search index account management
     successmessages(10100),         // a service which handles the successful operation messages
@@ -52,16 +52,16 @@ public enum YaCyServices implements Services {
     elastic(9300);                  // an elasticsearch server or main cluster address for global database storage
 
     private int default_port;
-    private String default_queue;
+    private String[] queues;
 
     private YaCyServices(int default_port) {
         this.default_port = default_port;
-        this.default_queue = null;
+        this.queues = null;
     }
     
-    private YaCyServices(int default_port, String default_queue) {
+    private YaCyServices(int default_port, String[] queues) {
         this.default_port = default_port;
-        this.default_queue = default_queue;
+        this.queues = queues;
     }
 
     @Override
@@ -70,8 +70,8 @@ public enum YaCyServices implements Services {
     }
 
     @Override
-    public String getDefaultQueue() {
-        return this.default_queue;
+    public String[] getQueues() {
+        return this.queues;
     }
     
 }

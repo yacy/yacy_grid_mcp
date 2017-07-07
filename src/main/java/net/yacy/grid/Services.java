@@ -23,7 +23,7 @@ public interface Services {
 
     public int getDefaultPort();
 
-    public String getDefaultQueue();
+    public String[] getQueues();
     
     public String name();
     

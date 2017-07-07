@@ -21,6 +21,7 @@ package net.yacy.grid.mcp;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -39,85 +40,118 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     
     public boolean shallRun;
     private final String serviceName;
-    private final String queueName;
+    private final String[] queueNames;
     private final int threads;
     private final ThreadPoolExecutor threadPool;
 
     public AbstractBrokerListener(final YaCyServices service, final int threads) {
-    	this(service.name(), service.getDefaultQueue(), threads);
+    	this(service.name(), service.getQueues(), threads);
     }
     
-    public AbstractBrokerListener(final String serviceName, final String queueName, final int threads) {
+    public AbstractBrokerListener(final String serviceName, final String[] queueNames, final int threads) {
     	this.serviceName = serviceName;
-    	this.queueName = queueName;
+    	this.queueNames = queueNames;
     	this.threads = threads;
     	this.threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(this.threads);
     	this.shallRun = true;
     }
 
     public abstract boolean processAction(SusiAction action, JSONArray data);
-    
+
     @Override
     public void run() {
-        runloop: while (shallRun) {
-        	String payload = "";
-            if (Data.gridBroker == null) {
-                try {Thread.sleep(1000);} catch (InterruptedException ee) {}
-            } else try {
-            	// wait until an execution thread is available
-            	while (this.threadPool.getActiveCount() >= this.threads)
-					try {Thread.sleep(100);} catch (InterruptedException e1) {}
-            	
-            	// wait until message arrives
-                MessageContainer<byte[]> mc = Data.gridBroker.receive(this.serviceName, this.queueName, 10000);
-                if (mc == null || mc.getPayload() == null || mc.getPayload().length == 0) {
-                    try {Thread.sleep(1000);} catch (InterruptedException ee) {}
-                	continue runloop;
-                }
-                payload = new String(mc.getPayload(), StandardCharsets.UTF_8);
-                JSONObject json = new JSONObject(new JSONTokener(payload));
-                final SusiThought process = new SusiThought(json);
-                final JSONArray data = process.getData();
-                final List<SusiAction> actions = process.getActions();
-                
-                // loop though all actions
-                actionloop: for (int ac = 0; ac < actions.size(); ac++) {
-                    SusiAction action = actions.get(ac);
-                    String type = action.getStringAttr("type");
-                    String queue = action.getStringAttr("queue");
-
-                    // check if the credentials to execute the queue are valid
-                    if (type == null || type.length() == 0 || queue == null || queue.length() == 0) {
-                        Data.logger.info("bad message in queue, continue");
-                        continue actionloop;
-                    }
-                    
-                    // check if this is the correct queue
-                    if (!type.equals(this.serviceName)) {
-                        Data.logger.info("wrong message in queue: " + type + ", continue");
-                        try {
-                            loadNextAction(action, process.getData()); // put that into the correct queue
-                        } catch (Throwable e) {
-                            e.printStackTrace();
-                        }
-                        continue actionloop;
-                    }
-
-                    // process the action using the previously acquired execution thread
-                    this.threadPool.execute(new ActionProcess(action, data));
-                }
-            } catch (JSONException e) {
-                // happens if the payload has a wrong form
-                Data.logger.info("message syntax error with '" + payload + "' in queue: " + e.getMessage(), e);
-                continue runloop;
-            } catch (IOException e) {
-                Data.logger.info("IOException: " + e.getMessage(), e);
-                try {Thread.sleep(1000);} catch (InterruptedException ee) {}
-                continue runloop;
-            } catch (Throwable e) {
-                Data.logger.info("error: " + e.getMessage(), e);
-                continue runloop;
+        List<QueueListener> threads = new ArrayList<>();
+        for (String queue: this.queueNames) {
+            QueueListener listener = new QueueListener(queue);
+            listener.start();
+            threads.add(listener);
+            Data.logger.info("Broker Listener for service " + this.serviceName + ", queue " + queue + " started");
+        }
+        threads.forEach(thread -> {
+            try {
+                thread.join();
+                Data.logger.info("Broker Listener for service " + this.serviceName + ", queue " + thread.queueName + " terminated");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                Data.logger.info("Broker Listener for service " + this.serviceName + ", queue " + thread.queueName + " interrupted");
             }
+        });
+    }
+    
+    
+    private class QueueListener extends Thread {
+        String queueName;
+        
+        public QueueListener(String queueName) {
+            this.queueName = queueName;
+        }
+    
+        @Override
+        public void run() {
+            runloop: while (shallRun) {
+            	String payload = "";
+                if (Data.gridBroker == null) {
+                    try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+                } else try {
+                	// wait until an execution thread is available
+                	while (AbstractBrokerListener.this.threadPool.getActiveCount() >= AbstractBrokerListener.this.threads)
+    					try {Thread.sleep(100);} catch (InterruptedException e1) {}
+                	
+                	// wait until message arrives
+                    MessageContainer<byte[]> mc = Data.gridBroker.receive(AbstractBrokerListener.this.serviceName, this.queueName, 10000);
+                    if (mc == null || mc.getPayload() == null || mc.getPayload().length == 0) {
+                        try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+                    	continue runloop;
+                    }
+                    handleMessage(mc);
+                } catch (JSONException e) {
+                    // happens if the payload has a wrong form
+                    Data.logger.info("message syntax error with '" + payload + "' in queue: " + e.getMessage(), e);
+                    continue runloop;
+                } catch (IOException e) {
+                    Data.logger.info("IOException: " + e.getMessage(), e);
+                    try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+                    continue runloop;
+                } catch (Throwable e) {
+                    Data.logger.info("error: " + e.getMessage(), e);
+                    continue runloop;
+                }
+            }
+        }
+    }
+    
+    private void handleMessage(MessageContainer<byte[]> mc) {
+        String payload = new String(mc.getPayload(), StandardCharsets.UTF_8);
+        JSONObject json = new JSONObject(new JSONTokener(payload));
+        final SusiThought process = new SusiThought(json);
+        final JSONArray data = process.getData();
+        final List<SusiAction> actions = process.getActions();
+        
+        // loop though all actions
+        actionloop: for (int ac = 0; ac < actions.size(); ac++) {
+            SusiAction action = actions.get(ac);
+            String type = action.getStringAttr("type");
+            String queue = action.getStringAttr("queue");
+
+            // check if the credentials to execute the queue are valid
+            if (type == null || type.length() == 0 || queue == null || queue.length() == 0) {
+                Data.logger.info("bad message in queue, continue");
+                continue actionloop;
+            }
+            
+            // check if this is the correct queue
+            if (!type.equals(this.serviceName)) {
+                Data.logger.info("wrong message in queue: " + type + ", continue");
+                try {
+                    loadNextAction(action, process.getData()); // put that into the correct queue
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+                continue actionloop;
+            }
+
+            // process the action using the previously acquired execution thread
+            this.threadPool.execute(new ActionProcess(action, data));
         }
     }
     
