@@ -1,6 +1,6 @@
 /**
- *  Services
- *  Copyright 16.01.2017 by Michael Peter Christen, @0rb1t3r
+ *  ShardingMethod
+ *  Copyright 08.07.2017 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -17,14 +17,15 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.yacy.grid;
+package net.yacy.grid.io.messages;
 
-public interface Services {
+public enum ShardingMethod {
 
-    public int getDefaultPort();
-
-    public QueueName[] getQueues();
-    
-    public String name();
+    ROUND_ROBIN,   // go around all queues all the time
+    LEAST_FILLED,  // take the one which has least entries
+    HASH,          // use a hashing key to determine a queue
+    LOOKUP,        // lookup a queue with the hashing key; if not determined yet, use LEAST_FILLED
+    RANDOM,        // just a random queue
+    FIRST;          // the last queue
     
 }

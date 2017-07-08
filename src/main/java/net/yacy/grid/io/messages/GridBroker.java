@@ -22,6 +22,8 @@ package net.yacy.grid.io.messages;
 import java.io.File;
 import java.io.IOException;
 
+import net.yacy.grid.QueueName;
+import net.yacy.grid.Services;
 import net.yacy.grid.mcp.Data;
 
 public class GridBroker extends PeerBroker implements Broker<byte[]> {
@@ -35,8 +37,8 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         this.mcpConnector = null;
     }
     
-    public static String serviceQueueName(String serviceName, String queueName) {
-        return serviceName + '_' + queueName;
+    public static String serviceQueueName(Services service, QueueName queue) {
+        return service.name() + '_' + queue.name();
     }
 
     public boolean connectRabbitMQ(String address) {
@@ -73,7 +75,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
 
     @Override
-    public QueueFactory<byte[]> send(String serviceName, String queueName, byte[] message) throws IOException {
+    public QueueFactory<byte[]> send(Services serviceName, QueueName queueName, byte[] message) throws IOException {
         if (this.rabbitConnector != null) try {
             this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).send(message);
             return this.rabbitConnector;
@@ -90,7 +92,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
 
     @Override
-    public MessageContainer<byte[]> receive(String serviceName, String queueName, long timeout) throws IOException {
+    public MessageContainer<byte[]> receive(Services serviceName, QueueName queueName, long timeout) throws IOException {
         if (this.rabbitConnector != null) try {
             return new MessageContainer<byte[]>(this.rabbitConnector, this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).receive(timeout));
         } catch (IOException e) {
@@ -105,7 +107,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
 
     @Override
-    public AvailableContainer available(String serviceName, String queueName) throws IOException {
+    public AvailableContainer available(Services serviceName, QueueName queueName) throws IOException {
         if (this.rabbitConnector != null) try {
             return new AvailableContainer(this.rabbitConnector, this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).available());
         } catch (IOException e) {

@@ -1,6 +1,6 @@
 /**
- *  Services
- *  Copyright 16.01.2017 by Michael Peter Christen, @0rb1t3r
+ *  Queue
+ *  Copyright 07.07.2017 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -19,12 +19,23 @@
 
 package net.yacy.grid;
 
-public interface Services {
+/**
+ * This is is used to provide an abstraction on queue names
+ */
+public class QueueName {
 
-    public int getDefaultPort();
-
-    public QueueName[] getQueues();
+    final String name;
     
-    public String name();
+    public QueueName(String name) {
+        this.name = name;
+    }
+    
+    public String name() {
+        return this.name;
+    }
+    
+    public String toString() {
+        return this.name;
+    }
     
 }

@@ -26,6 +26,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
 
+import net.yacy.grid.QueueName;
+import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
@@ -56,7 +58,7 @@ public class SendService extends ObjectAPIHandler implements APIHandler {
         JSONObject json = new JSONObject(true);
         if (serviceName.length() > 0 && queueName.length() > 0 && message.length() > 0) {
             try {
-                QueueFactory<byte[]> factory = Data.gridBroker.send(serviceName, queueName, message.getBytes(StandardCharsets.UTF_8));
+                QueueFactory<byte[]> factory = Data.gridBroker.send(YaCyServices.valueOf(serviceName), new QueueName(queueName), message.getBytes(StandardCharsets.UTF_8));
                 String url = factory.getConnectionURL();
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);

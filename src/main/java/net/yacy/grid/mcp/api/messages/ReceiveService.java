@@ -26,6 +26,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
 
+import net.yacy.grid.QueueName;
+import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
@@ -55,7 +57,7 @@ public class ReceiveService extends ObjectAPIHandler implements APIHandler {
         JSONObject json = new JSONObject(true);
         if (serviceName.length() > 0 && queueName.length() > 0) {
             try {
-                MessageContainer<byte[]> message = Data.gridBroker.receive(serviceName, queueName, timeout);
+                MessageContainer<byte[]> message = Data.gridBroker.receive(YaCyServices.valueOf(serviceName), new QueueName(queueName), timeout);
                 // message can be null if a timeout occurred
                 if (message == null) {
                     json.put(ObjectAPIHandler.SUCCESS_KEY, false);

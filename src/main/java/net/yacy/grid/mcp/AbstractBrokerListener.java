@@ -33,23 +33,25 @@ import org.json.JSONTokener;
 
 import ai.susi.mind.SusiAction;
 import ai.susi.mind.SusiThought;
+import net.yacy.grid.QueueName;
+import net.yacy.grid.Services;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.messages.MessageContainer;
 
 public abstract class AbstractBrokerListener implements BrokerListener {
     
     public boolean shallRun;
-    private final String serviceName;
-    private final String[] queueNames;
+    private final Services service;
+    private final QueueName[] queueNames;
     private final int threads;
     private final ThreadPoolExecutor threadPool;
 
     public AbstractBrokerListener(final YaCyServices service, final int threads) {
-    	this(service.name(), service.getQueues(), threads);
+    	this(service, service.getQueues(), threads);
     }
     
-    public AbstractBrokerListener(final String serviceName, final String[] queueNames, final int threads) {
-    	this.serviceName = serviceName;
+    public AbstractBrokerListener(final Services service, final QueueName[] queueNames, final int threads) {
+    	this.service = service;
     	this.queueNames = queueNames;
     	this.threads = threads;
     	this.threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(this.threads);
@@ -61,28 +63,28 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     @Override
     public void run() {
         List<QueueListener> threads = new ArrayList<>();
-        for (String queue: this.queueNames) {
+        for (QueueName queue: this.queueNames) {
             QueueListener listener = new QueueListener(queue);
             listener.start();
             threads.add(listener);
-            Data.logger.info("Broker Listener for service " + this.serviceName + ", queue " + queue + " started");
+            Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + queue + " started");
         }
         threads.forEach(thread -> {
             try {
                 thread.join();
-                Data.logger.info("Broker Listener for service " + this.serviceName + ", queue " + thread.queueName + " terminated");
+                Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + thread.queueName + " terminated");
             } catch (InterruptedException e) {
                 e.printStackTrace();
-                Data.logger.info("Broker Listener for service " + this.serviceName + ", queue " + thread.queueName + " interrupted");
+                Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + thread.queueName + " interrupted");
             }
         });
     }
     
     
     private class QueueListener extends Thread {
-        String queueName;
+        QueueName queueName;
         
-        public QueueListener(String queueName) {
+        public QueueListener(QueueName queueName) {
             this.queueName = queueName;
         }
     
@@ -98,7 +100,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     					try {Thread.sleep(100);} catch (InterruptedException e1) {}
                 	
                 	// wait until message arrives
-                    MessageContainer<byte[]> mc = Data.gridBroker.receive(AbstractBrokerListener.this.serviceName, this.queueName, 10000);
+                    MessageContainer<byte[]> mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000);
                     if (mc == null || mc.getPayload() == null || mc.getPayload().length == 0) {
                         try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                     	continue runloop;
@@ -140,7 +142,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
             }
             
             // check if this is the correct queue
-            if (!type.equals(this.serviceName)) {
+            if (!type.equals(this.service.name())) {
                 Data.logger.info("wrong message in queue: " + type + ", continue");
                 try {
                     loadNextAction(action, process.getData()); // put that into the correct queue
@@ -205,7 +207,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 .put("data", data)
                 .put("actions", new JSONArray().put(action.toJSONClone()));
         byte[] b = nextProcess.toString(2).getBytes(StandardCharsets.UTF_8);
-        Data.gridBroker.send(type, queue, b);
+        Data.gridBroker.send(YaCyServices.valueOf(type), new QueueName(queue), b);
     }
 
     @Override

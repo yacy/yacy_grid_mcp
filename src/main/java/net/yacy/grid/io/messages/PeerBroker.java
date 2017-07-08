@@ -24,48 +24,51 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class PeerBroker implements Broker<byte[]> {
+import net.yacy.grid.QueueName;
+import net.yacy.grid.Services;
+
+public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]> {
 
     private File basePath;
-    private Map<String, QueueFactory<byte[]>> clientConnector;
+    private Map<Services, QueueFactory<byte[]>> clientConnector;
     
     public PeerBroker(File basePath) {
         this.basePath = basePath;
         this.clientConnector = new ConcurrentHashMap<>();
     }
     
-    private QueueFactory<byte[]> getConnector(String serviceName) {
-        QueueFactory<byte[]> c = this.clientConnector.get(serviceName);
+    private QueueFactory<byte[]> getConnector(Services service) {
+        QueueFactory<byte[]> c = this.clientConnector.get(service);
         if (c != null)  return c;
         synchronized (this) {
-            c = this.clientConnector.get(serviceName);
+            c = this.clientConnector.get(service);
             if (c != null)  return c;
-            File clientPath = new File(this.basePath, serviceName);
+            File clientPath = new File(this.basePath, service.name());
             clientPath.mkdirs();
             c = new MapDBStackQueueFactory(clientPath);
-            this.clientConnector.put(serviceName, c);
+            this.clientConnector.put(service, c);
         }
         return c;
     }
 
     @Override
-    public QueueFactory<byte[]> send(String serviceName, String queueName, byte[] message) throws IOException {
-        QueueFactory<byte[]> factory = getConnector(serviceName);
-        factory.getQueue(queueName).send(message);
+    public QueueFactory<byte[]> send(Services service, QueueName queueName, byte[] message) throws IOException {
+        QueueFactory<byte[]> factory = getConnector(service);
+        factory.getQueue(queueName.name()).send(message);
         return factory;
     }
 
     @Override
-    public MessageContainer<byte[]> receive(String serviceName, String queueName, long timeout) throws IOException {
-        QueueFactory<byte[]> factory = getConnector(serviceName);
-        byte[] message = factory.getQueue(queueName).receive(timeout);
+    public MessageContainer<byte[]> receive(Services service, QueueName queueName, long timeout) throws IOException {
+        QueueFactory<byte[]> factory = getConnector(service);
+        byte[] message = factory.getQueue(queueName.name()).receive(timeout);
         return new MessageContainer<byte[]>(factory, message == null ? null : message);
     }
 
     @Override
-    public AvailableContainer available(String serviceName, String queueName) throws IOException {
-        QueueFactory<byte[]> factory = getConnector(serviceName);
-        return new AvailableContainer(factory, getConnector(serviceName).getQueue(queueName).available());
+    public AvailableContainer available(Services service, QueueName queueName) throws IOException {
+        QueueFactory<byte[]> factory = getConnector(service);
+        return new AvailableContainer(factory, getConnector(service).getQueue(queueName.name()).available());
     }
 
     @Override
