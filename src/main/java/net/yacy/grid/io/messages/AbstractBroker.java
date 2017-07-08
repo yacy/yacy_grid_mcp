@@ -92,6 +92,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     }
     
     private int leastFilled(final Services service, final QueueName[] queueNames) throws IOException {
+        if (queueNames.length == 1) return 0;
         AvailableContainer[] ac = available(service, queueNames);
         int index = -1;
         int leastAvailable = Integer.MAX_VALUE;
