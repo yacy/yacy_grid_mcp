@@ -36,7 +36,12 @@ package net.yacy.grid;
 public enum YaCyServices implements Services {
 
     mcp(8100),                      // the master connect program which orchestrates all other services
-    loader(8200, new QueueName[]{new QueueName("webloader")}),      // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
+    loader(8200, new QueueName[]{
+            new QueueName("webloader_00"), new QueueName("webloader_01"), new QueueName("webloader_02"), new QueueName("webloader_03"),
+            new QueueName("webloader_04"), new QueueName("webloader_05"), new QueueName("webloader_06"), new QueueName("webloader_07"),
+            new QueueName("webloader_08"), new QueueName("webloader_09"), new QueueName("webloader_10"), new QueueName("webloader_11"),
+            new QueueName("webloader_12"), new QueueName("webloader_13"), new QueueName("webloader_14"), new QueueName("webloader_15")
+    }),      // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
     crawler(8300, new QueueName[]{new QueueName("webcrawler")}),    // a crawler which loads a lot of documents from web or other network resources
     warcmanager(8400),              // a process which combines single WARC files to bigger ones to create archives
     parser(8500, new QueueName[]{new QueueName("yacyparser")}),     // a parser service which turns WARC into YaCy JSON
