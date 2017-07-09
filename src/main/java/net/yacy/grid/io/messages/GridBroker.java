@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
+import net.yacy.grid.YaCyServices;
 import net.yacy.grid.mcp.Data;
 
 public class GridBroker extends PeerBroker implements Broker<byte[]> {
@@ -65,7 +66,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public boolean connectMCP(String host, int port) {
         try {
             QueueFactory<byte[]> mcpqf = new MCPQueueFactory(this, host, port);
-            mcpqf.getQueue("test_test").checkConnection();
+            mcpqf.getQueue(YaCyServices.indexer.name() + "_" + YaCyServices.indexer.getQueues()[0].name()).checkConnection();
             this.mcpConnector = mcpqf;
             return true;
         } catch (IOException e) {
