@@ -22,6 +22,7 @@ package net.yacy.grid.mcp;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
@@ -86,17 +87,19 @@ public class Data {
         String elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "localhost:9300");
         String elasticsearchClusterName = config.getOrDefault("grid.elasticsearch.clusterName", "");
         String elasticsearchWebIndexName= config.getOrDefault("grid.elasticsearch.webIndexName", "web");
-        //index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName);
-        index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName.length() == 0 ? null : elasticsearchClusterName);
-        try {
+        Path webMappingPath = Paths.get("conf/mappings/web.json");
+        if (webMappingPath.toFile().exists()) try {
+            index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName.length() == 0 ? null : elasticsearchClusterName);
             index.createIndexIfNotExists(elasticsearchWebIndexName, 1 /*shards*/, 1 /*replicas*/);
-            String mapping = new String(Files.readAllBytes(Paths.get("conf/mappings/web.json")));
+            String mapping = new String(Files.readAllBytes(webMappingPath));
             index.setMapping("web", mapping);
             Data.logger.info("Connected elasticsearch at " + getHost(elasticsearchAddress));
         } catch (IOException | NoNodeAvailableException e) {
             index = null; // index not available
             e.printStackTrace();
             Data.logger.info("Failed connecting elasticsearch at " + getHost(elasticsearchAddress) + ": " + e.getMessage(), e);
+        } else {
+            Data.logger.info("no web index mapping available, no connection to elasticsearch attempted");
         }
         
         // connect outside services
