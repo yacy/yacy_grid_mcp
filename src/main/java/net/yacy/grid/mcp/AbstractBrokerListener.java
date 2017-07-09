@@ -31,6 +31,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import com.rabbitmq.client.AlreadyClosedException;
+
 import ai.susi.mind.SusiAction;
 import ai.susi.mind.SusiThought;
 import net.yacy.grid.QueueName;
@@ -109,13 +111,19 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 } catch (JSONException e) {
                     // happens if the payload has a wrong form
                     Data.logger.info("message syntax error with '" + payload + "' in queue: " + e.getMessage(), e);
+                    try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                     continue runloop;
                 } catch (IOException e) {
                     Data.logger.info("IOException: " + e.getMessage(), e);
                     try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                     continue runloop;
+                } catch (AlreadyClosedException e) {
+                    Data.logger.info("error: " + e.getMessage(), e);
+                    try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+                    continue runloop;
                 } catch (Throwable e) {
                     Data.logger.info("error: " + e.getMessage(), e);
+                    try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                     continue runloop;
                 }
             }
