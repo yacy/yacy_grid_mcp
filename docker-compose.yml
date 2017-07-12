@@ -1,10 +1,7 @@
 version: '2'
 services:
-  yacy_MCP:
-    name: "yacy"
+  yacy_mcp:
     build: .
-    ports:
-      - "80:80"
     links:
       - elasticsearch
 
@@ -15,21 +12,22 @@ services:
       - cluster.name=yacygrid
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
     ulimits:
       memlock:
         soft: -1
         hard: -1
     mem_limit: 1g
     volumes:
-      - esdata1:/usr/share/elasticsearch/data
+      - /mnt/docker:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
-    networks:
-      - esnet
+    expose:
+      - "9300"
+      - "9200"
 
+    
 volumes:
   esdata1:
     driver: local
 
-networks:
-  esnet:

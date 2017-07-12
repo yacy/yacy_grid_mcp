@@ -9,50 +9,48 @@ RUN apt-get upgrade -y
 RUN apt-get install -y git openjdk-8-jdk
 
 #install gradle required for build
+RUN apt-get update && apt-get install -y software-properties-common
 RUN add-apt-repository ppa:cwchien/gradle
 RUN apt-get update
-RUN apt-get install gradle
-
-# copy mcp configuration file
-COPY data/mcp-8100/conf/config.properties
-
+RUN apt-get install -y wget
+RUN wget https://services.gradle.org/distributions/gradle-3.4.1-bin.zip
+RUN mkdir /opt/gradle
+RUN apt-get install -y unzip
+RUN unzip -d /opt/gradle gradle-3.4.1-bin.zip
+RUN PATH=$PATH:/opt/gradle/gradle-3.4.1/bin
+ENV GRADLE_HOME=/opt/gradle/gradle-3.4.1
+ENV PATH=$PATH:$GRADLE_HOME/bin
+RUN gradle -v
 # install apache ftp server 1.1.0
 RUN wget http://www-eu.apache.org/dist/mina/ftpserver/1.1.0/dist/apache-ftpserver-1.1.0.tar.gz
 RUN tar xfz apache-ftpserver-1.1.0.tar.gz
-RUN cat config-ftp.properties >> apache-ftpserver-1.1.0/res/conf/users.properties
-
-# run ftp server
-RUN cd apache-ftpserver-1.1.0 bin/ftpd.sh res/conf/ftpd-typical.xml
 
 # install RabbitMQ server
 RUN wget https://www.rabbitmq.com/releases/rabbitmq-server/v3.6.6/rabbitmq-server-generic-unix-3.6.6.tar.xz
 RUN tar xf rabbitmq-server-generic-unix-3.6.6.tar.xz
 
-# run the RabbitMQ server
-RUN cd rabbitmq_server-3.6.6/sbin/rabbitmq-server
-
 # install erlang language for RabbitMQ
-RUN apt-get install erlang
+RUN apt-get install -y erlang
 
-# install the management plugin to be able to use a web interface
-RUN rabbitmq_server-3.6.10/sbin/rabbitmq-plugins enable rabbitmq_management
 
-# use the same username and password as given in instructions
-RUN rabbitmq_server-3.6.6/sbin/rabbitmqctl add_user yacygrid password4account
-RUN echo [{rabbit, [{loopback_users, []}]}]. >> rabbitmq_server-3.6.6/etc/rabbitmq/rabbitmq.config
 
 # clone the github repo
-RUN git clone https://github.com/yacy/yacy_grid_mcp.git
+ADD . /yacy_grid_mcp
 WORKDIR /yacy_grid_mcp
+
+RUN cat config-ftp.properties > ../apache-ftpserver-1.1.0/res/conf/users.properties
+
 
 # compile
 RUN gradle build
-
+RUN cp config-mcp.properties data/mcp-8100/conf/config.properties
+RUN chmod +x ./start.sh
 # Expose web interface ports
 # 2121: ftp, a FTP server to be used for mass data / file storage
 # 5672: rabbitmq, a rabbitmq message queue server to be used for global messages, queues and stacks
 # 9300: elastic, an elasticsearch server or main cluster address for global database storage
 EXPOSE 2121 5672 9300
 
+
 # Define default command.
-CMD ["yacy-start"]
+ENTRYPOINT ["/bin/bash", "./start.sh"]
