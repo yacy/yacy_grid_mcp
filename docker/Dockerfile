@@ -34,17 +34,17 @@ RUN apt-get install -y erlang
 
 
 
-# clone the github repo
-ADD . /yacy_grid_mcp
+
+ADD .. /yacy_grid_mcp
 WORKDIR /yacy_grid_mcp
 
-RUN cat config-ftp.properties > ../apache-ftpserver-1.1.0/res/conf/users.properties
+RUN cat docker/config-ftp.properties > ../apache-ftpserver-1.1.0/res/conf/users.properties
 
 
 # compile
 RUN gradle build
-RUN cp config-mcp.properties data/mcp-8100/conf/config.properties
-RUN chmod +x ./start.sh
+RUN cp docker/config-mcp.properties data/mcp-8100/conf/config.properties
+RUN chmod +x ./docker/start.sh
 # Expose web interface ports
 # 2121: ftp, a FTP server to be used for mass data / file storage
 # 5672: rabbitmq, a rabbitmq message queue server to be used for global messages, queues and stacks
@@ -53,4 +53,4 @@ EXPOSE 2121 5672 9300
 
 
 # Define default command.
-ENTRYPOINT ["/bin/bash", "./start.sh"]
+ENTRYPOINT ["/bin/bash", "./docker/start.sh"]
