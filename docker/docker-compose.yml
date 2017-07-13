@@ -21,7 +21,7 @@ services:
         hard: -1
     mem_limit: 1g
     volumes:
-      - /mnt/docker:/usr/share/elasticsearch/data
+      - esdata1:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
     expose:
