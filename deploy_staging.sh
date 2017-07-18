@@ -6,7 +6,6 @@ docker build -t nikhilrayaprolu/yacygridmcp:$TRAVIS_COMMIT ./docker
 docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
 docker push nikhilrayaprolu/yacygridmcp
 echo $GCLOUD_SERVICE | base64 --decode -i > ${HOME}/gcloud-service-key.json
-cat ${HOME}/gcloud-service-key.json
 gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
 
 gcloud --quiet config set project $PROJECT_NAME_STG
