@@ -1,0 +1,38 @@
+sudo: required
+# Use node_js environnement
+language: java
+
+# Cache Gcloud SDK between commands
+
+cache:
+  directories:
+    - "$HOME/google-cloud-sdk/"
+
+# Install services
+services:
+  - docker
+
+# Set env vars
+env:
+  global:
+    - GOOGLE_APPLICATION_CREDENTIALS=~/gcloud-service-key.json
+    - PROJECT_NAME_STG=yacygrid
+    - CLUSTER_NAME_STG=cluster-1
+    - CLOUDSDK_COMPUTE_ZONE=us-central1-a
+    - DOCKER_IMAGE_NAME=yacygridmcp
+    - KUBE_DEPLOYMENT_NAME=yacygridmcp
+    - KUBE_DEPLOYMENT_CONTAINER_NAME=yacygridmcp
+    - NODE_ENV=CI
+
+
+script:
+  - if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
+  - source /home/travis/google-cloud-sdk/path.bash.inc
+  - gcloud --quiet version
+  - gcloud --quiet components update
+  - gcloud --quiet components update kubectl
+  - bash ./deploy_staging.sh
+
+branches:
+   only:
+   - master

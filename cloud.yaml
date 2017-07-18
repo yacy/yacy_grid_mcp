@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: yacygridmcp
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: yacygridmcp
+    spec:
+      containers:
+      - name: yacygridmcp
+        image: gcr.io/yacygrid/yacygridmcp
+        ports:
+        - containerPort: 8080

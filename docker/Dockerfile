@@ -32,10 +32,11 @@ RUN tar xf rabbitmq-server-generic-unix-3.6.6.tar.xz
 # install erlang language for RabbitMQ
 RUN apt-get install -y erlang
 
+RUN wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz
+RUN sha1sum elasticsearch-5.5.0.tar.gz 
+RUN tar -xzf elasticsearch-5.5.0.tar.gz
 
-
-
-ADD .. /yacy_grid_mcp
+RUN git clone https://github.com/nikhilrayaprolu/yacy_grid_mcp.git
 WORKDIR /yacy_grid_mcp
 
 RUN cat docker/config-ftp.properties > ../apache-ftpserver-1.1.0/res/conf/users.properties
@@ -43,13 +44,14 @@ RUN cat docker/config-ftp.properties > ../apache-ftpserver-1.1.0/res/conf/users.
 
 # compile
 RUN gradle build
+RUN mkdir data/mcp-8100/conf/ -p
 RUN cp docker/config-mcp.properties data/mcp-8100/conf/config.properties
 RUN chmod +x ./docker/start.sh
 # Expose web interface ports
 # 2121: ftp, a FTP server to be used for mass data / file storage
 # 5672: rabbitmq, a rabbitmq message queue server to be used for global messages, queues and stacks
 # 9300: elastic, an elasticsearch server or main cluster address for global database storage
-EXPOSE 2121 5672 9300
+EXPOSE 2121 5672 9300 9200 15672 8100
 
 
 # Define default command.
