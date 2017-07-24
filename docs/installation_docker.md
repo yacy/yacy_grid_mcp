@@ -22,7 +22,7 @@ Type this command in your terminal:
    ```
    sudo apt-get update && sudo apt-get upgrade -y
    sudo apt-get install docker.io
-   sudo docker build https://github.com/yacy/yacygridmcp.git
+   sudo docker build https://github.com/yacy/yacy_grid_mcp.git
    ```
 
 2. You will get a hash from last command. Copy that hash and do...
