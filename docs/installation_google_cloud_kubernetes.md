@@ -33,7 +33,7 @@ $ git clone https://github.com/yacy/yacy_grid_mcp.git
 $ cd yacy_grid_mcp/
 ```
 
-### 6. Build the Docker Image and Push to Google Container Registry
+### 6. Build the Docker Image and Push to DockerHub Container Registry
 ```sh
 $ docker build -t nikhilrayaprolu/yacygridmcp:v1 .
 $ docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"

@@ -1,4 +1,4 @@
-## Installing Yacy on Google Cloud with Docker
+## Installing Yacy on Google Cloud Computer Engine with Docker
 
 
 1. Go to [Google Cloud Free Trial](https://cloud.google.com/free-trial/) and sign up. You will get 300 dollars credit for 12 months.
