@@ -213,6 +213,13 @@ If you did not start a ftp server, you can find the file in data/mcp-8100/assets
 The MCP organises the connection to the remote RabbitMQ server and a ftp server, but if another Grid Service is started, the MCP tells that service to handle the connection to the RabbitMQ and ftp server itself. The MCP can act as such an external service: just start another MCP and it will run at port 8101. Repeat the curl commands as given in the example above, but now use port 8101 to access the MCP. You will see that the second MCP learns from the first MCP to handle the connection by itself.
 
 
+### How do I install yacy_grid_mcp with Docker?
+To install yacy_grid_mcp with Docker please refer to the [yacy Docker installation readme](/docs/installation_docker.md).
+
+### How do I deploy yacy_grid_mcp on Cloud Providers?
+To install yacy_grid_mcp on Cloud Providers please look documentations at [yacy_grid_mcp Cloud installation readme](/docs/).
+
+
 ## Contribute
 
 This is a community project and your contribution is welcome!
