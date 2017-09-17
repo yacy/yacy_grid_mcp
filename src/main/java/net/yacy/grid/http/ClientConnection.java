@@ -66,10 +66,11 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
-import org.eclipse.jetty.util.log.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+
+import net.yacy.grid.mcp.Data;
 
 public class ClientConnection {
 
@@ -178,7 +179,7 @@ public class ClientConnection {
                         .register("https", trustSelfSignedSocketFactory)
                         .build();
             } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
-                Log.getLog().warn(e);
+                Data.logger.warn("", e);
             }
         }
         
@@ -308,17 +309,17 @@ public class ClientConnection {
                 try {
                     while ((count = connection.inputStream.read(buffer)) > 0) os.write(buffer, 0, count);
                 } catch (IOException e) {
-                    Log.getLog().warn(e.getMessage());
+                    Data.logger.warn(e.getMessage());
                 } finally {
                     os.close();
                 }
             } catch (IOException e) {
-                Log.getLog().warn(e.getMessage());
+                Data.logger.warn(e.getMessage());
             } finally {
                 connection.close();
             }
         } catch (IOException e) {
-            Log.getLog().warn(e.getMessage());
+            Data.logger.warn(e.getMessage());
         }
     }
     
@@ -357,7 +358,7 @@ public class ClientConnection {
         try {
             while ((count = this.inputStream.read(buffer)) > 0) baos.write(buffer, 0, count);
         } catch (IOException e) {
-            Log.getLog().warn(e.getMessage());
+            Data.logger.warn(e.getMessage());
         } finally {
             this.close();
         }

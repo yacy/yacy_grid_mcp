@@ -37,8 +37,9 @@ import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+
+import net.yacy.grid.mcp.Data;
 
 /**
  * main server class as static class: we made this static on purpose because then it is always
@@ -108,7 +109,7 @@ public class APIServer {
                 try {
                     servletHandler.addServlet(service, ((APIHandler) (service.getConstructor().newInstance())).getAPIPath());
                 } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-                    Log.getLog().warn(service.getName() + " instantiation error", e);
+                    Data.logger.warn(service.getName() + " instantiation error", e);
                     e.printStackTrace();
                 }
     

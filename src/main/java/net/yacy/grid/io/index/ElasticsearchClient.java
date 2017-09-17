@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.eclipse.jetty.util.log.Log;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsAction;
@@ -85,6 +84,8 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
+import net.yacy.grid.mcp.Data;
+
 public class ElasticsearchClient {
 
     private static long throttling_time_threshold = 2000L; // update time high limit
@@ -118,7 +119,7 @@ public class ElasticsearchClient {
                 int port = Integer.parseInt(a.substring(p + 1));
                 tc.addTransportAddress(new InetSocketTransportAddress(i, port));
             } catch (UnknownHostException e) {
-                Log.getLog().warn(e);
+                Data.logger.warn("", e);
             }
         }
         this.elasticsearchClient = tc;
@@ -183,7 +184,7 @@ public class ElasticsearchClient {
                 .setUpdateAllTypes(true)
                 .setType("_default_").execute().actionGet();
         } catch (Throwable e) {
-            Log.getLog().warn(e);
+            Data.logger.warn("", e);
         };
     }
 
@@ -194,7 +195,7 @@ public class ElasticsearchClient {
                 .setUpdateAllTypes(true)
                 .setType("_default_").execute().actionGet();
         } catch (Throwable e) {
-            Log.getLog().warn(e);
+            Data.logger.warn("", e);
         };
     }
 
@@ -205,7 +206,7 @@ public class ElasticsearchClient {
                 .setUpdateAllTypes(true)
                 .setType("_default_").execute().actionGet();
         } catch (Throwable e) {
-            Log.getLog().warn(e);
+            Data.logger.warn("", e);
         };
     }
 
@@ -218,7 +219,7 @@ public class ElasticsearchClient {
                 .execute()
                 .actionGet();
         } catch (Throwable e) {
-            Log.getLog().warn(e);
+            Data.logger.warn("", e);
         };
     }
 
@@ -308,7 +309,7 @@ public class ElasticsearchClient {
                 .actionGet();
             return response.getHits().getTotalHits();
         } catch (Throwable e) {
-            Log.getLog().warn(e);
+            Data.logger.warn("", e);
             return 0;
         }
     }
@@ -322,7 +323,7 @@ public class ElasticsearchClient {
                 .actionGet();
             return response.getHits().getTotalHits();
         } catch (Throwable e) {
-            Log.getLog().warn(e);
+            Data.logger.warn("", e);
             return 0;
         }
     }
@@ -556,7 +557,7 @@ public class ElasticsearchClient {
             try {Thread.sleep(regulator);} catch (InterruptedException e) {}
         }
         */
-        Log.getLog().info("elastic write entry to index " + indexName + ": " + (created ? "created":"updated") + ", " + duration + " ms" + (regulator == 0 ? "" : ", throttled with " + regulator + " ms"));
+        Data.logger.info("elastic write entry to index " + indexName + ": " + (created ? "created":"updated") + ", " + duration + " ms" + (regulator == 0 ? "" : ", throttled with " + regulator + " ms"));
         return created;
     }
 
@@ -602,7 +603,7 @@ public class ElasticsearchClient {
             regulator = (long) (throttling_factor * duration);
             try {Thread.sleep(regulator);} catch (InterruptedException e) {}
         }
-        Log.getLog().info("elastic write bulk to index " + indexName + ": " + jsonMapList.size() + " entries, " + result.created.size() + " created, " + result.errors.size() + " errors, " + duration + " ms" + (regulator == 0 ? "" : ", throttled with " + regulator + " ms") + ", " + ops + " objects/second");
+        Data.logger.info("elastic write bulk to index " + indexName + ": " + jsonMapList.size() + " entries, " + result.created.size() + " created, " + result.errors.size() + " errors, " + duration + " ms" + (regulator == 0 ? "" : ", throttled with " + regulator + " ms") + ", " + ops + " objects/second");
         return result;
     }
     
