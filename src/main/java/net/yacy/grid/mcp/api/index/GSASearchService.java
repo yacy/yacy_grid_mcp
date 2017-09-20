@@ -29,8 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.servlet.http.HttpServletResponse;
 
 import org.elasticsearch.index.query.Operator;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.json.XML;
 
 import net.yacy.grid.http.APIHandler;

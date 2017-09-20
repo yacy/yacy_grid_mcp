@@ -3,6 +3,7 @@
 import os
 import socket
 import urllib
+import subprocess
 
 elasticversion = 'elasticsearch-5.5.2'
     
@@ -32,4 +33,7 @@ if not checkportopen(9200):
     # run elasticsearch
     print('running elasticsearch')
     os.chdir(path_apphome + '/data/mcp-8100/apps/elasticsearch/bin')
-    os.system('nohup ./elasticsearch &')
+    if not os.path.isdir(path_apphome + '/data/elasticsearch/data'): os.makedirs(path_apphome + '/data/elasticsearch/data')
+    logpath = path_apphome + '/data/mcp-8100/apps/elasticsearch/data/log'
+    if not os.path.isfile(logpath): open(logpath, 'a').close()
+    subprocess.call('./elasticsearch >> ' + logpath + ' &', shell=True)
