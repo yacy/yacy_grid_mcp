@@ -80,14 +80,14 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public QueueFactory<byte[]> send(Services serviceName, QueueName queueName, byte[] message) throws IOException {
         if (this.rabbitConnector != null) try {
             this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).send(message);
-            Data.logger.info("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + new String(message, 0, 80, StandardCharsets.UTF_8).replace('\n', ' '));
+            Data.logger.info("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + ((message == null) ? "NULL" : new String(message, 0, 80, StandardCharsets.UTF_8).replace('\n', ' ')));
             return this.rabbitConnector;
         } catch (IOException e) {
             Data.logger.debug("Broker/Client: rabbitmq fail", e);
         }
         if (this.mcpConnector != null) try {
             this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).send(message);
-            Data.logger.info("Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "', message:" + new String(message, 0, 80, StandardCharsets.UTF_8).replace('\n', ' '));
+            Data.logger.info("Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "', message:" + ((message == null) ? "NULL" : new String(message, 0, 80, StandardCharsets.UTF_8).replace('\n', ' ')));
             return this.mcpConnector;
         } catch (IOException e) {
             Data.logger.debug("Broker/Client: mcp fail", e);
@@ -98,27 +98,35 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     @Override
     public MessageContainer<byte[]> receive(Services serviceName, QueueName queueName, long timeout) throws IOException {
         if (this.rabbitConnector != null) try {
-            return new MessageContainer<byte[]>(this.rabbitConnector, this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).receive(timeout));
+            MessageContainer<byte[]> mc = new MessageContainer<byte[]>(this.rabbitConnector, this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).receive(timeout));
+            if (mc.getPayload() != null) Data.logger.info("Broker/Server: received rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, 80, StandardCharsets.UTF_8).replace('\n', ' ')));
+            return mc;
         } catch (IOException e) {
             Data.logger.debug("rabbitmq fail", e);
         }
         if (this.mcpConnector != null) try {
-            return new MessageContainer<byte[]>(this.mcpConnector, this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).receive(timeout));
+            MessageContainer<byte[]> mc = new MessageContainer<byte[]>(this.mcpConnector, this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).receive(timeout));
+            if (mc.getPayload() != null) Data.logger.info("Broker/Server: received mcp service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, 80, StandardCharsets.UTF_8).replace('\n', ' ')));
+            return mc;
         } catch (IOException e) {
             Data.logger.debug("mcp fail", e);
         }
-        return super.receive(serviceName, queueName, timeout);
+        MessageContainer<byte[]> mc = super.receive(serviceName, queueName, timeout);
+        if (mc.getPayload() != null) Data.logger.info("Broker/Server: received peer broker service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, 80, StandardCharsets.UTF_8).replace('\n', ' ')));
+        return mc;
     }
 
     @Override
     public AvailableContainer available(Services serviceName, QueueName queueName) throws IOException {
         if (this.rabbitConnector != null) try {
-            return new AvailableContainer(this.rabbitConnector, this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).available());
+            AvailableContainer ac = new AvailableContainer(this.rabbitConnector, this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).available());
+            return ac;
         } catch (IOException e) {
             Data.logger.debug("rabbitmq fail", e);
         }
         if (this.mcpConnector != null) try {
-            return new AvailableContainer(this.mcpConnector, this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).available());
+            AvailableContainer ac = new AvailableContainer(this.mcpConnector, this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).available());
+            return ac;
         } catch (IOException e) {
             Data.logger.debug("mcp fail", e);
         }
