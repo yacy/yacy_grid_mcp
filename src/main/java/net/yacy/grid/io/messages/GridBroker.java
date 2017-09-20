@@ -21,6 +21,7 @@ package net.yacy.grid.io.messages;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
@@ -54,7 +55,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.rabbitConnector = qc;
             return true;
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to the rabbitMQ broker at " + host + ":" + port + " failed: " + e.getMessage(), e);
+            Data.logger.info("Broker/Client: trying to connect to the rabbitMQ broker at " + host + ":" + port + " failed: " + e.getMessage(), e);
             return false;
         }
     }
@@ -70,7 +71,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.mcpConnector = mcpqf;
             return true;
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to a Queue over MCP at " + host + ":" + port + " failed");
+            Data.logger.info("Broker/Client: trying to connect to a Queue over MCP at " + host + ":" + port + " failed");
             return false;
         }
     }
@@ -79,15 +80,17 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public QueueFactory<byte[]> send(Services serviceName, QueueName queueName, byte[] message) throws IOException {
         if (this.rabbitConnector != null) try {
             this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).send(message);
+            Data.logger.info("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + new String(message, 0, 80, StandardCharsets.UTF_8).replace('\n', ' '));
             return this.rabbitConnector;
         } catch (IOException e) {
-            Data.logger.debug("rabbitmq fail", e);
+            Data.logger.debug("Broker/Client: rabbitmq fail", e);
         }
         if (this.mcpConnector != null) try {
             this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).send(message);
+            Data.logger.info("Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "', message:" + new String(message, 0, 80, StandardCharsets.UTF_8).replace('\n', ' '));
             return this.mcpConnector;
         } catch (IOException e) {
-            Data.logger.debug("mcp fail", e);
+            Data.logger.debug("Broker/Client: mcp fail", e);
         }
         return super.send(serviceName, queueName, message);
     }
