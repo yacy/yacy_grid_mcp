@@ -26,14 +26,15 @@ if not checkportopen(9200):
     if not os.path.isfile(path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz'):
         print('downloading ' + elasticversion)
         urllib.urlretrieve ('https://artifacts.elastic.co/downloads/elasticsearch/' + elasticversion + '.tar.gz', path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz')
-    if not os.path.isdir(path_apphome + '/data/mcp-8100/apps/elasticsearch'):
+    elasticpath = path_apphome + '/data/mcp-8100/apps/elasticsearch'
+    if not os.path.isdir(elasticpath):
         print('decompressing' + elasticversion)
         os.system('tar xfz ' + path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz -C ' + path_apphome + '/data/mcp-8100/apps/')
-        os.rename(path_apphome + '/data/mcp-8100/apps/' + elasticversion, path_apphome + '/data/mcp-8100/apps/elasticsearch')
+        os.rename(path_apphome + '/data/mcp-8100/apps/' + elasticversion, elasticpath)
     # run elasticsearch
     print('running elasticsearch')
-    os.chdir(path_apphome + '/data/mcp-8100/apps/elasticsearch/bin')
-    if not os.path.isdir(path_apphome + '/data/elasticsearch/data'): os.makedirs(path_apphome + '/data/elasticsearch/data')
-    logpath = path_apphome + '/data/mcp-8100/apps/elasticsearch/data/log'
-    if not os.path.isfile(logpath): open(logpath, 'a').close()
+    os.chdir(elasticpath + '/bin')
+    if not os.path.isdir(elasticpath + '/data'): os.makedirs(elasticpath + '/data')
+    logpath = elasticpath + '/log'
+    if not os.path.isfile(logpath): os.system('touch ' + logpath)
     subprocess.call('./elasticsearch >> ' + logpath + ' &', shell=True)
