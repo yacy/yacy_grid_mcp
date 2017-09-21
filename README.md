@@ -148,13 +148,17 @@ This will run the ftp server at port 2121. To test the connection use a standard
 
     > rabbitmq_server-3.6.6/sbin/rabbitmq-plugins enable rabbitmq_management
     
-- add a rabbitmq user:
+- add a rabbitmq user 'anonymous' with password 'yacy':
 
-    > rabbitmq_server-3.6.6/sbin/rabbitmqctl add_user yacy anonymous
+    > rabbitmq_server-3.6.6/sbin/rabbitmqctl add_user anonymous yacy
 
 - set administration rights to that user (without that, it is not possible to open the administration pages)
 
-    > rabbitmq_server-3.6.6/sbin/rabbitmqctl set_user_tags yacy administrator
+    > rabbitmq_server-3.6.6/sbin/rabbitmqctl set_user_tags anonymous administrator
+    
+- set access right to vserver path '/' (makes it possible that queues are written over the api)
+
+	> rabbitmq_server-3.6.6/sbin/rabbitmqctl set_permissions -p / anonymous ".*" ".*" ".*"
 
 - to make it possible that the rabbitmq server can be accessed from outside of localhost, add a configuration file to `rabbitmq_server-3.6.6/etc/rabbitmq/rabbitmq.config` with the following content:
 
