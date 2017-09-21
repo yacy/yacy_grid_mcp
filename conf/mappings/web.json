@@ -1,6 +1,8 @@
-{
-"_all": {"enabled": false},
-"properties": {
+{"mappings":{"_default_":{"properties":{
+
+  "_all": {
+    "enabled": false
+  },
   "url_s": {
     "include_in_all": "true",
     "index": "not_analyzed",
@@ -683,4 +685,4 @@
     "index": "not_analyzed",
     "type": "keyword"
   }
-}}
+}}}}
