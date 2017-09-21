@@ -21,7 +21,7 @@ def mkapps():
     if not os.path.isdir(path_apphome + '/data/mcp-8100/apps'): os.makedirs(path_apphome + '/data/mcp-8100/apps')
 
 if not checkportopen(9200):
-    print "elasticsearch is not running"
+    print('elasticsearch is not running')
     mkapps()
     if not os.path.isfile(path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz'):
         print('downloading ' + elasticversion)
