@@ -705,8 +705,8 @@ public class ElasticsearchClient {
         return map;
     }
     
-    public Query query(final String indexName, final QueryBuilder queryBuilder, String order_field, int timezoneOffset, int resultCount, int aggregationLimit, String... aggregationFields) {
-        return new Query(indexName,  queryBuilder, order_field, timezoneOffset, resultCount, aggregationLimit, aggregationFields);
+    public Query query(final String indexName, final QueryBuilder queryBuilder, int timezoneOffset, int from, int resultCount, int aggregationLimit, String... aggregationFields) {
+        return new Query(indexName,  queryBuilder, timezoneOffset, from, resultCount, aggregationLimit, aggregationFields);
     }
     
     public class Query {
@@ -724,21 +724,14 @@ public class ElasticsearchClient {
          * @param aggregationLimit - the maximum count of facet entities, not search results
          * @param aggregationFields - names of the aggregation fields. If no aggregation is wanted, pass no (zero) field(s)
          */
-        public Query(final String indexName, final QueryBuilder queryBuilder, String order_field, int timezoneOffset, int resultCount, int aggregationLimit, String... aggregationFields) {
+        public Query(final String indexName, final QueryBuilder queryBuilder, int timezoneOffset, int from, int resultCount, int aggregationLimit, String... aggregationFields) {
             // prepare request
             SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName)
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
                     .setQuery(queryBuilder)
-                    .setFrom(0)
+                    .setFrom(from)
                     .setSize(resultCount);
             request.clearRescorers();
-            if (resultCount > 0) {
-                request.addSort(
-                        SortBuilders.fieldSort(order_field)
-                            .unmappedType(order_field)
-                            .order(SortOrder.DESC)
-                        );
-            }
             for (String field: aggregationFields) {
                 request.addAggregation(AggregationBuilders.terms(field).field(field).minDocCount(1).size(aggregationLimit));
             }

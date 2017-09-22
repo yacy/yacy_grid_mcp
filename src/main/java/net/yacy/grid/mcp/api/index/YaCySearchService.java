@@ -26,6 +26,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 import org.elasticsearch.index.query.Operator;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.search.MatchQuery.ZeroTermsQuery;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -67,8 +70,9 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         long timeout = call.get("timeout", -1);
         JSONObject json = new JSONObject(true);
         
-        List<Map<String, Object>> result = Data.index.query("web", query, Operator.AND, 0, 10, "text_t");
-
+        QueryBuilder qb = QueryBuilders.multiMatchQuery(query, new String[]{"text_t"}).operator(Operator.AND).zeroTermsQuery(ZeroTermsQuery.ALL);
+        net.yacy.grid.io.index.ElasticsearchClient.Query eq = Data.index.query("web", qb, timezoneOffset, startRecord, maximumRecords, 5);
+        
         JSONArray channels = new JSONArray();
         json.put("channels", channels);
         JSONObject channel = new JSONObject();
@@ -80,7 +84,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         channel.put("itemsPerPage", "" + items.length());
         channel.put("searchTerms", query);
         channel.put("items", items);
-        result.forEach(map -> {
+        eq.result.forEach(map -> {
             JSONObject hit = new JSONObject(true);
             List<?> title = (List<?>) map.get(WebMapping.title.getSolrFieldName());
             String titleString = title == null || title.isEmpty() ? "" : title.iterator().next().toString();
