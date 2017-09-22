@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import time
 import socket
 import urllib
 import subprocess
@@ -21,20 +22,30 @@ def mkapps():
     if not os.path.isdir(path_apphome + '/data/mcp-8100/apps'): os.makedirs(path_apphome + '/data/mcp-8100/apps')
 
 if not checkportopen(9200):
-    print "elasticsearch is not running"
+    print('elasticsearch is not running')
     mkapps()
     if not os.path.isfile(path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz'):
         print('downloading ' + elasticversion)
         urllib.urlretrieve ('https://artifacts.elastic.co/downloads/elasticsearch/' + elasticversion + '.tar.gz', path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz')
     elasticpath = path_apphome + '/data/mcp-8100/apps/elasticsearch'
+    firstrun = False
     if not os.path.isdir(elasticpath):
         print('decompressing' + elasticversion)
         os.system('tar xfz ' + path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz -C ' + path_apphome + '/data/mcp-8100/apps/')
         os.rename(path_apphome + '/data/mcp-8100/apps/' + elasticversion, elasticpath)
+        firstrun = True
     # run elasticsearch
-    print('running elasticsearch')
+    print('running elasticsearch...')
     os.chdir(elasticpath + '/bin')
     if not os.path.isdir(elasticpath + '/data'): os.makedirs(elasticpath + '/data')
     logpath = elasticpath + '/log'
     if not os.path.isfile(logpath): os.system('touch ' + logpath)
     subprocess.call('./elasticsearch >> ' + logpath + ' &', shell=True)
+    if firstrun: 
+        while not checkportopen(9200):
+            print('waiting until elasticsearch is running...')
+            time.sleep(3)
+        print('preparing index...')
+        os.chdir(path_apphome)
+        subprocess.call('bin/prepare_index.sh', shell=True)
+

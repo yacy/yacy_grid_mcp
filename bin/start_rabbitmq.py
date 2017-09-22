@@ -41,8 +41,9 @@ if not checkportopen(5672):
     subprocess.call('./rabbitmq-server &', shell=True)
     time.sleep(5)
     subprocess.call('./rabbitmq-plugins enable rabbitmq_management', shell=True)
-    subprocess.call('./rabbitmqctl add_user yacy anonymous', shell=True)
-    subprocess.call('./rabbitmqctl set_user_tags yacy administrator', shell=True)
+    subprocess.call('./rabbitmqctl add_user anonymous yacy', shell=True)
+    subprocess.call('./rabbitmqctl set_user_tags anonymous administrator', shell=True)
+    subprocess.call('./rabbitmqctl set_permissions -p / anonymous ".*" ".*" ".*"', shell=True)
 
 print('to view the administration pages, open http://127.0.0.1:15672/')
-print('log in with yacy:anonymous')
+print('log in with anonymous:yacy')
