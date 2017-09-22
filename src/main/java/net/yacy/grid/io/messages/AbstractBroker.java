@@ -32,7 +32,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
 
     private final static Random random = new Random();
     private final Map<Services, AtomicInteger> roundRobinLookup = new ConcurrentHashMap<>();
-    private final Map<Services, Integer> leastFilledLookup = new ConcurrentHashMap<>();
+    private final Map<Services, Map<String, Integer>> leastFilledLookup = new ConcurrentHashMap<>();
     
     @Override
     public abstract void close() throws IOException;
@@ -107,10 +107,15 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     }
     
     private int lookup(final Services service, final QueueName[] queueNames, final String hashingKey) throws IOException {
-        Integer lookupIndex = this.leastFilledLookup.get(service);
+        Map<String, Integer> lookupMap = this.leastFilledLookup.get(service);
+        if (lookupMap == null) {
+            lookupMap = new ConcurrentHashMap<>();
+            this.leastFilledLookup.put(service, lookupMap);
+        }
+        Integer lookupIndex = lookupMap.get(hashingKey);
         if (lookupIndex == null) {
             lookupIndex = leastFilled(service, queueNames);
-            this.leastFilledLookup.put(service, lookupIndex);
+            lookupMap.put(hashingKey, lookupIndex);
         }
         return lookupIndex;
     }

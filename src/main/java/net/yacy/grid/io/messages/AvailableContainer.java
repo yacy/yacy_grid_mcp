@@ -36,4 +36,8 @@ public class AvailableContainer {
     public int getAvailable() {
         return this.available;
     }
+    
+    public String toString() {
+        return Integer.toString(available);
+    }
 }
