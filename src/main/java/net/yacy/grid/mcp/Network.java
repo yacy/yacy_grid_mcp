@@ -24,9 +24,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -43,10 +41,10 @@ public class Network {
     private final Set<String> mcpActiveAddresses = new LinkedHashSet<>();
     private final Set<String> mcpPassiveAddresses = new LinkedHashSet<>();
     
-    private Map<String, Peer> peers;
+    //private Map<String, Peer> peers;
     
     public Network() {
-        this.peers = new ConcurrentHashMap<>();
+        //this.peers = new ConcurrentHashMap<>();
     }
     
     public Network addMCP(String hostprotocolstub) {

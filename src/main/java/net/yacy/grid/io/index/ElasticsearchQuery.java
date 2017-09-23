@@ -230,7 +230,7 @@ public class ElasticsearchQuery {
                     String[] screen_names = screen_name.split(",");
                     BoolQueryBuilder disjunction = QueryBuilders.boolQuery();
                     for (String name: screen_names) disjunction.should(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery("screen_name", name)));
-                    disjunction.minimumNumberShouldMatch(1);
+                    disjunction.minimumShouldMatch(1);
                     ops.add(disjunction);
                 }
             }
@@ -284,7 +284,7 @@ public class ElasticsearchQuery {
             for (QueryBuilder qb: ops) {
                 if (ORconnective) ((BoolQueryBuilder) bquery).should(qb); else ((BoolQueryBuilder) bquery).filter(qb);
             }
-            if (ORconnective) ((BoolQueryBuilder) bquery).minimumNumberShouldMatch(1);
+            if (ORconnective) ((BoolQueryBuilder) bquery).minimumShouldMatch(1);
             for (QueryBuilder nqb: nops) {
                 ((BoolQueryBuilder) bquery).mustNot(nqb);
             }

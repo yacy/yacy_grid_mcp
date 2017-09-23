@@ -67,6 +67,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.Operator;
@@ -200,7 +201,7 @@ public class ElasticsearchClient {
     public void setMapping(String indexName, String mapping) {
         try {
             this.elasticsearchClient.admin().indices().preparePutMapping(indexName)
-                .setSource(mapping)
+                .setSource(mapping, XContentType.JSON)
                 .setUpdateAllTypes(true)
                 .setType("_default_").execute().actionGet();
         } catch (Throwable e) {
@@ -211,7 +212,7 @@ public class ElasticsearchClient {
     public void setMapping(String indexName, File json) {
         try {
             this.elasticsearchClient.admin().indices().preparePutMapping(indexName)
-                .setSource(new String(Files.readAllBytes(json.toPath()), StandardCharsets.UTF_8))
+                .setSource(new String(Files.readAllBytes(json.toPath()), StandardCharsets.UTF_8), XContentType.JSON)
                 .setUpdateAllTypes(true)
                 .setType("_default_")
                 .execute()

@@ -64,14 +64,14 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
         String query = call.get("q", "");
         String queryXML = XML.escape(query);
-        String contentdom = call.get("contentdom", "text");
+        //String contentdom = call.get("contentdom", "text");
         int maximumRecords = call.get("num", 10);
         int startRecord = call.get("startRecord", 0);
-        int meanCount = call.get("meanCount", 5);
-        int timezoneOffset = call.get("timezoneOffset", 0);
-        String nav = call.get("nav", "");
-        String prefermaskfilter = call.get("prefermaskfilter", "");
-        String constraint = call.get("constraint", "");
+        //int meanCount = call.get("meanCount", 5);
+        //int timezoneOffset = call.get("timezoneOffset", 0);
+        //String nav = call.get("nav", "");
+        //String prefermaskfilter = call.get("prefermaskfilter", "");
+        //String constraint = call.get("constraint", "");
         
         // no xml encoder here on purpose, we will try to not have such things into our software in the future!
         StringBuffer sb = new StringBuffer(2048);

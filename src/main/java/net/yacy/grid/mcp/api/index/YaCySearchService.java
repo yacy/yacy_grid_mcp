@@ -58,14 +58,14 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
     @Override
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
         String query = call.get("query", "");
-        String contentdom = call.get("contentdom", "text");
+        //String contentdom = call.get("contentdom", "text");
         int maximumRecords = call.get("maximumRecords", 10);
         int startRecord = call.get("startRecord", 0);
-        int meanCount = call.get("meanCount", 5);
+        //int meanCount = call.get("meanCount", 5);
         int timezoneOffset = call.get("timezoneOffset", 0);
-        String nav = call.get("nav", "");
-        String prefermaskfilter = call.get("prefermaskfilter", "");
-        String constraint = call.get("constraint", "");
+        //String nav = call.get("nav", "");
+        //String prefermaskfilter = call.get("prefermaskfilter", "");
+        //String constraint = call.get("constraint", "");
         JSONObject json = new JSONObject(true);
         
         QueryBuilder qb = QueryBuilders.multiMatchQuery(query, new String[]{"text_t"}).operator(Operator.AND).zeroTermsQuery(ZeroTermsQuery.ALL);
