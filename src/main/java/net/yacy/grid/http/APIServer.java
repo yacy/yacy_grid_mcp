@@ -71,11 +71,11 @@ public class APIServer {
         return serviceMap.get(name);
     }
 
-    public static int open(int port, int expiresSeconds, String htmlPath, boolean force) throws IOException {
+    public static int open(int port, String htmlPath, boolean force) throws IOException {
         int ap = 0;
         while (true) {
             try {
-                open(port + ap, expiresSeconds, htmlPath);
+                open(port + ap, htmlPath);
                 return port + ap;
             } catch (IOException e) {
                 if (force || ap >= 16) {
@@ -88,7 +88,7 @@ public class APIServer {
         }
     }
     
-    private static void open(int port, int expiresSeconds, String htmlPath) throws IOException {
+    private static void open(int port, String htmlPath) throws IOException {
         try {
             QueuedThreadPool pool = new QueuedThreadPool();
             pool.setMaxThreads(500);
@@ -121,7 +121,7 @@ public class APIServer {
             if (htmlPath == null) {
                 handlerlist2.setHandlers(new Handler[]{servletHandler, new DefaultHandler()});
             } else {
-                FileHandler fileHandler = new FileHandler(expiresSeconds);
+                FileHandler fileHandler = new FileHandler();
                 fileHandler.setDirectoriesListed(true);
                 fileHandler.setWelcomeFiles(new String[]{"index.html"});
                 fileHandler.setResourceBase(htmlPath);

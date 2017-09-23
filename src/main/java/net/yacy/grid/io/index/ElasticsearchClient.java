@@ -539,8 +539,8 @@ public class ElasticsearchClient {
         Long version = (Long) jsonMap.remove("_version");
         // put this to the index
         IndexResponse r = elasticsearchClient.prepareIndex(indexName, typeName, id).setSource(jsonMap)
-            .setVersion(version == null ? 1 : version.longValue())
-            .setVersionType(version == null ? VersionType.FORCE : VersionType.EXTERNAL)
+            //.setVersion(version == null ? 1 : version.longValue())
+            .setVersionType(VersionType.INTERNAL)
             .execute()
             .actionGet();
         if (version != null) jsonMap.put("_version", version); // to prevent side effects
@@ -580,8 +580,8 @@ public class ElasticsearchClient {
             if (be.id == null) continue;
             bulkRequest.add(
                     elasticsearchClient.prepareIndex(indexName, be.type, be.id).setSource(be.jsonMap)
-                        .setVersion(be.version == null ? 1 : be.version.longValue())
-                        .setVersionType(be.version == null ? VersionType.FORCE : VersionType.EXTERNAL));
+                        //.setVersion(be.version == null ? 1 : be.version.longValue())
+                        .setVersionType(VersionType.INTERNAL));
         }
         BulkResponse bulkResponse = bulkRequest.get();
         BulkWriteResult result = new BulkWriteResult();
@@ -626,7 +626,7 @@ public class ElasticsearchClient {
     public static class BulkEntry {
         private String id;
         private String type;
-        private Long version;
+        //private Long version;
         public Map<String, Object> jsonMap;
         
         /**
@@ -637,10 +637,10 @@ public class ElasticsearchClient {
          * @param version the version number >= 0 for external versioning or null for forced updates without versioning
          * @param jsonMap the payload object
          */
-        public BulkEntry(final String id, final String type, final String timestamp_fieldname, final Long version, final Map<String, Object> jsonMap) {
+        public BulkEntry(final String id, final String type, final String timestamp_fieldname, final Map<String, Object> jsonMap) {
             this.id = id;
             this.type = type;
-            this.version = version;
+            //this.version = version;
             this.jsonMap = jsonMap;
             if (timestamp_fieldname != null && !this.jsonMap.containsKey(timestamp_fieldname)) this.jsonMap.put(timestamp_fieldname, utcFormatter.print(System.currentTimeMillis()));
         }

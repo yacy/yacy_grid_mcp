@@ -188,8 +188,8 @@ public class ElasticsearchQuery {
         if (modifier.containsKey("-to")) users_negative.addAll(modifier.get("-to"));
 
         // special constraints
-        boolean constraint_about = constraints_positive.remove("about");
-        if (constraints_negative.remove("about")) constraint_about = false;
+        //boolean constraint_about = constraints_positive.remove("about");
+        //if (constraints_negative.remove("about")) constraint_about = false;
         
         // compose query for text
         List<QueryBuilder> ops = new ArrayList<>();

@@ -116,7 +116,7 @@ public enum Service {
             
             // open the server on available port
             boolean portForce = Boolean.getBoolean(Data.config.get("port.force"));
-            port = APIServer.open(port, 600, html_path, portForce);
+            port = APIServer.open(port, html_path, portForce);
 
             // give positive feedback
             Data.logger.info("Service started at port " + port);

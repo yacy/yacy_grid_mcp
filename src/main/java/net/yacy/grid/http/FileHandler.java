@@ -52,14 +52,12 @@ import net.yacy.grid.tools.ByteBuffer;
 public class FileHandler extends ResourceHandler implements Handler {
     
     private final long CACHE_LIMIT = 128L * 1024L;
-    private int expiresSeconds = 0;
     
     /**
      * create a custom ResourceHandler with more caching
      * @param expiresSeconds the time each file shall stay in the cache
      */
-    public FileHandler(int expiresSeconds) {
-        this.expiresSeconds = expiresSeconds;
+    public FileHandler() {
         //this.setMinMemoryMappedContentLength((int) CACHE_LIMIT);
     }
     
