@@ -29,7 +29,7 @@ if not checkportopen(5672):
     mkapps()
     if not os.path.isfile(path_apphome + '/data/mcp-8100/apps/' + rabbitversion + '.tar.xz'):
         print('downloading ' + rabbitversion)
-        urllib.urlretrieve ('https://dl.bintray.com/rabbitmq/binaries/' + rabbitversion + '.tar.xz', path_apphome + '/data/mcp-8100/apps/' + rabbitversion + '.tar.xz')
+        urllib.urlretrieve ('http://dl.bintray.com/rabbitmq/binaries/' + rabbitversion + '.tar.xz', path_apphome + '/data/mcp-8100/apps/' + rabbitversion + '.tar.xz')
     rabbitpath = path_apphome + '/data/mcp-8100/apps/rabbitmq'
     if not os.path.isdir(rabbitpath):
         print('decompressing' + rabbitversion)
