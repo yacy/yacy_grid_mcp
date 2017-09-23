@@ -72,7 +72,6 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         String nav = call.get("nav", "");
         String prefermaskfilter = call.get("prefermaskfilter", "");
         String constraint = call.get("constraint", "");
-        long timeout = call.get("timeout", -1);
         
         // no xml encoder here on purpose, we will try to not have such things into our software in the future!
         StringBuffer sb = new StringBuffer(2048);

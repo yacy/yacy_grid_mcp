@@ -21,7 +21,6 @@ package net.yacy.grid.mcp.api.index;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -67,7 +66,6 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         String nav = call.get("nav", "");
         String prefermaskfilter = call.get("prefermaskfilter", "");
         String constraint = call.get("constraint", "");
-        long timeout = call.get("timeout", -1);
         JSONObject json = new JSONObject(true);
         
         QueryBuilder qb = QueryBuilders.multiMatchQuery(query, new String[]{"text_t"}).operator(Operator.AND).zeroTermsQuery(ZeroTermsQuery.ALL);
