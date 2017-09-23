@@ -19,8 +19,10 @@
 
 package net.yacy.grid.mcp.api.index;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -53,7 +55,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
     @Override
     public String getAPIPath() {
         return "/yacy/grid/mcp/index/" + NAME + ".json";
-    }
+    }    
     
     @Override
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
@@ -66,10 +68,15 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         //String nav = call.get("nav", "");
         //String prefermaskfilter = call.get("prefermaskfilter", "");
         //String constraint = call.get("constraint", "");
+        int facetLimit = call.get("facetLimit", 10);
+        String facetFields = call.get("facetFields", "host_s,url_file_ext_s,author_sxt,dates_in_content_dts,language_s,url_protocol_s,collection_sxt");
+        List<String> facetFieldList = new ArrayList<>();
+        for (String s: facetFields.split(",")) facetFieldList.add(WebMapping.valueOf(s).getSolrFieldName());
+        
         JSONObject json = new JSONObject(true);
         
         QueryBuilder qb = QueryBuilders.multiMatchQuery(query, new String[]{"text_t"}).operator(Operator.AND).zeroTermsQuery(ZeroTermsQuery.ALL);
-        net.yacy.grid.io.index.ElasticsearchClient.Query eq = Data.index.query("web", qb, timezoneOffset, startRecord, maximumRecords, 5);
+        net.yacy.grid.io.index.ElasticsearchClient.Query eq = Data.index.query("web", qb, timezoneOffset, startRecord, maximumRecords, facetLimit, facetFieldList.toArray(new String[facetFieldList.size()]));
         
         JSONArray channels = new JSONArray();
         json.put("channels", channels);
@@ -105,9 +112,61 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
             hit.put("host", host);
             items.put(hit);
         });
+        JSONArray navigation = new JSONArray();
+        json.put("navigation", navigation);
+        
+        Map<String, List<Map.Entry<String, Long>>> aggregations = eq.aggregations;
+        for (Map.Entry<String, List<Map.Entry<String, Long>>> fe: aggregations.entrySet()) {
+            String facetname = fe.getKey();
+            JSONObject facetobject = new JSONObject(true);
+            facetobject.put("facetname", facetname);
+            facetobject.put("displayname", facetname);
+            facetobject.put("type", "String");
+            facetobject.put("min", "0");
+            facetobject.put("max", "0");
+            facetobject.put("mean", "0");
+            JSONArray elements = new JSONArray();
+            facetobject.put("elements", elements);
+            for (Map.Entry<String, Long> element: fe.getValue()) {
+                JSONObject elementEntry = new JSONObject(true);
+                elementEntry.put("name", element.getKey());
+                elementEntry.put("count", element.getValue().toString());
+                elementEntry.put("modifier", facetname + ":" + element.getKey());
+                elements.put(elementEntry);
+            }
+            navigation.put(facetobject);
+        }
         return new ServiceResponse(json);
     }
     
+    /*
+     * 
+     * {collection_sxt=[], url_file_ext_s=[html=58, php=4, 591571=1, htm=1, muenchen=1], dates_in_content_dts=[2017-09-21T02:00:00.000Z=29, 2017-09-20T02:00:00.000Z=22, 2017-09-18T02:00:00.000Z=19, 2017-09-04T02:00:00.000Z=17, 2017-09-15T02:00:00.000Z=17, 2017-09-12T02:00:00.000Z=16, 2017-09-14T02:00:00.000Z=16, 2017-09-19T02:00:00.000Z=16, 2017-08-04T02:00:00.000Z=14, 2017-08-09T02:00:00.000Z=13], author_sxt=[], host_s=[www.welt.de=75, www.facebook.com=9, en.wikipedia.org=8, flug.idealo.de=7, www.idealo.de=5, www.ladenzeile.de=5, l.facebook.com=3, nl.wikipedia.org=3, plus.google.com=3, www.youtube.com=3], language_s=[], url_protocol_s=[http=83, https=69]}
+     * 
+     * 
+],
+"navigation":[
+
+{"facetname":"filetypes","displayname":"Filetypes","type":"String","min":"0","max":"0","mean":"0","elements":[
+{"name":"html","count":"92035","modifier":"filetype%3Ahtml"},
+{"name":"jpg","count":"28620","modifier":"filetype%3Ajpg"},
+{"name":"php","count":"18716","modifier":"filetype%3Aphp"},
+{"name":"png","count":"14835","modifier":"filetype%3Apng"},
+{"name":"htm","count":"8239","modifier":"filetype%3Ahtm"},
+{"name":"g","count":"4951","modifier":"filetype%3Ag"},
+{"name":"aspx","count":"4054","modifier":"filetype%3Aaspx"},
+{"name":"cgi","count":"3917","modifier":"filetype%3Acgi"},
+{"name":"pdf","count":"3917","modifier":"filetype%3Apdf"},
+{"name":"gif","count":"3226","modifier":"filetype%3Agif"},
+{"name":"jsp","count":"2620","modifier":"filetype%3Ajsp"},
+{"name":"asp","count":"2202","modifier":"filetype%3Aasp"},
+{"name":"shtml","count":"1718","modifier":"filetype%3Ashtml"},
+{"name":"cfm","count":"1392","modifier":"filetype%3Acfm"},
+{"name":"svg","count":"825","modifier":"filetype%3Asvg"},
+{"name":"com","count":"628","modifier":"filetype%3Acom"}
+]}
+]}]}
+     */
     /*
 http://192.168.1.60:8000/yacysearch.json?query=casey+neistat&Enter=&contentdom=text&former=casey+neistad&maximumRecords=10
 &startRecord=0&verify=ifexist&resource=global&nav=location%2Chosts%2Cauthors%2Cnamespace%2Ctopics%2Cfiletype%2Cprotocol%2Clanguage&
