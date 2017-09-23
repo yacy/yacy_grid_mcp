@@ -21,7 +21,9 @@ def mkapps():
     if not os.path.isdir(path_apphome + '/data/mcp-8100'): os.makedirs(path_apphome + '/data/mcp-8100')
     if not os.path.isdir(path_apphome + '/data/mcp-8100/apps'): os.makedirs(path_apphome + '/data/mcp-8100/apps')
 
-if not checkportopen(9200):
+if checkportopen(9200):
+    print('elasticsearch is already running!')
+else:
     print('elasticsearch is not running')
     mkapps()
     if not os.path.isfile(path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz'):
@@ -35,7 +37,7 @@ if not checkportopen(9200):
         os.rename(path_apphome + '/data/mcp-8100/apps/' + elasticversion, elasticpath)
         firstrun = True
     # run elasticsearch
-    print('running elasticsearch...')
+    print('starting elasticsearch...')
     os.chdir(elasticpath + '/bin')
     if not os.path.isdir(elasticpath + '/data'): os.makedirs(elasticpath + '/data')
     logpath = elasticpath + '/log'
