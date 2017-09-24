@@ -73,13 +73,13 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         //String constraint = call.get("constraint", "");
         int facetLimit = call.get("facetLimit", 10);
         String facetFields = call.get("facetFields", "host_s,url_file_ext_s,author_sxt,dates_in_content_dts,language_s,url_protocol_s,collection_sxt");
-        List<String> facetFieldList = new ArrayList<>();
-        for (String s: facetFields.split(",")) facetFieldList.add(WebMapping.valueOf(s).getSolrFieldName());
+        List<WebMapping> facetFieldMapping = new ArrayList<>();
+        for (String s: facetFields.split(",")) facetFieldMapping.add(WebMapping.valueOf(s));
         
         JSONObject json = new JSONObject(true);
         
         QueryBuilder qb = QueryBuilders.multiMatchQuery(query, new String[]{"text_t"}).operator(Operator.AND).zeroTermsQuery(ZeroTermsQuery.ALL);
-        net.yacy.grid.io.index.ElasticsearchClient.Query eq = Data.index.query("web", qb, timezoneOffset, startRecord, maximumRecords, facetLimit, facetFieldList.toArray(new String[facetFieldList.size()]));
+        net.yacy.grid.io.index.ElasticsearchClient.Query eq = Data.index.query("web", qb, timezoneOffset, startRecord, maximumRecords, facetLimit, facetFieldMapping.toArray(new WebMapping[facetFieldMapping.size()]));
         
         JSONArray channels = new JSONArray();
         json.put("channels", channels);
@@ -122,10 +122,11 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         Map<String, List<Map.Entry<String, Long>>> aggregations = eq.aggregations;
         for (Map.Entry<String, List<Map.Entry<String, Long>>> fe: aggregations.entrySet()) {
             String facetname = fe.getKey();
+            WebMapping mapping = WebMapping.valueOf(facetname);
             JSONObject facetobject = new JSONObject(true);
-            facetobject.put("facetname", facetname);
-            facetobject.put("displayname", facetname);
-            facetobject.put("type", "String");
+            facetobject.put("facetname", mapping.getFacetname());
+            facetobject.put("displayname", mapping.getDisplayname());
+            facetobject.put("type", mapping.getFacettype());
             facetobject.put("min", "0");
             facetobject.put("max", "0");
             facetobject.put("mean", "0");
@@ -135,7 +136,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
                 JSONObject elementEntry = new JSONObject(true);
                 elementEntry.put("name", element.getKey());
                 elementEntry.put("count", element.getValue().toString());
-                elementEntry.put("modifier", facetname + ":" + element.getKey());
+                elementEntry.put("modifier", mapping.getFacetmodifier() + ":" + element.getKey());
                 elements.put(elementEntry);
             }
             navigation.put(facetobject);

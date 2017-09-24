@@ -704,7 +704,7 @@ public class ElasticsearchClient {
         return map;
     }
     
-    public Query query(final String indexName, final QueryBuilder queryBuilder, int timezoneOffset, int from, int resultCount, int aggregationLimit, String... aggregationFields) {
+    public Query query(final String indexName, final QueryBuilder queryBuilder, int timezoneOffset, int from, int resultCount, int aggregationLimit, WebMapping... aggregationFields) {
         return new Query(indexName,  queryBuilder, timezoneOffset, from, resultCount, aggregationLimit, aggregationFields);
     }
     
@@ -723,7 +723,7 @@ public class ElasticsearchClient {
          * @param aggregationLimit - the maximum count of facet entities, not search results
          * @param aggregationFields - names of the aggregation fields. If no aggregation is wanted, pass no (zero) field(s)
          */
-        public Query(final String indexName, final QueryBuilder queryBuilder, int timezoneOffset, int from, int resultCount, int aggregationLimit, String... aggregationFields) {
+        public Query(final String indexName, final QueryBuilder queryBuilder, int timezoneOffset, int from, int resultCount, int aggregationLimit, WebMapping... aggregationFields) {
             // prepare request
             SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName)
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
@@ -731,8 +731,8 @@ public class ElasticsearchClient {
                     .setFrom(from)
                     .setSize(resultCount);
             request.clearRescorers();
-            for (String field: aggregationFields) {
-                request.addAggregation(AggregationBuilders.terms(field).field(field).minDocCount(1).size(aggregationLimit));
+            for (WebMapping field: aggregationFields) {
+                request.addAggregation(AggregationBuilders.terms(field.getSolrFieldName()).field(field.getSolrFieldName()).minDocCount(1).size(aggregationLimit));
             }
             // get response
             SearchResponse response = request.execute().actionGet();
@@ -750,8 +750,8 @@ public class ElasticsearchClient {
             // evaluate aggregation
             // collect results: fields
             this.aggregations = new HashMap<>();
-            for (String field: aggregationFields) {
-                Terms fieldCounts = response.getAggregations().get(field);
+            for (WebMapping field: aggregationFields) {
+                Terms fieldCounts = response.getAggregations().get(field.getSolrFieldName());
                 List<? extends Bucket> buckets = fieldCounts.getBuckets();
                 // aggregate double-tokens (matching lowercase)
                 Map<String, Long> checkMap = new HashMap<>();
@@ -772,7 +772,7 @@ public class ElasticsearchClient {
                         list.add(new AbstractMap.SimpleEntry<String, Long>(key, v));
                     }
                 }
-                aggregations.put(field, list);
+                aggregations.put(field.getSolrFieldName(), list);
                 //if (field.equals("place_country")) {
                     // special handling of country aggregation: add the country center as well
                 //}

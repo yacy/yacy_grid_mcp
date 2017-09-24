@@ -23,6 +23,20 @@ package net.yacy.grid.io.index;
 import org.json.JSONObject;
 
 public enum WebMapping implements MappingDeclaration {
+    // dates_in_content_dts,language_s
+    /*
+ 
+
+    "facetname": "namespace",
+    "displayname": "Wiki Name Space",
+    "type": "String",
+    
+
+    "facetname": "topics",
+    "displayname": "Topics",
+    "type": "String",
+    
+    */
     
 	//MappingType type, indexed, stored, multiValued, omitNorms, searchable, comment, mandatory) {
     
@@ -33,12 +47,12 @@ public enum WebMapping implements MappingDeclaration {
     load_date_dt(MappingType.date, true, true, false, false, false, "time when resource was loaded", true),
     content_type(MappingType.string, true, true, true, false, false, "mime-type of document", true),
     title(MappingType.text_general, true, true, true, false, true, "content of title tag", true),
-    host_s(MappingType.string, true, true, false, false, true, "host of the url", true),
+    host_s(MappingType.string, true, true, false, false, true, "host of the url", true, "domains", "Provider", "String", "site"),
     size_i(MappingType.num_integer, true, true, false, false, false, "the size of the raw source", true),// int size();
     failreason_s(MappingType.string, true, true, false, false, false, "fail reason if a page was not loaded. if the page was loaded then this field is empty", true),
     failtype_s(MappingType.string, true, true, false, false, false, "fail type if a page was not loaded. This field is either empty, 'excl' or 'fail'", true),
     httpstatus_i(MappingType.num_integer, true, true, false, false, false, "html status return code (i.e. \"200\" for ok), -1 if not loaded", true),
-    url_file_ext_s(MappingType.string, true, true, false, false, true, "the file name extension", true),
+    url_file_ext_s(MappingType.string, true, true, false, false, true, "the file name extension", true, "filetype", "Filetype", "String", "filetype"),
     host_organization_s(MappingType.string, true, true, false, false, true, "either the second level domain or, if a ccSLD is used, the third level domain", true), // needed to search in the url
     inboundlinks_sxt(MappingType.string, true, true, true, false, true, "internal links", true),
     outboundlinks_sxt(MappingType.string, true, true, true, false, false, "external links", true),
@@ -71,7 +85,7 @@ public enum WebMapping implements MappingDeclaration {
     coordinate_p_1_coordinate(MappingType.coordinate, true, false, false, false, false, "automatically created subfield, (longitude)"),
     ip_s(MappingType.string, true, true, false, false, false, "ip of host of url (after DNS lookup)"),
     author(MappingType.text_general, true, true, false, false, true, "content of author-tag"),
-    author_sxt(MappingType.string, true, true, true, false, false, "content of author-tag as copy-field from author. This is used for facet generation"),
+    author_sxt(MappingType.string, true, true, true, false, false, "content of author-tag as copy-field from author. This is used for facet generation", false, "authors", "Authors", "String", "author"),
     description_txt(MappingType.text_general, true, true, true, false, true, "content of description-tag(s)"),
     description_exact_signature_l(MappingType.num_long, true, true, false, false, false, "the 64 bit hash of the org.apache.solr.update.processor.Lookup3Signature of description, used to compute description_unique_b"),
     description_unique_b(MappingType.bool, true, true, false, false, false, "flag shows if description is unique within all indexable documents of the same host with status code 200; if yes and another document appears with same description, the unique-flag is set to false"),
@@ -97,7 +111,8 @@ public enum WebMapping implements MappingDeclaration {
     score_l(MappingType.num_long, true, true, false, false, false, "custom score"),
     
     // optional values, not part of standard YaCy handling (but useful for external applications)
-    collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation to separate the search result into user-defined subsets"),
+    collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation to separate the search result into user-defined subsets", false,
+            "collections", "Collections", "String", "collection"),
     csscount_i(MappingType.num_integer, true, true, false, false, false, "number of entries in css_tag_txt and css_url_txt"),
     css_tag_sxt(MappingType.string, true, true, true, false, false, "full css tag with normalized url"),
     css_url_sxt(MappingType.string, true, true, true, false, false, "normalized urls within a css tag"),
@@ -164,7 +179,7 @@ public enum WebMapping implements MappingDeclaration {
     navigation_type_sxt(MappingType.string, true, true, true, false, false, "page navigation rel property value, can contain one of {top,up,next,prev,first,last}"),
     publisher_url_s(MappingType.string, true, true, false, false, false, "publisher url as defined in http://support.google.com/plus/answer/1713826?hl=de"),
     
-    url_protocol_s(MappingType.string, true, true, false, false, false, "the protocol of the url"),
+    url_protocol_s(MappingType.string, true, true, false, false, false, "the protocol of the url", false, "protocols", "Protocol", "String", "protocol"),
     url_file_name_s(MappingType.string, true, true, false, false, true, "the file name (which is the string after the last '/' and before the query part from '?' on) without the file extension"),
     url_file_name_tokens_t(MappingType.text_general, true, true, false, false, true, "tokens generated from url_file_name_s which can be used for better matching and result boosting"),
     url_paths_count_i(MappingType.num_integer, true, true, false, false, false, "number of all path elements in the url hpath (see: http://www.ietf.org/rfc/rfc1738.txt) without the file name"),
@@ -239,6 +254,9 @@ public enum WebMapping implements MappingDeclaration {
     private final boolean indexed, stored, searchable, multiValued, omitNorms, docValues;
     private String comment;
     
+    // for facets:
+    private String facetname, displayname, facettype, facetmodifier;
+    
     /** When true, the field must be enabled for proper YaCy operation */
     private boolean mandatory = false;
     
@@ -275,6 +293,19 @@ public enum WebMapping implements MappingDeclaration {
             assert !ext.equals("d") || (type == MappingType.num_double && !multiValued) : name;
         }
         assert type.appropriateName(this) : "bad configuration: " + this.name();
+        this.facetname = "";
+        this.displayname = "";
+        this.facettype = "";
+        this.facetmodifier = "";
+    }
+    
+    private WebMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment, final boolean mandatory,
+                       final String facetname, final String displayname, final String facettype, final String facetmodifier) {
+        this(type, indexed, stored,  multiValued, omitNorms, searchable, comment, mandatory);
+        this.facetname = facetname;
+        this.displayname = displayname;
+        this.facettype = facettype;
+        this.facetmodifier = facetmodifier;
     }
     
     /**
@@ -345,6 +376,26 @@ public enum WebMapping implements MappingDeclaration {
         return this.mandatory;
     }
 
+    @Override
+    public final String getFacetname() {
+        return this.facetname;
+    }
+
+    @Override
+    public final String getDisplayname() {
+        return this.displayname;
+    }
+
+    @Override
+    public final String getFacettype() {
+        return this.facettype;
+    }
+    
+    @Override
+    public final String getFacetmodifier() {
+        return this.facetmodifier;
+    }
+    
     @Override
     public final JSONObject toJSON() {
     	JSONObject json = new JSONObject();

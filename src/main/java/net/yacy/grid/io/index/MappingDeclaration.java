@@ -51,6 +51,14 @@ public interface MappingDeclaration {
 
     public String getComment();
 
+    public String getFacetname();
+    
+    public String getDisplayname();
+    
+    public String getFacettype();
+
+    public String getFacetmodifier();
+
     /**
      * @return true when this field is mandatory for proper operation
      */
