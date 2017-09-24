@@ -59,6 +59,9 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
     
     @Override
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
+        String callback = call.get("callback", "");
+        boolean jsonp = callback != null && callback.length() > 0;
+        boolean minified = call.get("minified", false);
         String query = call.get("query", "");
         //String contentdom = call.get("contentdom", "text");
         int maximumRecords = call.get("maximumRecords", 10);
@@ -80,7 +83,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         
         JSONArray channels = new JSONArray();
         json.put("channels", channels);
-        JSONObject channel = new JSONObject();
+        JSONObject channel = new JSONObject(true);
         channels.put(channel);
         JSONArray items = new JSONArray();
         channel.put("title", "Search for " + query);
@@ -88,6 +91,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         channel.put("startIndex", "" + startRecord);
         channel.put("itemsPerPage", "" + items.length());
         channel.put("searchTerms", query);
+        channel.put("totalResults", Integer.toString(eq.hitCount));
         channel.put("items", items);
         eq.result.forEach(map -> {
             JSONObject hit = new JSONObject(true);
@@ -113,7 +117,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
             items.put(hit);
         });
         JSONArray navigation = new JSONArray();
-        json.put("navigation", navigation);
+        channel.put("navigation", navigation);
         
         Map<String, List<Map.Entry<String, Long>>> aggregations = eq.aggregations;
         for (Map.Entry<String, List<Map.Entry<String, Long>>> fe: aggregations.entrySet()) {
@@ -136,7 +140,14 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
             }
             navigation.put(facetobject);
         }
-        return new ServiceResponse(json);
+        
+        if (jsonp) {
+            StringBuilder sb = new StringBuilder(1024);
+            sb.append(callback).append("([").append(json.toString(minified ? 0 : 2)).append("]);");
+            return new ServiceResponse(sb.toString());
+        } else {
+            return new ServiceResponse(json);
+        }
     }
     
     /*
