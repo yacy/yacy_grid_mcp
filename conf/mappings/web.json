@@ -153,13 +153,13 @@
     "include_in_all": "true",
     "type": "geo_point"
   },
-  "coordinate_p_0_coordinate": {
+  "coordinate_lat_d": {
     "include_in_all": "true",
-    "type": "geo_point"
+    "type": "double"
   },
-  "coordinate_p_1_coordinate": {
+  "coordinate_lon_d": {
     "include_in_all": "true",
-    "type": "geo_point"
+    "type": "double"
   },
   "ip_s": {
     "include_in_all": "true",
