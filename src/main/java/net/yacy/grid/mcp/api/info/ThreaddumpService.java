@@ -41,6 +41,10 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+/**
+ * The Threadump Service
+ * call http://localhost:8100/yacy/grid/mcp/threaddump.txt
+ */
 public class ThreaddumpService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = -7095346222464124198L;
