@@ -1,6 +1,6 @@
 /**
- *  MapDBTableFactory
- *  Copyright 16.01.2017 by Michael Peter Christen, @0rb1t3r
+ *  ElasticsearchTableFactory
+ *  Copyright 03.12.2017 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -19,17 +19,18 @@
 
 package net.yacy.grid.io.db;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * factory for file-based tables
- */
-public class MapDBTableFactory implements TableFactory {
+import net.yacy.grid.io.index.ElasticsearchClient;
 
-    private File location;
+/**
+ * factory for elasticsearch-based tables
+ */
+public class ElasticsearchTableFactory implements TableFactory {
+
+    private ElasticsearchClient elastic;
     private Map<String, MapTable> tables;
     
     /**
@@ -37,9 +38,8 @@ public class MapDBTableFactory implements TableFactory {
      * given path as files
      * @param storageLocationPath the storage location for the tables
      */
-    public MapDBTableFactory(File storageLocationPath) {
-        this.location = storageLocationPath;
-        this.location.mkdirs();
+    public ElasticsearchTableFactory(ElasticsearchClient elastic) {
+        this.elastic = elastic;
         this.tables = new ConcurrentHashMap<>();
     }
     
@@ -58,7 +58,7 @@ public class MapDBTableFactory implements TableFactory {
         synchronized (this) {
             table = tables.get(databaseName);
             if (table != null) return table;
-            table = new MapTable(new MapDBHashMap(new File(this.location, databaseName)));
+            table = new MapTable(new ElasticsearchHashMap(this.elastic, databaseName));
             this.tables.put(databaseName, table);
             return table;
         }

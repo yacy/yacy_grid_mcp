@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.yacy.grid.io.db.MapDBTreeMap;
+import net.yacy.grid.io.db.MapDBSortedMap;
 import net.yacy.grid.io.db.MapStack;
 
 /**
@@ -80,7 +80,7 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
         synchronized (this) {
             queue = queues.get(queueName);
             if (queue != null) return queue;
-            queue = new StackQueue<byte[]>(new MapStack<byte[]>(MapDBTreeMap.newLongMap(new File(this.location, queueName))));
+            queue = new StackQueue<byte[]>(new MapStack<byte[]>(new MapDBSortedMap(new File(this.location, queueName))));
             this.queues.put(queueName, queue);
             return queue;
         }
@@ -98,12 +98,12 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
     	File location = new File("/tmp/queuetest");
     	location.mkdirs();
     	try {
-			StackQueue<byte[]> queue = new StackQueue<byte[]>(new MapStack<byte[]>(MapDBTreeMap.newLongMap(new File(location, "testqueue"))));
+			StackQueue<byte[]> queue = new StackQueue<byte[]>(new MapStack<byte[]>(new MapDBSortedMap(new File(location, "testqueue"))));
 			for (int i = 0; i < 10; i++) {
 				queue.send(("x" + i).getBytes());
 			}
 			queue.close();
-			queue = new StackQueue<byte[]>(new MapStack<byte[]>(MapDBTreeMap.newLongMap(new File(location, "testqueue"))));
+			queue = new StackQueue<byte[]>(new MapStack<byte[]>(new MapDBSortedMap(new File(location, "testqueue"))));
 			while (queue.available() > 0) {
 				System.out.println(new String(queue.receive(1000)));
 			}
