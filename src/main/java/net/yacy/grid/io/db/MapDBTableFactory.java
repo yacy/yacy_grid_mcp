@@ -58,7 +58,7 @@ public class MapDBTableFactory implements TableFactory {
         synchronized (this) {
             table = tables.get(databaseName);
             if (table != null) return table;
-            table = new MapTable(MapDBHashMap.newStringMap(new File(this.location, databaseName)));
+            table = new MapTable(new MapDBHashMap(new File(this.location, databaseName)));
             this.tables.put(databaseName, table);
             return table;
         }
