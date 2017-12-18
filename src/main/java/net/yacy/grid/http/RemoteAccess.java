@@ -130,7 +130,7 @@ public class RemoteAccess {
     public static Map<String, String> getQueryMap(String query) {
         Map<String, String> map = new HashMap<String, String>();
         if (query == null) return map;
-        String[] params = query.split("&");
+        String[] params = query.replaceAll("&amp;", "&").split("&");
         for (String param : params) {
             int p = param.indexOf('=');
             if (p >= 0) try {

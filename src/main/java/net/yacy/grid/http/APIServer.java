@@ -96,6 +96,8 @@ public class APIServer {
     
             ServerConnector connector = new ServerConnector(server);
             HttpConfiguration http_config = new HttpConfiguration();
+            http_config.setRequestHeaderSize(65536);
+            http_config.setResponseHeaderSize(65536);
             connector.addConnectionFactory(new HttpConnectionFactory(http_config));
             connector.setPort(port);
             connector.setName("httpd:" + port);

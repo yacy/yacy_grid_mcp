@@ -65,6 +65,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             private void initConnection() throws IOException {
                 FTPStorageFactory.this.ftp = new FTPClient();
                 FTPStorageFactory.this.ftp.setDataTimeout(3000);
+                FTPStorageFactory.this.ftp.setConnectTimeout(20000);
                 if (FTPStorageFactory.this.port < 0 || FTPStorageFactory.this.port == DEFAULT_PORT) {
                     FTPStorageFactory.this.ftp.connect(FTPStorageFactory.this.server);
                 } else {
