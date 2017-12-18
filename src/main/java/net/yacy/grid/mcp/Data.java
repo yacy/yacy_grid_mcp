@@ -27,6 +27,8 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +94,9 @@ public class Data {
             index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName.length() == 0 ? null : elasticsearchClusterName);
             index.createIndexIfNotExists(elasticsearchWebIndexName, 1 /*shards*/, 1 /*replicas*/);
             String mapping = new String(Files.readAllBytes(webMappingPath));
-            index.setMapping("web", mapping);
+            JSONObject mo = new JSONObject(new JSONTokener(mapping));
+            mo = mo.getJSONObject("mappings").getJSONObject("_default_");
+            index.setMapping("web", mo.toString());
             Data.logger.info("Connected elasticsearch at " + getHost(elasticsearchAddress));
         } catch (IOException | NoNodeAvailableException e) {
             index = null; // index not available

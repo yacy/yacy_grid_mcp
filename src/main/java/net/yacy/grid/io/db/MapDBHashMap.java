@@ -29,25 +29,16 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
-import org.mapdb.serializer.GroupSerializer;
 
-public class MapDBHashMap<K> implements CloseableMap<K, String> {
+public class MapDBHashMap implements CloseableMap<String, String> {
 
     private DB db;
-    private HTreeMap<K, String> hashMap;
-
-    public static MapDBHashMap<Long> newLongMap(File f) {
-        return new MapDBHashMap<Long>(f, Serializer.LONG);
-    }
+    private HTreeMap<String, String> hashMap;
     
-    public static MapDBHashMap<String> newStringMap(File f) {
-        return new MapDBHashMap<String>(f, Serializer.STRING);
-    }
-    
-    private MapDBHashMap(File f, GroupSerializer<K> keySerializer) {
+    public MapDBHashMap(File f) {
         this.db = DBMaker.fileDB(f).closeOnJvmShutdown().transactionEnable().make();
         this.hashMap = db.hashMap(f.getName())
-                .keySerializer(keySerializer)
+                .keySerializer(Serializer.STRING)
                 .valueSerializer(Serializer.STRING)
                 .createOrOpen();
     }
@@ -78,7 +69,7 @@ public class MapDBHashMap<K> implements CloseableMap<K, String> {
     }
 
     @Override
-    public String put(K key, String value) {
+    public String put(String key, String value) {
         return this.hashMap.put(key, value);
     }
 
@@ -88,7 +79,7 @@ public class MapDBHashMap<K> implements CloseableMap<K, String> {
     }
 
     @Override
-    public void putAll(Map<? extends K, ? extends String> m) {
+    public void putAll(Map<? extends String, ? extends String> m) {
         this.hashMap.putAll(m);
     }
 
@@ -99,7 +90,7 @@ public class MapDBHashMap<K> implements CloseableMap<K, String> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Set<K> keySet() {
+    public Set<String> keySet() {
         return this.hashMap.keySet();
     }
 
@@ -110,7 +101,7 @@ public class MapDBHashMap<K> implements CloseableMap<K, String> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Set<java.util.Map.Entry<K, String>> entrySet() {
+    public Set<java.util.Map.Entry<String, String>> entrySet() {
         return this.hashMap.entrySet();
     }
 

@@ -32,10 +32,10 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class MapStack<A> implements Stack<A> {
     
-    private NavigableMap<Long, A> map;
+    private NavigableCloseableMap<Long, A> map;
     private AtomicLong cc;
     
-    public MapStack(NavigableMap<Long, A> backedMap) {
+    public MapStack(NavigableCloseableMap<Long, A> backedMap) {
         this.map = backedMap;
         this.cc = new AtomicLong(0);
     }
@@ -97,7 +97,7 @@ public class MapStack<A> implements Stack<A> {
     
     public static void main(String[] args) {
         File f = new File("/tmp/stacktest");
-        MapStack<byte[]> stack = new MapStack<byte[]>(MapDBTreeMap.newLongMap(f));
+        MapStack<byte[]> stack = new MapStack<byte[]>(new MapDBSortedMap(f));
         try {stack.clear();} catch (IOException e) {}
         System.out.println(f.length());
         for (int i = 0; i < 10001; i++) {

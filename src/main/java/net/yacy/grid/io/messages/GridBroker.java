@@ -112,7 +112,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             Data.logger.info("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + ((message == null) ? "NULL" : new String(message, 0, Math.min(80, message.length), StandardCharsets.UTF_8).replace('\n', ' ')));
             return this.rabbitConnector;
         } catch (IOException e) {
-            Data.logger.debug("Broker/Client: rabbitmq fail", e);
+            if (!e.getMessage().contains("timeout")) Data.logger.debug("Broker/Client: rabbitmq fail", e);
         }
         if (this.mcpConnector == null && this.mcp_host != null) {
         	// try to connect again..
@@ -123,7 +123,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             Data.logger.info("Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "', message:" + ((message == null) ? "NULL" : new String(message, 0, Math.min(80, message.length), StandardCharsets.UTF_8).replace('\n', ' ')));
             return this.mcpConnector;
         } catch (IOException e) {
-            Data.logger.debug("Broker/Client: mcp fail", e);
+            if (!e.getMessage().contains("timeout")) Data.logger.debug("Broker/Client: mcp fail", e);
         }
         return super.send(serviceName, queueName, message);
     }
@@ -139,7 +139,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Server: received rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, Math.min(80, mc.getPayload().length), StandardCharsets.UTF_8).replace('\n', ' ')));
             return mc;
         } catch (IOException e) {
-            Data.logger.debug("rabbitmq fail", e);
+            if (!e.getMessage().contains("timeout")) Data.logger.debug("rabbitmq fail", e);
         }
     	if (this.mcpConnector == null && this.mcp_host != null) {
         	// try to connect again..
@@ -150,7 +150,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Server: received mcp service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, Math.min(80, mc.getPayload().length), StandardCharsets.UTF_8).replace('\n', ' ')));
             return mc;
         } catch (IOException e) {
-            Data.logger.debug("mcp fail", e);
+            if (!e.getMessage().contains("timeout")) Data.logger.debug("mcp fail", e);
         }
         MessageContainer<byte[]> mc = super.receive(serviceName, queueName, timeout);
         if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Server: received peer broker service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, Math.min(80, mc.getPayload().length), StandardCharsets.UTF_8).replace('\n', ' ')));
@@ -163,13 +163,13 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             AvailableContainer ac = new AvailableContainer(this.rabbitConnector, this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).available());
             return ac;
         } catch (IOException e) {
-            Data.logger.debug("rabbitmq fail", e);
+            if (!e.getMessage().contains("timeout")) Data.logger.debug("rabbitmq fail", e);
         }
         if (this.mcpConnector != null) try {
             AvailableContainer ac = new AvailableContainer(this.mcpConnector, this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).available());
             return ac;
         } catch (IOException e) {
-            Data.logger.debug("mcp fail", e);
+            if (!e.getMessage().contains("timeout")) Data.logger.debug("mcp fail", e);
         }
         return super.available(serviceName, queueName);
     }

@@ -26,9 +26,12 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.elasticsearch.common.lucene.search.function.FiltersFunctionScoreQuery.ScoreMode;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilder;
 import org.elasticsearch.index.search.MatchQuery.ZeroTermsQuery;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -78,7 +81,20 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         
         JSONObject json = new JSONObject(true);
         
-        QueryBuilder qb = QueryBuilders.multiMatchQuery(query, new String[]{"text_t"}).operator(Operator.AND).zeroTermsQuery(ZeroTermsQuery.ALL);
+        QueryBuilder qb = QueryBuilders
+                .multiMatchQuery(query)
+                .operator(Operator.AND)
+                .zeroTermsQuery(ZeroTermsQuery.ALL)
+                .field(WebMapping.host_organization_s.getSolrFieldName(), 1000.0f)
+                .field(WebMapping.url_paths_sxt.getSolrFieldName(), 500.0f)
+                .field(WebMapping.url_file_name_s.getSolrFieldName(), 200.0f)
+                .field(WebMapping.title.getSolrFieldName(), 100.0f)
+                .field(WebMapping.h1_txt.getSolrFieldName(), 50.0f)
+                .field(WebMapping.h2_txt.getSolrFieldName(), 10.0f)
+                .field(WebMapping.h3_txt.getSolrFieldName(), 6.0f)
+                .field(WebMapping.h4_txt.getSolrFieldName(), 3.0f)
+                .field(WebMapping.text_t.getSolrFieldName(), 1.0f);
+        
         net.yacy.grid.io.index.ElasticsearchClient.Query eq = Data.index.query("web", qb, timezoneOffset, startRecord, maximumRecords, facetLimit, facetFieldMapping.toArray(new WebMapping[facetFieldMapping.size()]));
         
         JSONArray channels = new JSONArray();

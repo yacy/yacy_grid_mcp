@@ -31,6 +31,7 @@ import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Service;
 import net.yacy.grid.tools.OS;
 
+// test: http://localhost:8100/yacy/grid/mcp/status.json
 public class StatusService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578478303032749479L;
