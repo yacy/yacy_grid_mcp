@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# to run this script, erlang must be installed
+# Mac OS: brew install erlang
+# debian/ubuntu: apt-get install erlang
+
 import os
 import time
 import socket
