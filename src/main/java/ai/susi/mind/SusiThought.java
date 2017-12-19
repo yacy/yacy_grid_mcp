@@ -230,6 +230,21 @@ public class SusiThought extends JSONObject {
     }
     
     /**
+     * select from the data array an object which is selected with an identifier
+     * @param data the data object
+     * @param where the key which shall appear in one of the data objects
+     * @param is the value which shall be assigned to that "where" key
+     * @return the object which contains the specific relation
+     */
+    public static JSONObject selectData(JSONArray data, String where, String is) {
+        for (int i = 0; i < data.length(); i++) {
+            JSONObject json = data.getJSONObject(i);
+            if (json.has(where) && json.get(where).equals(is)) return json;
+        }
+        return null;
+    }
+    
+    /**
      * Merging of data is required during an mind-meld.
      * To meld two thoughts, we combine their data arrays into one.
      * The resulting table has at maximum the length of both source tables combined.
