@@ -130,11 +130,14 @@ public class RemoteAccess {
     public static Map<String, String> getQueryMap(String query) {
         Map<String, String> map = new HashMap<String, String>();
         if (query == null) return map;
-        String[] params = query.replaceAll("\\.\\*&amp;", ".*").replaceAll("&amp;", "&").split("&");
+        String[] params = query.replaceAll("\\.\\*&amp;", ".*%26").replaceAll("&amp;", "&").split("&");
         for (String param : params) {
             int p = param.indexOf('=');
             if (p >= 0) try {
-                map.put(param.substring(0, p), URLDecoder.decode(param.substring(p + 1), "UTF-8"));
+                String key = param.substring(0, p); // single steps here to enhanced ability to debug this
+                String value = param.substring(p + 1);
+                value = URLDecoder.decode(value, "UTF-8");
+                map.put(key, value);
             } catch (UnsupportedEncodingException e) {}
         }  
         return map;  
