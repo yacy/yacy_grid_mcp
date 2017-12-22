@@ -26,7 +26,6 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.elasticsearch.common.lucene.search.function.FiltersFunctionScoreQuery.ScoreMode;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;

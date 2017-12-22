@@ -64,7 +64,7 @@ import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -116,7 +116,7 @@ public class ElasticsearchClient {
             if (p >= 0) try {
                 InetAddress i = InetAddress.getByName(a.substring(0, p));
                 int port = Integer.parseInt(a.substring(p + 1));
-                tc.addTransportAddress(new InetSocketTransportAddress(i, port));
+                tc.addTransportAddress(new TransportAddress(i, port));
             } catch (UnknownHostException e) {
                 Data.logger.warn("", e);
             }
@@ -230,10 +230,6 @@ public class ElasticsearchClient {
     public String clusterStats() {
         ClusterStatsResponse r = this.elasticsearchClient.admin().cluster().prepareClusterStats().get();
         return r.toString();
-    }
-
-    public Map<String, String> nodeSettings() {
-        return this.elasticsearchClient.settings().getAsMap();
     }
     
     /**
@@ -674,7 +670,7 @@ public class ElasticsearchClient {
         SearchHit[] hits = response.getHits().getHits();
         ArrayList<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
         for (SearchHit hit : hits) {
-            Map<String, Object> map = hit.getSource();
+            Map<String, Object> map = hit.getSourceAsMap();
             result.add(map);
         }
         return result;
@@ -700,7 +696,7 @@ public class ElasticsearchClient {
         SearchHit[] hits = response.getHits().getHits();
         if (hits.length == 0) return null;
         assert hits.length == 1;
-        Map<String, Object> map = hits[0].getSource();
+        Map<String, Object> map = hits[0].getSourceAsMap();
         return map;
     }
     
@@ -743,7 +739,7 @@ public class ElasticsearchClient {
             SearchHit[] hits = response.getHits().getHits();
             this.result = new ArrayList<Map<String, Object>>(hitCount);
             for (SearchHit hit: hits) {
-                Map<String, Object> map = hit.getSource();
+                Map<String, Object> map = hit.getSourceAsMap();
                 this.result.add(map);
             }
             
@@ -802,7 +798,7 @@ public class ElasticsearchClient {
         ArrayList<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
         SearchHit[] hits = response.getHits().getHits();
         for (SearchHit hit: hits) {
-            Map<String, Object> map = hit.getSource();
+            Map<String, Object> map = hit.getSourceAsMap();
             result.add(map);
         }
 
