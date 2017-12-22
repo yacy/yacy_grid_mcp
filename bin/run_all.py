@@ -20,10 +20,10 @@ def mkapps():
 if not checkportopen(9200):
     print "elasticsearch is not running"
     mkapps()
-    elasticversion = 'elasticsearch-5.5.2'
-    if not os.path.isfile(path_apphome + '/data/mcp-8100/apps/elasticsearch-5.5.2.tar.gz'):
+    elasticversion = 'elasticsearch-6.1.1'
+    if not os.path.isfile(path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz'):
         print('downloading ' + elasticversion)
-        urllib.urlretrieve ('https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.2.tar.gz', path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz')
+        urllib.urlretrieve ('https://artifacts.elastic.co/downloads/elasticsearch/' + elasticversion + '.tar.gz', path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz')
     if not os.path.isdir(path_apphome + '/data/mcp-8100/apps/elasticsearch'):
         print('decompressing' + elasticversion)
         os.system('tar xfz ' + path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz -C ' + path_apphome + '/data/mcp-8100/apps/')

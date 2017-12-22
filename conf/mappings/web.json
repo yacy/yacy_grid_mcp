@@ -1,685 +1,483 @@
 {"mappings":{"_default_":{"properties":{
 
   "url_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "last_modified": {
-    "include_in_all": "true",
     "type": "date"
   },
   "load_date_dt": {
-    "include_in_all": "true",
     "type": "date"
   },
   "content_type": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "title": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "host_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "size_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "failreason_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "failtype_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "httpstatus_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "url_file_ext_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "host_organization_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "inboundlinks_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "outboundlinks_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "images_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "fresh_date_dt": {
-    "include_in_all": "true",
     "type": "date"
   },
   "referrer_url_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "publisher_t": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "language_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "audiolinkscount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "videolinkscount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "applinkscount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "dates_in_content_dts": {
-    "include_in_all": "true",
     "type": "date"
   },
   "dates_in_content_count_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "startDates_dts": {
-    "include_in_all": "true",
     "type": "date"
   },
   "endDates_dts": {
-    "include_in_all": "true",
     "type": "date"
   },
   "references_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "references_internal_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "references_external_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "references_exthosts_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "crawldepth_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "harvestkey_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "http_unique_b": {
-    "include_in_all": "true",
     "type": "boolean"
   },
   "www_unique_b": {
-    "include_in_all": "true",
     "type": "boolean"
   },
   "coordinate_p": {
-    "include_in_all": "true",
     "type": "geo_point"
   },
   "coordinate_lat_d": {
-    "include_in_all": "true",
     "type": "double"
   },
   "coordinate_lon_d": {
-    "include_in_all": "true",
     "type": "double"
   },
   "ip_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "author": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "author_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "description_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "description_exact_signature_l": {
-    "include_in_all": "true",
     "type": "long"
   },
   "description_unique_b": {
-    "include_in_all": "true",
     "type": "boolean"
   },
   "keywords": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "charset_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "wordcount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "linkscount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "linksnofollowcount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "inboundlinkscount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "inboundlinksnofollowcount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "outboundlinkscount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "outboundlinksnofollowcount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "imagescount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "responsetime_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "text_t": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "synonyms_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "h1_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "h2_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "h3_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "h4_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "h5_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "h6_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "score_l": {
-    "include_in_all": "true",
     "type": "long"
   },
   "collection_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "csscount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "css_tag_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "css_url_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "scripts_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "scriptscount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "robots_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "metagenerator_t": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "inboundlinks_anchortext_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "outboundlinks_anchortext_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "icons_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "icons_rel_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "icons_sizes_sxt": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "images_text_t": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "images_alt_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "images_height_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "images_width_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "images_pixel_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "images_withalt_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "htags_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "canonical_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "canonical_equal_sku_b": {
-    "include_in_all": "true",
     "type": "boolean"
   },
   "refresh_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "li_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "licount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "dt_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "dtcount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "dd_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "ddcount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "article_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "articlecount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "bold_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "boldcount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "italic_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "italiccount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "underline_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "underlinecount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "flash_b": {
-    "include_in_all": "true",
     "type": "boolean"
   },
   "frames_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "framesscount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "iframes_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "iframesscount_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "hreflang_url_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "hreflang_cc_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "navigation_url_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "navigation_type_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "publisher_url_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "url_protocol_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "url_file_name_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "url_file_name_tokens_t": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "url_paths_count_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "url_paths_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "url_parameter_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "url_parameter_key_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "url_parameter_value_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "url_chars_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "host_dnc_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "host_organizationdnc_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "host_subdomain_s": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   },
   "host_extent_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "title_count_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "title_chars_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "title_words_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "description_count_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "description_chars_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "description_words_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "h1_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "h2_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "h3_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "h4_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "h5_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "h6_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "schema_org_breadcrumb_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "opengraph_title_t": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "opengraph_type_s": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "keyword"
   },
   "opengraph_url_s": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "keyword"
   },
   "opengraph_image_s": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "keyword"
   },
   "cr_host_count_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "cr_host_chance_d": {
-    "include_in_all": "true",
     "type": "double"
   },
   "cr_host_norm_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "rating_i": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "bold_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "italic_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "underline_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "ext_cms_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "ext_cms_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "ext_ads_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "ext_ads_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "ext_community_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "ext_community_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "ext_maps_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "ext_maps_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "ext_tracker_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "ext_tracker_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "ext_title_txt": {
-    "include_in_all": "true",
-    "type": "string"
+    "type": "text"
   },
   "ext_title_val": {
-    "include_in_all": "true",
     "type": "integer"
   },
   "vocabularies_sxt": {
-    "include_in_all": "true",
-    "index": "not_analyzed",
     "type": "keyword"
   }
 }}}}
