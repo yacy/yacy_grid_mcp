@@ -41,7 +41,7 @@ import com.google.common.collect.Multimap;
 import net.yacy.grid.tools.DateParser;
 
 
-public class ElasticsearchQuery {
+public class LoklakQuery {
     
     private final static Pattern term4ORPattern = Pattern.compile("(?:^| )(\\S*(?: OR \\S*)+)(?: |$)"); // Pattern.compile("(^\\s*(?: OR ^\\s*+)+)");
     private final static Pattern tokenizerPattern = Pattern.compile("([^\"]\\S*|\".+?\")\\s*"); // tokenizes Strings into terms respecting quoted parts
@@ -50,7 +50,7 @@ public class ElasticsearchQuery {
     public Date since;
     public Date until;
 
-    public ElasticsearchQuery(String q, int timezoneOffset) {
+    public LoklakQuery(String q, int timezoneOffset) {
         // default values for since and util
         this.since = new Date(0);
         this.until = new Date(Long.MAX_VALUE);

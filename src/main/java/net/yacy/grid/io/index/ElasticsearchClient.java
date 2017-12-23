@@ -70,10 +70,8 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.search.MatchQuery.ZeroTermsQuery;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -642,40 +640,6 @@ public class ElasticsearchClient {
         }
     }
 
-    /**
-     * Query with a string and boundaries.
-     * The string is supposed to be something that the user types in without a technical syntax.
-     * The mapping of the search terms into the index can be different according
-     * to a search type. Please see
-     * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html.
-     * A better way to do this would be the usage of a cursor.
-     * See the delete method to find out how cursors work.
-     * 
-     * @param q
-     *            a search query string
-     * @param operator
-     *            either AND or OR, the default operator for the query tokens
-     * @param offset
-     *            the first document number, 0 is the first one
-     * @param count
-     *            the number of documents to be returned
-     * @return a list of json objects, mapped as Map<String,Object> for each json
-     */
-    public List<Map<String, Object>> query(final String indexName, final String q, final Operator operator, final int offset, final int count, String... fieldNames) {
-        assert count > 1; // for smaller amounts, use the next method
-        SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName)
-            // .addFields("_all")
-            .setQuery(QueryBuilders.multiMatchQuery(q, fieldNames).operator(operator).zeroTermsQuery(ZeroTermsQuery.ALL)).setFrom(offset).setSize(count);
-        SearchResponse response = request.execute().actionGet();
-        SearchHit[] hits = response.getHits().getHits();
-        ArrayList<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
-        for (SearchHit hit : hits) {
-            Map<String, Object> map = hit.getSourceAsMap();
-            result.add(map);
-        }
-        return result;
-    }
-
     public Map<String, Object> query(final String indexName, final String field_name, String field_value) {
         if (field_value == null || field_value.length() == 0) return null;
         // prepare request
@@ -775,7 +739,6 @@ public class ElasticsearchClient {
             }
         }
     }
-    
     
     public List<Map<String, Object>> queryWithConstraints(final String indexName, final String fieldName, final String fieldValue, final Map<String, String> constraints, boolean latest) throws IOException {
         SearchRequestBuilder request = this.elasticsearchClient.prepareSearch(indexName)

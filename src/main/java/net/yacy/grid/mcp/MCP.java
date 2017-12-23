@@ -121,7 +121,7 @@ public class MCP {
                    if (date == null && json.has(WebMapping.fresh_date_dt.getSolrFieldName())) date = WebMapping.fresh_date_dt.getSolrFieldName();
                    String url = json.getString(WebMapping.url_s.getSolrFieldName());
                    String id = Digest.encodeMD5Hex(url);
-                   boolean created = Data.index.writeMap("web", json.toMap(), "crawler", id);
+                   boolean created = Data.getIndex().writeMap("web", json.toMap(), "crawler", id);
                    Data.logger.info("indexed (" + (created ? "created" : "updated")+ "): " + url);
                    //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
                    //bulk.add(be);
@@ -145,7 +145,7 @@ public class MCP {
         Service.initEnvironment(MCP_SERVICE, services, DATA_PATH);
         
         // start listener
-        if (Data.index != null) {
+        if (Data.getIndex() != null) {
             BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);
             new Thread(brokerListener).start();
         }

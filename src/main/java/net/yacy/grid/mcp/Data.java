@@ -50,7 +50,7 @@ public class Data {
     public static GridStorage gridStorage;
     public static Logger logger;
     public static Map<String, String> config;
-    public static ElasticsearchClient index;
+    private static ElasticsearchClient index = null; // will be initialized on-the-fly
     
     //public static Swagger swagger;
     
@@ -84,27 +84,6 @@ public class Data {
         // create storage
         File assetsPath = new File(gridServicePath, "assets");
         gridStorage = new GridStorage(assetsPath);
- 
-        // create index
-        String elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "localhost:9300");
-        String elasticsearchClusterName = config.getOrDefault("grid.elasticsearch.clusterName", "");
-        String elasticsearchWebIndexName= config.getOrDefault("grid.elasticsearch.webIndexName", "web");
-        Path webMappingPath = Paths.get("conf/mappings/web.json");
-        if (webMappingPath.toFile().exists()) try {
-            index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName.length() == 0 ? null : elasticsearchClusterName);
-            index.createIndexIfNotExists(elasticsearchWebIndexName, 1 /*shards*/, 1 /*replicas*/);
-            String mapping = new String(Files.readAllBytes(webMappingPath));
-            JSONObject mo = new JSONObject(new JSONTokener(mapping));
-            mo = mo.getJSONObject("mappings").getJSONObject("_default_");
-            index.setMapping("web", mo.toString());
-            Data.logger.info("Connected elasticsearch at " + getHost(elasticsearchAddress));
-        } catch (IOException | NoNodeAvailableException e) {
-            index = null; // index not available
-            e.printStackTrace();
-            Data.logger.info("Failed connecting elasticsearch at " + getHost(elasticsearchAddress) + ": " + e.getMessage(), e);
-        } else {
-            Data.logger.info("no web index mapping available, no connection to elasticsearch attempted");
-        }
         
         // connect outside services
         // first try to connect to the configured MCPs.
@@ -146,6 +125,32 @@ public class Data {
             }
         }
         
+    }
+    
+    public static ElasticsearchClient getIndex() {
+        if (index == null) {
+            // create index
+            String elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "localhost:9300");
+            String elasticsearchClusterName = config.getOrDefault("grid.elasticsearch.clusterName", "");
+            String elasticsearchWebIndexName= config.getOrDefault("grid.elasticsearch.webIndexName", "web");
+            Path webMappingPath = Paths.get("conf/mappings/web.json");
+            if (webMappingPath.toFile().exists()) try {
+                index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName.length() == 0 ? null : elasticsearchClusterName);
+                index.createIndexIfNotExists(elasticsearchWebIndexName, 1 /*shards*/, 1 /*replicas*/);
+                String mapping = new String(Files.readAllBytes(webMappingPath));
+                JSONObject mo = new JSONObject(new JSONTokener(mapping));
+                mo = mo.getJSONObject("mappings").getJSONObject("_default_");
+                index.setMapping("web", mo.toString());
+                Data.logger.info("Connected elasticsearch at " + getHost(elasticsearchAddress));
+            } catch (IOException | NoNodeAvailableException e) {
+                index = null; // index not available
+                e.printStackTrace();
+                Data.logger.info("Failed connecting elasticsearch at " + getHost(elasticsearchAddress) + ": " + e.getMessage(), e);
+            } else {
+                Data.logger.info("no web index mapping available, no connection to elasticsearch attempted");
+            }
+        }
+        return index;
     }
 
     public static String getHost(String address) {
