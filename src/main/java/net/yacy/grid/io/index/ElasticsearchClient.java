@@ -74,9 +74,12 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
@@ -664,47 +667,55 @@ public class ElasticsearchClient {
         return map;
     }
     
-    public Query query(final String indexName, final QueryBuilder queryBuilder, int timezoneOffset, int from, int resultCount, int aggregationLimit, WebMapping... aggregationFields) {
-        return new Query(indexName,  queryBuilder, timezoneOffset, from, resultCount, aggregationLimit, aggregationFields);
+    public Query query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, WebMapping... aggregationFields) {
+        return new Query(indexName,  queryBuilder, postFilter, hb, timezoneOffset, from, resultCount, aggregationLimit, aggregationFields);
     }
     
     public class Query {
         public List<Map<String, Object>> result;
+        public List<Map<String, HighlightField>> highlights;
         public int hitCount;
         public Map<String, List<Map.Entry<String, Long>>> aggregations;
 
         /**
-         * Search the local message cache using a elasticsearch query.
-         * @param q - the query, for aggregation this which should include a time frame in the form since:yyyy-MM-dd until:yyyy-MM-dd
-         * @param order_field - the field to order the results, i.e. Timeline.Order.CREATED_AT
+         * Searches using a elasticsearch query.
+         * @param indexName the name of the search index
+         * @param queryBuilder a query for the search
+         * @param postFilter a filter that does not affect aggregations
          * @param timezoneOffset - an offset in minutes that is applied on dates given in the query of the form since:date until:date
+         * @param from - a filter that is applied on the document date and excludes all documents older than from
          * @param resultCount - the number of messages in the result; can be zero if only aggregations are wanted
-         * @param dateHistogrammInterval - the date aggregation interval or null, if no aggregation wanted
          * @param aggregationLimit - the maximum count of facet entities, not search results
          * @param aggregationFields - names of the aggregation fields. If no aggregation is wanted, pass no (zero) field(s)
          */
-        public Query(final String indexName, final QueryBuilder queryBuilder, int timezoneOffset, int from, int resultCount, int aggregationLimit, WebMapping... aggregationFields) {
+        public Query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, WebMapping... aggregationFields) {
             // prepare request
             SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName)
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
                     .setQuery(queryBuilder)
                     .setFrom(from)
                     .setSize(resultCount);
+            if (hb != null) request.highlighter(hb);
+            //HighlightBuilder hb = new HighlightBuilder().field("message").preTags("<foo>").postTags("<bar>");
+            if (postFilter != null) request.setPostFilter(postFilter);
             request.clearRescorers();
             for (WebMapping field: aggregationFields) {
                 request.addAggregation(AggregationBuilders.terms(field.getSolrFieldName()).field(field.getSolrFieldName()).minDocCount(1).size(aggregationLimit));
             }
             // get response
             SearchResponse response = request.execute().actionGet();
-            hitCount = (int) response.getHits().getTotalHits();
+            SearchHits searchHits = response.getHits();
+            hitCount = (int) searchHits.getTotalHits();
                     
             // evaluate search result
             //long totalHitCount = response.getHits().getTotalHits();
-            SearchHit[] hits = response.getHits().getHits();
+            SearchHit[] hits = searchHits.getHits();
             this.result = new ArrayList<Map<String, Object>>(hitCount);
+            this.highlights = new ArrayList<Map<String, HighlightField>>(hitCount);
             for (SearchHit hit: hits) {
                 Map<String, Object> map = hit.getSourceAsMap();
                 this.result.add(map);
+                this.highlights.add(hit.getHighlightFields());
             }
             
             // evaluate aggregation

@@ -28,7 +28,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.json.XML;
 
 import net.yacy.grid.http.APIHandler;
@@ -69,17 +73,31 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         String q = call.get("q", "");
         int num = call.get("num", 10); // in GSA: the maximum value of this parameter is 1000
         int start = call.get("startRecord", call.get("start", 0)); // The index number of the results is 0-based
-        //String site = call.get("site", "");
+        String site = call.get("site", "");
+        String[] sites = site.length() == 0 ? new String[0] : site.split("\\|");
         int timezoneOffset = call.get("timezoneOffset", -1);
         String queryXML = XML.escape(q);
         
+        // prepare a query
+        QueryBuilder termQuery = YaCyQuery.simpleQueryBuilder(q);
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().must(termQuery);
+        if (sites.length > 0) {
+            BoolQueryBuilder collectionQuery = QueryBuilders.boolQuery();
+            for (String s: sites) collectionQuery.should(QueryBuilders.termQuery(WebMapping.collection_sxt.getSolrFieldName(), s));
+            qb.must(QueryBuilders.constantScoreQuery(collectionQuery));
+        }
+
+        HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getSolrFieldName()).preTags("").postTags("").fragmentSize(140);
+        ElasticsearchClient.Query query = Data.getIndex().query("web", qb, null, hb, timezoneOffset, start, num, 0);
+        List<Map<String, Object>> result = query.result;
+ 
         // no xml encoder here on purpose, we will try to not have such things into our software in the future!
         StringBuffer sb = new StringBuffer(2048);
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
         
         // GSP
         sb.append("<GSP VER=\"3.2\">\n");
-        sb.append("<!-- This is a Google Search Appliance API result, provided by YaCy. See https://developers.google.com/search-appliance/documentation/614/xml_reference -->\n");
+        sb.append("<!-- This is a Google Search Appliance API result, provided by YaCy Grid (see: https://github.com/yacy/yacy_grid_mcp). For the GSA protocol, see https://www.google.com/support/enterprise/static/gsa/docs/admin/74/gsa_doc_set/xml_reference/index.html -->\n");
         sb.append("<TM>0</TM>\n");
         sb.append("<Q>").append(queryXML).append("</Q>\n");
         sb.append("<PARAM name=\"output\" value=\"xml_no_dtd\" original_value=\"xml_no_dtd\"/>\n");
@@ -88,27 +106,29 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         sb.append("<PARAM name=\"q\" value=\"").append(queryXML).append("\" original_value=\"").append(queryXML).append("\"/>\n");
         sb.append("<PARAM name=\"start\" value=\"").append(Integer.toString(start)).append("\" original_value=\"").append(Integer.toString(start)).append("\"/>\n");
         sb.append("<PARAM name=\"num\" value=\"").append(Integer.toString(num)).append("\" original_value=\"").append(Integer.toString(num)).append("\"/>\n");
-        
+        sb.append("<PARAM name=\"site\" value=\"").append(XML.escape(site)).append("\" original_value=\"").append(XML.escape(site)).append("\"/>\n");
+       
         // RES
-        QueryBuilder qb = YaCyQuery.simpleQueryBuilder(q);
-        ElasticsearchClient.Query query = Data.getIndex().query("web", qb, timezoneOffset, start, num, 0);
-        List<Map<String, Object>> result = query.result;
-        
         sb.append("<RES SN=\"" + (start + 1) + "\" EN=\"" + (start + result.size()) + "\">\n"); //SN; The index number (1-based) of this search result; EN: Indicates the index (1-based) of the last search result returned in this result set.
-        sb.append("<M>").append(Integer.toString(result.size())).append("</M>\n");
+        sb.append("<M>").append(Integer.toString(query.hitCount)).append("</M>\n"); // this should show the estimated total number of results
         sb.append("<FI/>\n");
-        sb.append("<NB><NU>").append(getAPIPath()).append("?q=\"").append(queryXML).append("\"&amp;site=&amp;lr=&amp;ie=UTF-8&amp;oe=UTF-8&amp;output=xml_no_dtd&amp;client=&amp;access=&amp;sort=&amp;start=").append(Integer.toString(start)).append("&amp;num=").append(Integer.toString(num)).append("&amp;sa=N</NU></NB>\n");
+        //sb.append("<NB><NU>").append(getAPIPath()).append("?q=\"").append(queryXML).append("\"&amp;site=&amp;lr=&amp;ie=UTF-8&amp;oe=UTF-8&amp;output=xml_no_dtd&amp;client=&amp;access=&amp;sort=&amp;start=").append(Integer.toString(start)).append("&amp;num=").append(Integer.toString(num)).append("&amp;sa=N</NU></NB>\n");
         
         // List
         final AtomicInteger hit = new AtomicInteger(1);
-        result.forEach(map -> {
+        for (int hitc = 0; hitc < result.size(); hitc++) {
+            Map<String, Object> map = result.get(hitc);
+            Map<String, HighlightField> highlights = query.highlights.get(hitc);
             List<?> title = (List<?>) map.get(WebMapping.title.getSolrFieldName());
             String titleXML = title == null || title.isEmpty() ? "" : XML.escape(title.iterator().next().toString());
             Object link = map.get(WebMapping.url_s.getSolrFieldName());
             String linkXML = XML.escape(link.toString());
             String urlhash = Digest.encodeMD5Hex(link.toString());
+            
             List<?> description = (List<?>) map.get(WebMapping.description_txt.getSolrFieldName());
-            String descriptionXML = description == null || description.isEmpty() ? "" :XML.escape(description.iterator().next().toString());
+            String snippetDescription = description == null || description.isEmpty() ? "" : description.iterator().next().toString();
+            String snippetHighlight = highlights == null || highlights.isEmpty() ? "" : highlights.values().iterator().next().fragments()[0].toString();
+            String snippetXML = snippetDescription.length() > snippetHighlight.length() ? XML.escape(snippetDescription) : XML.escape(snippetHighlight);
             String last_modified = (String) map.get(WebMapping.last_modified.getSolrFieldName());
             Date last_modified_date = DateParser.iso8601MillisParser(last_modified);
             Integer size = (Integer) map.get(WebMapping.size_i.getSolrFieldName());
@@ -123,12 +143,12 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
 	        sb.append("<LANG>en</LANG>\n");
 	        sb.append("<U>").append(linkXML).append("</U>\n");
 	        sb.append("<UE>").append(linkXML).append("</UE>\n");
-	        sb.append("<S>").append(descriptionXML).append("</S>\n");
+	        sb.append("<S>").append(snippetXML).append("</S>\n");
 	        sb.append("<COLS>dht</COLS>\n");
 	        sb.append("<HAS><L/><C SZ=\"").append(size_string).append("\" CID=\"").append(urlhash).append("\" ENC=\"UTF-8\"/></HAS>\n");
 	        //sb.append("<ENT_SOURCE>yacy_v1.921_20170616_9248.tar.gz/amBzuRuUFyt6</ENT_SOURCE>\n");
 	        sb.append("</R>\n");
-        });
+        };
         
         // END RES GSP
         sb.append("</RES>\n");

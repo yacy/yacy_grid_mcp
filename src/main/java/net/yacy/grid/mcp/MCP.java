@@ -85,7 +85,7 @@ public class MCP {
     public static class IndexListener extends AbstractBrokerListener implements BrokerListener {
 
        public IndexListener(YaCyServices service) {
-			super(service, Runtime.getRuntime().availableProcessors());
+			super(service, 1); // limit the number of listeners because too much concurrency does not help here
 		}
 
        @Override

@@ -78,7 +78,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         
         QueryBuilder qb = YaCyQuery.simpleQueryBuilder(query);
         ElasticsearchClient.Query eq = Data.getIndex().query(
-                "web", qb, timezoneOffset, startRecord, maximumRecords,
+                "web", qb, null, null, timezoneOffset, startRecord, maximumRecords,
                 facetLimit, facetFieldMapping.toArray(new WebMapping[facetFieldMapping.size()]));
 
         JSONObject json = new JSONObject(true);

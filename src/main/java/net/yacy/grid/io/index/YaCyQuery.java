@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.http.HttpStatus;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -33,10 +34,12 @@ public class YaCyQuery {
     public final static String FACET_DEFAULT_PARAMETER = "host_s,url_file_ext_s,author_sxt,dates_in_content_dts,language_s,url_protocol_s,collection_sxt";
     private final static Map<WebMapping, Float> QUERY_DEFAULT_FIELDS = new HashMap<>();
     static {
+        QUERY_DEFAULT_FIELDS.put(WebMapping.url_s, 1000.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.host_organization_s, 1000.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.url_paths_sxt, 500.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.url_file_name_s, 200.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.title, 100.0f);
+        QUERY_DEFAULT_FIELDS.put(WebMapping.description_txt, 100.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.h1_txt, 50.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.h2_txt, 10.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.h3_txt, 6.0f);
@@ -45,19 +48,11 @@ public class YaCyQuery {
     }
 
     public static QueryBuilder simpleQueryBuilder(String q) {
-        QueryBuilder qb = QueryBuilders
+        final MultiMatchQueryBuilder qb = QueryBuilders
                 .multiMatchQuery(q)
                 .operator(Operator.AND)
-                .zeroTermsQuery(ZeroTermsQuery.ALL)
-                .field(WebMapping.host_organization_s.getSolrFieldName(), 1000.0f)
-                .field(WebMapping.url_paths_sxt.getSolrFieldName(), 500.0f)
-                .field(WebMapping.url_file_name_s.getSolrFieldName(), 200.0f)
-                .field(WebMapping.title.getSolrFieldName(), 100.0f)
-                .field(WebMapping.h1_txt.getSolrFieldName(), 50.0f)
-                .field(WebMapping.h2_txt.getSolrFieldName(), 10.0f)
-                .field(WebMapping.h3_txt.getSolrFieldName(), 6.0f)
-                .field(WebMapping.h4_txt.getSolrFieldName(), 3.0f)
-                .field(WebMapping.text_t.getSolrFieldName(), 1.0f);
+                .zeroTermsQuery(ZeroTermsQuery.ALL);
+        QUERY_DEFAULT_FIELDS.forEach((mapping, boost) -> qb.field(mapping.getSolrFieldName(), boost));
         return qb;
     }
     
