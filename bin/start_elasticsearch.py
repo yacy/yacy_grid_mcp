@@ -6,7 +6,7 @@ import socket
 import urllib
 import subprocess
 
-elasticversion = 'elasticsearch-6.1.1'
+elasticversion = 'elasticsearch-5.6.5'
     
 path_apphome = os.path.dirname(os.path.abspath(__file__)) + '/..'
 os.chdir(path_apphome)

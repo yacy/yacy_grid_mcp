@@ -33,6 +33,6 @@ dependencies {
     compile group: 'com.rabbitmq', name: 'amqp-client', version: '4.+'
     compile group: 'commons-net', name: 'commons-net', version: '3.+'
     compile group: 'jcifs', name: 'jcifs', version: '1.+'
-    compile group: 'org.elasticsearch.client', name: 'transport', version: '6.+'
+    compile group: 'org.elasticsearch.client', name: 'transport', version: '5.+'
     
 }

@@ -62,8 +62,10 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -117,7 +119,7 @@ public class ElasticsearchClient {
             if (p >= 0) try {
                 InetAddress i = InetAddress.getByName(a.substring(0, p));
                 int port = Integer.parseInt(a.substring(p + 1));
-                tc.addTransportAddress(new TransportAddress(i, port));
+                tc.addTransportAddress(new InetSocketTransportAddress(i, port));
             } catch (UnknownHostException e) {
                 Data.logger.warn("", e);
             }
@@ -535,16 +537,31 @@ public class ElasticsearchClient {
         // get the version number out of the json, if any is given
         Long version = (Long) jsonMap.remove("_version");
         // put this to the index
-        IndexResponse r = elasticsearchClient.prepareIndex(indexName, typeName, id).setSource(jsonMap)
-            //.setVersion(version == null ? 1 : version.longValue())
-            .setVersionType(VersionType.INTERNAL)
-            .execute()
-            .actionGet();
+        IndexResponse r = null;
+        try {
+            r = elasticsearchClient
+                .prepareIndex(indexName, typeName, id)
+                .setCreate(true)
+                .setSource(jsonMap)
+                //.setVersion(version == null ? 1 : version.longValue())
+                .setVersionType(VersionType.INTERNAL)
+                .execute()
+                .actionGet();
+        } catch (ClusterBlockException e) {
+            /*
+            elasticsearchClient.admin().indices().prepareUpdateSettings(indexName)   
+                .setSettings(Settings.builder()                     
+                    .put("index.number_of_replicas", 0)
+                )
+           .get();
+           */
+            throw e;
+        }
         if (version != null) jsonMap.put("_version", version); // to prevent side effects
         // documentation about the versioning is available at
         // https://www.elastic.co/blog/elasticsearch-versioning-support
         // TODO: error handling
-        boolean created = r.status() == RestStatus.CREATED; // true means created, false means updated
+        boolean created = r != null && r.status() == RestStatus.CREATED; // true means created, false means updated
         long duration = Math.max(1, System.currentTimeMillis() - start);
         long regulator = 0;
         /*
