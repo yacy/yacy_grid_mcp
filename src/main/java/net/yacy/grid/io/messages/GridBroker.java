@@ -135,9 +135,13 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
         }
     	if (this.rabbitConnector != null) try {
-            MessageContainer<byte[]> mc = new MessageContainer<byte[]>(this.rabbitConnector, this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).receive(timeout));
-            if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Server: received rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, Math.min(80, mc.getPayload().length), StandardCharsets.UTF_8).replace('\n', ' ')));
-            return mc;
+    	    Queue<byte[]> rabbitQueue = this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName));
+    	    byte[] message = rabbitQueue.receive(timeout);
+    	    if (message != null) {
+            MessageContainer<byte[]> mc = new MessageContainer<byte[]>(this.rabbitConnector, message);
+                if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Server: received rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, Math.min(80, mc.getPayload().length), StandardCharsets.UTF_8).replace('\n', ' ')));
+                return mc;
+    	    }
         } catch (IOException e) {
             if (!e.getMessage().contains("timeout")) Data.logger.debug("rabbitmq fail", e);
         }
@@ -146,7 +150,9 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         	connectMCP(this.mcp_host, this.mcp_port);
         }
         if (this.mcpConnector != null) try {
-            MessageContainer<byte[]> mc = new MessageContainer<byte[]>(this.mcpConnector, this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).receive(timeout));
+            Queue<byte[]> mcpQueue = this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName));
+            byte[] message = mcpQueue.receive(timeout);
+            MessageContainer<byte[]> mc = new MessageContainer<byte[]>(this.mcpConnector, message);
             if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Server: received mcp service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, Math.min(80, mc.getPayload().length), StandardCharsets.UTF_8).replace('\n', ' ')));
             return mc;
         } catch (IOException e) {

@@ -61,7 +61,8 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
     @Override
     public MessageContainer<byte[]> receive(Services service, QueueName queueName, long timeout) throws IOException {
         QueueFactory<byte[]> factory = getConnector(service);
-        byte[] message = factory.getQueue(queueName.name()).receive(timeout);
+        Queue<byte[]> mq = factory.getQueue(queueName.name());
+        byte[] message = mq.receive(timeout);
         return new MessageContainer<byte[]>(factory, message == null ? null : message);
     }
 

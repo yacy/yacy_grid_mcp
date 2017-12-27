@@ -88,7 +88,8 @@ public class Data {
         // connect outside services
         // first try to connect to the configured MCPs.
         // if that fails, try to make all connections self
-        String[] gridMcpAddress = config.get("grid.mcp.address").split(",");
+        String gridMcpAddressl = config.get("grid.mcp.address");
+        String[] gridMcpAddress = gridMcpAddressl.split(",");
         boolean mcpConnected = false;
         for (String address: gridMcpAddress) {
             if (
