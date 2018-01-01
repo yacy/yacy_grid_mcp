@@ -26,8 +26,8 @@ public class PeerStorage implements Storage<byte[]> {
 
     private StorageFactory<byte[]> factory;
     
-    public PeerStorage(File basePath) {
-        this.factory = new FilesystemStorageFactory(basePath);
+    public PeerStorage(File basePath, boolean deleteafterread) {
+        this.factory = new FilesystemStorageFactory(basePath, deleteafterread);
     }
 
     @Override

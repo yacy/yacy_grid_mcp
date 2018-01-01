@@ -30,8 +30,8 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
     private StorageFactory<byte[]> ftp = null;
     private StorageFactory<byte[]> mcp = null;
     
-    public GridStorage(File basePath) {
-        super(basePath);
+    public GridStorage(File basePath, boolean deleteafterread) {
+        super(basePath, deleteafterread);
         this.ftp = null;
     }
 

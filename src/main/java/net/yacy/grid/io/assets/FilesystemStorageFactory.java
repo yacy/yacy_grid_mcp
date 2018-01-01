@@ -26,8 +26,10 @@ import java.nio.file.Files;
 public class FilesystemStorageFactory implements StorageFactory<byte[]> {
 
     private final Storage<byte[]> storage;
+    private boolean deleteafterread;
     
-    FilesystemStorageFactory(File basePath) {
+    FilesystemStorageFactory(File basePath, boolean deleteafterread) {
+        this.deleteafterread = deleteafterread;
         this.storage = new Storage<byte[]>() {
 
             @Override
@@ -57,6 +59,13 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
                 File f = new File(basePath, path);
                 if (!f.exists()) throw new IOException("asset " + path + " does not exist");
                 byte[] b = Files.readAllBytes(f.toPath());
+                if (FilesystemStorageFactory.this.deleteafterread) try {
+                    f.delete();
+                    File parent = f.getParentFile();
+                    if (parent.list().length == 0) parent.delete();
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
                 return new Asset<byte[]>(FilesystemStorageFactory.this, b);
             }
 
