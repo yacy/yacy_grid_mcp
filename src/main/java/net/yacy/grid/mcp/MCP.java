@@ -27,10 +27,6 @@ import java.util.List;
 
 import javax.servlet.Servlet;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -48,6 +44,7 @@ import net.yacy.grid.mcp.api.info.ServicesService;
 import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.mcp.api.info.ThreaddumpService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
+import net.yacy.grid.mcp.api.messages.PeekService;
 import net.yacy.grid.mcp.api.messages.ReceiveService;
 import net.yacy.grid.mcp.api.messages.SendService;
 import net.yacy.grid.tools.Digest;
@@ -77,6 +74,7 @@ public class MCP {
             SendService.class,
             ReceiveService.class,
             AvailableService.class,
+            PeekService.class,
 
             // asset services
             //RetrieveService.class,

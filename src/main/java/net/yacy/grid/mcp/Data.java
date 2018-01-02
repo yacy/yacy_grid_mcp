@@ -60,7 +60,7 @@ public class Data {
         PatternLayout layout = new PatternLayout("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %p %c %x - %m%n");
         logger = Logger.getRootLogger();
         logger.removeAllAppenders();
-        logAppender = new LogAppender(layout, 10000);
+        logAppender = new LogAppender(layout, 100000);
         logger.addAppender(logAppender);
         logger.addAppender(new ConsoleAppender(layout));
         

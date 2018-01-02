@@ -19,6 +19,8 @@
 
 package net.yacy.grid.mcp.api.info;
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletResponse;
 
 import net.yacy.grid.http.APIHandler;
@@ -43,9 +45,12 @@ public class LogService extends ObjectAPIHandler implements APIHandler {
     
     @Override
     public ServiceResponse serviceImpl(Query post, HttpServletResponse response) {
-        final StringBuilder buffer = new StringBuilder(1000);
-        for (String line: Data.logAppender.getLines()) {
-            buffer.append(line);
+        int count = post.get("count", 10000);
+        final StringBuilder buffer = new StringBuilder(100000);
+        List<String> lines = Data.logAppender.getLines();
+        int start = Math.max(0, lines.size() - count);
+        for (int i = start; i < lines.size(); i++) {
+            buffer.append(lines.get(i)); // lines are stored with \n at end
         }
         return new ServiceResponse(buffer.toString());
     }
