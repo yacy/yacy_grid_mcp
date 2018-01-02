@@ -806,7 +806,7 @@ public class ElasticsearchClient {
             String mapping = new String(Files.readAllBytes(Paths.get("conf/mappings/web.json")));
             client.setMapping("test", mapping);
         } catch (IOException e) {
-            e.printStackTrace();
+            Data.logger.warn("", e);
         }
     	
     	client.close();

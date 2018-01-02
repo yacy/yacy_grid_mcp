@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import net.yacy.grid.mcp.Data;
+
 public class FilesystemStorageFactory implements StorageFactory<byte[]> {
 
     private final Storage<byte[]> storage;
@@ -64,7 +66,7 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
                     File parent = f.getParentFile();
                     if (parent.list().length == 0) parent.delete();
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    Data.logger.warn("", e);
                 }
                 return new Asset<byte[]>(FilesystemStorageFactory.this, b);
             }

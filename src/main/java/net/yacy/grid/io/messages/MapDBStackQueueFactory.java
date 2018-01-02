@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.yacy.grid.io.db.MapDBSortedMap;
 import net.yacy.grid.io.db.MapStack;
+import net.yacy.grid.mcp.Data;
 
 /**
  * Factory for a queue using a stack
@@ -109,7 +110,7 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
 			}
 			queue.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+            Data.logger.warn("", e);
 		}
     }
     

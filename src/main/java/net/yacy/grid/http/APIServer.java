@@ -63,7 +63,7 @@ public class APIServer {
             services.add(service);
             serviceMap.put(handler.getAPIName(), handler);
         } catch (InstantiationException | IllegalAccessException e) {
-            e.printStackTrace();
+            Data.logger.warn("", e);
         }
     }
     
@@ -79,7 +79,7 @@ public class APIServer {
                 return port + ap;
             } catch (IOException e) {
                 if (force || ap >= 16) {
-                    e.printStackTrace();
+                    Data.logger.warn("", e);
                     throw e;
                 }
                 ap++;
@@ -112,7 +112,6 @@ public class APIServer {
                     servletHandler.addServlet(service, ((APIHandler) (service.getConstructor().newInstance())).getAPIPath());
                 } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                     Data.logger.warn(service.getName() + " instantiation error", e);
-                    e.printStackTrace();
                 }
     
             ErrorHandler errorHandler = new ErrorHandler();
@@ -140,7 +139,7 @@ public class APIServer {
         try {
             server.join();
         } catch (Exception e) {
-            e.printStackTrace();
+            Data.logger.warn("", e);
         }
     }
     

@@ -81,7 +81,7 @@ public enum Service {
         try {
             config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
         } catch (IOException e1) {
-            e1.printStackTrace();
+            Data.logger.warn("", e1);
             System.exit(-1);
         }
         
@@ -91,7 +91,7 @@ public enum Service {
         try {
             config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
         } catch (IOException e1) {
-            e1.printStackTrace();
+            Data.logger.warn("", e1);
             System.exit(-1);
         }
 

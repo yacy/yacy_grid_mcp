@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import net.yacy.grid.mcp.Data;
+
 /**
  * A stack based on a map
  */
@@ -91,7 +93,7 @@ public class MapStack<A> implements Stack<A> {
             try {
                 ((Closeable) this.map).close();
             } catch (IOException e) {
-            	e.printStackTrace();
+                Data.logger.warn("", e);
             }
     }
     

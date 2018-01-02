@@ -76,8 +76,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 thread.join();
                 Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + thread.queueName + " terminated");
             } catch (InterruptedException e) {
-                e.printStackTrace();
-                Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + thread.queueName + " interrupted");
+                Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + thread.queueName + " interrupted", e);
             }
         });
     }
@@ -155,7 +154,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 try {
                     loadNextAction(action, process.getData()); // put that into the correct queue
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    Data.logger.warn("", e);
                 }
                 continue actionloop;
             }
@@ -187,15 +186,15 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 	                    try {
 							loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), data);
 						} catch (UnsupportedOperationException | JSONException e) {
-							e.printStackTrace();
+		                    Data.logger.warn("", e);
 						} catch (IOException e) {
-							e.printStackTrace();
+		                    Data.logger.warn("", e);
 							// do a re-try
 							try {Thread.sleep(10000);} catch (InterruptedException e1) {}
 							try {
 								loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), data);
 							} catch (UnsupportedOperationException | JSONException | IOException ee) {
-								e.printStackTrace();
+			                    Data.logger.warn("", e);
 							}
 						}
 	                }

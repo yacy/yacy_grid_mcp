@@ -30,6 +30,8 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
 
+import net.yacy.grid.mcp.Data;
+
 public class MapDBSortedMap implements NavigableCloseableMap<Long, byte[]>, CloseableMap<Long, byte[]> {
 
     private DB db;
@@ -154,7 +156,7 @@ public class MapDBSortedMap implements NavigableCloseableMap<Long, byte[]>, Clos
 			}
 			map.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+            Data.logger.warn("", e);
 		}
     }
 }

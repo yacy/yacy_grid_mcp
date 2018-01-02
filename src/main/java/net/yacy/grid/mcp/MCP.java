@@ -110,8 +110,7 @@ public class MCP {
         		   byte[] source = asset.getPayload();
         		   jsonlist = new JSONList(new ByteArrayInputStream(source));
         	   } catch (IOException e) {
-        		   e.printStackTrace();
-        		   Data.logger.warn("could not read asset from storage: " + sourceasset_path);
+        		   Data.logger.warn("could not read asset from storage: " + sourceasset_path, e);
         		   return false;
         	   }
         	   
@@ -130,13 +129,13 @@ public class MCP {
                    //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
                    //bulk.add(be);
                } catch (JSONException je) {
-            	   je.printStackTrace();
+                   Data.logger.warn("", je);
                }
                //Data.index.writeMapBulk("web", bulk);
                Data.logger.info("processed indexing message from queue: " + sourceasset_path);
                return true;
            } catch (Throwable e) {
-               e.printStackTrace();
+               Data.logger.warn("", e);
                return false;
            }
        }

@@ -187,7 +187,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             System.out.println(qc.getQueue("test2").receive(60000));
             qc.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            Data.logger.warn("", e);
         }
     }
 }

@@ -29,6 +29,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import net.yacy.grid.mcp.Data;
+
 public class DateParser {
 
     public final static long HOUR_MILLIS = 60 * 60 * 1000;
@@ -143,7 +145,7 @@ public class DateParser {
         try {
             System.out.println("post date to date     : " + parse(postDate, getTimezoneOffset()).getTime().getTime());
         } catch (ParseException e) {
-            e.printStackTrace();
+            Data.logger.warn("", e);
         }
     }
 }
