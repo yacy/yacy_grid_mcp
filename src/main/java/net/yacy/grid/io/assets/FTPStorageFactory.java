@@ -36,102 +36,99 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
     private String server, username, password;
     private int port;
     private Storage<byte[]> ftpClient;
-    private FTPClient ftp;
     
     public FTPStorageFactory(String server, int port, String username, String password) throws IOException {
         this.server = server;
         this.username = username == null ? "" : username;
         this.password = password == null ? "" : password;
         this.port = port;
-        this.ftp = null;
 
         this.ftpClient = new Storage<byte[]>() {
+
+            @Override
             public void checkConnection() throws IOException {
-                // check if there was any first initialization
-                if (FTPStorageFactory.this.ftp == null || !FTPStorageFactory.this.ftp.isConnected()) {
-                    initConnection();
-                }
-                // try to send a command
-                try {
-                    FTPStorageFactory.this.ftp.cwd("/");
-                } catch (Exception e) {
-                    // in case that the command causes an exception, try to re-connect
-                    if (FTPStorageFactory.this.ftp != null) try {FTPStorageFactory.this.ftp.disconnect();} catch (Throwable ee) {}
-                    initConnection();
-                    // with a connection established, test again a command
-                    FTPStorageFactory.this.ftp.cwd("/");
-                }
+                return;
             }
-            private void initConnection() throws IOException {
-                FTPStorageFactory.this.ftp = new FTPClient();
-                FTPStorageFactory.this.ftp.setDataTimeout(3000);
-                FTPStorageFactory.this.ftp.setConnectTimeout(20000);
+            
+            private FTPClient initConnection() throws IOException {
+                FTPClient ftp = new FTPClient();
+                ftp.setDataTimeout(3000);
+                ftp.setConnectTimeout(20000);
                 if (FTPStorageFactory.this.port < 0 || FTPStorageFactory.this.port == DEFAULT_PORT) {
-                    FTPStorageFactory.this.ftp.connect(FTPStorageFactory.this.server);
+                    ftp.connect(FTPStorageFactory.this.server);
                 } else {
-                    FTPStorageFactory.this.ftp.connect(FTPStorageFactory.this.server, FTPStorageFactory.this.port);
+                    ftp.connect(FTPStorageFactory.this.server, FTPStorageFactory.this.port);
                 }
-                FTPStorageFactory.this.ftp.enterLocalPassiveMode(); // the server opens a data port to which the client conducts data transfers
+                ftp.enterLocalPassiveMode(); // the server opens a data port to which the client conducts data transfers
                 int reply = ftp.getReplyCode();
                 if(!FTPReply.isPositiveCompletion(reply)) {
-                    if (FTPStorageFactory.this.ftp != null) try {FTPStorageFactory.this.ftp.disconnect();} catch (Throwable ee) {}
+                    if (ftp != null) try {ftp.disconnect();} catch (Throwable ee) {}
                     throw new IOException("bad connection to ftp server: " + reply);
                 }
-                if (!FTPStorageFactory.this.ftp.login(FTPStorageFactory.this.username, FTPStorageFactory.this.password)) {
-                    if (FTPStorageFactory.this.ftp != null) try {FTPStorageFactory.this.ftp.disconnect();} catch (Throwable ee) {}
+                if (!ftp.login(FTPStorageFactory.this.username, FTPStorageFactory.this.password)) {
+                    if (ftp != null) try {ftp.disconnect();} catch (Throwable ee) {}
                     throw new IOException("login failure");
                 }
-                FTPStorageFactory.this.ftp.setFileType(FTP.BINARY_FILE_TYPE);
-                FTPStorageFactory.this.ftp.setBufferSize(8192);
+                ftp.setFileType(FTP.BINARY_FILE_TYPE);
+                ftp.setBufferSize(8192);
+                return ftp;
             }
             
             @Override
             public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
                 long t0 = System.currentTimeMillis();
-                checkConnection();
-                long t1 = System.currentTimeMillis();
-                String file = cdPath(path);
-                long t2 = System.currentTimeMillis();
-                FTPStorageFactory.this.ftp.enterLocalPassiveMode();
-                boolean success = FTPStorageFactory.this.ftp.storeFile(file, new ByteArrayInputStream(asset));
-                long t3 = System.currentTimeMillis();
-                Data.logger.debug("ftp store: check connection =" + (t1 - t0) + ", cdPath = " + (t2 - t1) + ", store = " + (t3 - t2));
-                if (!success) throw new IOException("storage to path " + path + " was not successful");
-                if (FTPStorageFactory.this.ftp != null) try {FTPStorageFactory.this.ftp.disconnect();} catch (Throwable ee) {}
+                FTPClient ftp = initConnection();
+                try {
+                    long t1 = System.currentTimeMillis();
+                    String file = cdPath(ftp, path);
+                    long t2 = System.currentTimeMillis();
+                    ftp.enterLocalPassiveMode();
+                    boolean success = ftp.storeFile(file, new ByteArrayInputStream(asset));
+                    long t3 = System.currentTimeMillis();
+                    Data.logger.debug("ftp store: check connection =" + (t1 - t0) + ", cdPath = " + (t2 - t1) + ", store = " + (t3 - t2));
+                    if (!success) throw new IOException("storage to path " + path + " was not successful");
+                } catch (IOException e) {
+                    throw e;
+                } finally {
+                    if (ftp != null) try {ftp.disconnect();} catch (Throwable ee) {}
+                }
                 return FTPStorageFactory.this;
             }
 
             @Override
             public Asset<byte[]> load(String path) throws IOException {
-                checkConnection();
-                String file = cdPath(path);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                FTPStorageFactory.this.ftp.retrieveFile(file, baos);
-                if (FTPStorageFactory.this.ftp != null) try {FTPStorageFactory.this.ftp.disconnect();} catch (Throwable ee) {}
-                return new Asset<byte[]>(FTPStorageFactory.this, baos.toByteArray());
+                FTPClient ftp = initConnection();
+                ByteArrayOutputStream baos = null;
+                try {
+                    String file = cdPath(ftp, path);
+                    baos = new ByteArrayOutputStream();
+                    ftp.retrieveFile(file, baos);
+                } catch (IOException e) {
+                    throw e;
+                } finally {
+                    if (ftp != null) try {ftp.disconnect();} catch (Throwable ee) {}
+                }
+                return new Asset<byte[]>(FTPStorageFactory.this, baos == null ? null : baos.toByteArray());
             }
 
             @Override
             public void close() {
-                try {
-                    FTPStorageFactory.this.ftp.disconnect();
-                } catch (Throwable e) {
-                }
             }
-            private String cdPath(String path) throws IOException {
-                int success_code = FTPStorageFactory.this.ftp.cwd("/");
+            
+            private String cdPath(FTPClient ftp, String path) throws IOException {
+                int success_code = ftp.cwd("/");
                 if (success_code >= 300) throw new IOException("cannot cd into " + path + ": " + success_code);
                 if (path.length() == 0 || path.equals("/")) return "";
                 if (path.charAt(0) == '/') path = path.substring(1); // we consider that all paths are absolute to / (home)
                 int p;
                 while ((p = path.indexOf('/')) > 0) {
                     String dir = path.substring(0, p);
-                    int code = FTPStorageFactory.this.ftp.cwd(dir);
+                    int code = ftp.cwd(dir);
                     if (code >= 300) {
                         // path may not exist, try to create the path
-                        boolean success = FTPStorageFactory.this.ftp.makeDirectory(dir);
+                        boolean success = ftp.makeDirectory(dir);
                         if (!success) throw new IOException("unable to create directory " + dir + " for path " + path);
-                        code = FTPStorageFactory.this.ftp.cwd(dir);
+                        code = ftp.cwd(dir);
                         if (code >= 300) throw new IOException("unable to cwd into directory " + dir + " for path " + path);
                     }
                     path = path.substring(p + 1);
