@@ -129,4 +129,7 @@ public class Query {
     public HttpServletRequest getRequest() {
         return this.request;
     }
+    public String toString() {
+        return this.qm == null ? "" : this.qm.toString().replaceAll(", ", "&").replaceFirst("\\{", "").replaceAll("\\}", "").replaceAll(" ", "%20");
+    }
 }
