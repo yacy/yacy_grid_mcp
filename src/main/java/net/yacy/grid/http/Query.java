@@ -57,6 +57,12 @@ public class Query {
         this.qm = qm;
         return this;
     }
+    public String getClientHost() {
+        return this.request.getRemoteHost();
+    }
+    public boolean isLocalhostAccess() {
+        return RemoteAccess.isLocalhost(getClientHost());
+    }
     public String get(String key) {
         String val = this.request == null ? null : this.request.getParameter(key);
         if (val == null && this.qm.containsKey(key)) return new String(this.qm.get(key), StandardCharsets.UTF_8);
