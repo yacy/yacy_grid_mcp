@@ -43,6 +43,7 @@ import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
 import net.yacy.grid.mcp.api.index.GSASearchService;
 import net.yacy.grid.mcp.api.index.YaCySearchService;
+import net.yacy.grid.mcp.api.info.LogService;
 import net.yacy.grid.mcp.api.info.ServicesService;
 import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.mcp.api.info.ThreaddumpService;
@@ -70,6 +71,7 @@ public class MCP {
             ServicesService.class,
             StatusService.class,
             ThreaddumpService.class,
+            LogService.class,
 
             // message services
             SendService.class,
