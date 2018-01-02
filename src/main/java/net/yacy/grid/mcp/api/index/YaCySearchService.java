@@ -131,6 +131,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
             facetobject.put("min", "0");
             facetobject.put("max", "0");
             facetobject.put("mean", "0");
+            facetobject.put("count", fe.getValue().size());
             JSONArray elements = new JSONArray();
             facetobject.put("elements", elements);
             for (Map.Entry<String, Long> element: fe.getValue()) {
