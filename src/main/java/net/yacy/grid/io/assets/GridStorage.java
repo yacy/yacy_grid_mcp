@@ -80,7 +80,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         if (this.ftp != null) try {
             return this.ftp.getStorage().store(path, asset);
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to the ftp server failed", e);
+            Data.logger.debug("trying to connect to the ftp server failed");
         }
         if (this.mcp != null) try {
             return this.mcp.getStorage().store(path, asset);
@@ -95,7 +95,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         if (this.ftp != null) try {
             return this.ftp.getStorage().load(path);
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to the ftp server failed", e);
+            Data.logger.debug("trying to connect to the ftp server failed");
             }
         if (this.mcp != null) try {
             return this.mcp.getStorage().load(path);
