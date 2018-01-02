@@ -27,6 +27,10 @@ import java.util.List;
 
 import javax.servlet.Servlet;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -137,9 +141,12 @@ public class MCP {
            }
        }
     }
-    
+
     public static void main(String[] args) {
         // initialize environment variables
+        System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
+        
+        // start server
         List<Class<? extends Servlet>> services = new ArrayList<>();
         services.addAll(Arrays.asList(MCP_SERVICES));
         Service.initEnvironment(MCP_SERVICE, services, DATA_PATH);

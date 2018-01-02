@@ -26,11 +26,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.assets.GridStorage;
@@ -55,7 +56,10 @@ public class Data {
     //public static Swagger swagger;
     
     public static void init(File serviceData, Map<String, String> cc) {
-        logger = LoggerFactory.getLogger(Data.class);
+        logger = Logger.getRootLogger();
+        logger.removeAllAppenders();
+        logger.addAppender(new ConsoleAppender(new PatternLayout("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %p %c %x - %m%n")));
+        
         config = cc;
         /*
         try {
