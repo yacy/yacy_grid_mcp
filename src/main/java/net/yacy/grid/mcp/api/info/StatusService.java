@@ -1,5 +1,5 @@
 /**
- *  StatusServlet
+ *  StatusService
  *  Copyright 27.02.2015 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
@@ -31,7 +31,7 @@ import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Service;
 import net.yacy.grid.tools.OS;
 
-// test: http://localhost:8100/yacy/grid/mcp/status.json
+// test: http://localhost:8100/yacy/grid/mcp/info/status.json
 public class StatusService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578478303032749479L;
@@ -39,7 +39,7 @@ public class StatusService extends ObjectAPIHandler implements APIHandler {
     
     @Override
     public String getAPIPath() {
-        return "/yacy/grid/mcp/" + NAME + ".json";
+        return "/yacy/grid/mcp/info/" + NAME + ".json";
     }
     
     @Override

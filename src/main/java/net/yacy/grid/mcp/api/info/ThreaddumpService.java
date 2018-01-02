@@ -1,5 +1,5 @@
 /**
- *  ThreaddumpServlet
+ *  ThreaddumpService
  *  Copyright 03.07.2015 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
 
 /**
  * The Threadump Service
- * call http://localhost:8100/yacy/grid/mcp/threaddump.txt
+ * call http://localhost:8100/yacy/grid/mcp/info/threaddump.txt
  */
 public class ThreaddumpService extends ObjectAPIHandler implements APIHandler {
 
@@ -62,7 +62,7 @@ public class ThreaddumpService extends ObjectAPIHandler implements APIHandler {
 
     @Override
     public String getAPIPath() {
-        return "/yacy/grid/mcp/" + NAME + ".txt";
+        return "/yacy/grid/mcp/info/" + NAME + ".txt";
     }
     
     @Override
