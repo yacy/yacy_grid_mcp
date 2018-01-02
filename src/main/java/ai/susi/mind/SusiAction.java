@@ -27,6 +27,7 @@ import java.util.Collection;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import net.yacy.grid.mcp.Data;
 import net.yacy.grid.tools.JSONList;
 
 /**
@@ -214,7 +215,7 @@ public class SusiAction {
         try {
 			return new JSONList(jsonlist);
 		} catch (IOException e) {
-			e.printStackTrace();
+            Data.logger.warn("error in getJSONListAsset with name " + name, e);
 			return null;
 		}
     }
