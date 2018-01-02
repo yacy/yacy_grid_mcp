@@ -69,7 +69,6 @@ public class Data {
         try {
             swagger = new Swagger(new File(new File(approot, "conf"), "swagger.json"));
         } catch (UnsupportedEncodingException | FileNotFoundException e) {
-            e.printStackTrace();
         }
         */
         //swagger.getServlets().forEach(path -> System.out.println(swagger.getServlet(path).toString()));
@@ -154,7 +153,6 @@ public class Data {
                 Data.logger.info("Connected elasticsearch at " + getHost(elasticsearchAddress));
             } catch (IOException | NoNodeAvailableException e) {
                 index = null; // index not available
-                e.printStackTrace();
                 Data.logger.info("Failed connecting elasticsearch at " + getHost(elasticsearchAddress) + ": " + e.getMessage(), e);
             } else {
                 Data.logger.info("no web index mapping available, no connection to elasticsearch attempted");

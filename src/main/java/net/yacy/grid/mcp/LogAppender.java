@@ -41,8 +41,12 @@ public class LogAppender extends AppenderSkeleton {
 
     @Override
     public void append(LoggingEvent event) {
+        if (event == null) return;
         String line = this.layout.format(event);
         this.lines.add(line);
+        if (event.getThrowableInformation() != null) {
+            for (String t: event.getThrowableStrRep()) this.lines.add(t + "\n");
+        }
         while (this.lines.size() > this.maxlines) {
             this.lines.remove(0);
         }
