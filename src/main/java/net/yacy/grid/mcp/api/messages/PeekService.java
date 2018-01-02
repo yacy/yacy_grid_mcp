@@ -20,10 +20,12 @@
 package net.yacy.grid.mcp.api.messages;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import net.yacy.grid.QueueName;
 import net.yacy.grid.YaCyServices;
@@ -32,16 +34,17 @@ import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.messages.AvailableContainer;
+import net.yacy.grid.io.messages.MessageContainer;
 import net.yacy.grid.mcp.Data;
 
 /**
  * test: call
- * http://127.0.0.1:8100/yacy/grid/mcp/messages/available.json?serviceName=crawler&queueName=webcrawler_00
+ * http://127.0.0.1:8100/yacy/grid/mcp/messages/peek.json?serviceName=crawler&queueName=webcrawler_00
  */
-public class AvailableService extends ObjectAPIHandler implements APIHandler {
+public class PeekService extends ObjectAPIHandler implements APIHandler {
 
-    private static final long serialVersionUID = 8578478303031749879L;
-    public static final String NAME = "available";
+    private static final long serialVersionUID = 8578478303031749889L;
+    public static final String NAME = "peek";
     
     @Override
     public String getAPIPath() {
@@ -55,11 +58,33 @@ public class AvailableService extends ObjectAPIHandler implements APIHandler {
         JSONObject json = new JSONObject(true);
         if (serviceName.length() > 0 && queueName.length() > 0) {
             try {
-                AvailableContainer available = Data.gridBroker.available(YaCyServices.valueOf(serviceName), new QueueName(queueName));
+                YaCyServices service = YaCyServices.valueOf(serviceName);
+                QueueName queue = new QueueName(queueName);
+                AvailableContainer available = Data.gridBroker.available(service, queue);
+                int ac = available.getAvailable();
                 String url = available.getFactory().getConnectionURL();
-                json.put(ObjectAPIHandler.AVAILABLE_KEY, available.getAvailable());
-                json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
+                if (ac > 0) {
+                    // load one message and send it right again to prevent that it is lost
+                    MessageContainer<byte[]> message = Data.gridBroker.receive(service, queue, 3000);
+                    // message can be null if a timeout occurred
+                    if (message == null) {
+                        json.put(ObjectAPIHandler.SUCCESS_KEY, false);
+                        json.put(ObjectAPIHandler.COMMENT_KEY, "timeout");
+                    } else {
+                        // send it again asap!
+                        Data.gridBroker.send(service, queue, message.getPayload());
+                        // evaluate whats inside
+                        String payload = message.getPayload() == null ? null : new String(message.getPayload(), StandardCharsets.UTF_8);
+                        JSONObject payloadjson = payload == null ? null : new JSONObject(new JSONTokener(payload));
+                        json.put(ObjectAPIHandler.AVAILABLE_KEY, ac);
+                        json.put(ObjectAPIHandler.MESSAGE_KEY, payloadjson == null ? new JSONObject() : payloadjson);
+                        json.put(ObjectAPIHandler.SUCCESS_KEY, true);
+                    }
+                } else {
+                    json.put(ObjectAPIHandler.AVAILABLE_KEY, 0);
+                    json.put(ObjectAPIHandler.SUCCESS_KEY, true);
+                }
             } catch (IOException e) {
                 json.put(ObjectAPIHandler.SUCCESS_KEY, false);
                 json.put(ObjectAPIHandler.COMMENT_KEY, e.getMessage());
