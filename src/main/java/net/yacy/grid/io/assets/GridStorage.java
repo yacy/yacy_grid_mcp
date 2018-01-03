@@ -42,7 +42,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
             this.ftp = ftp;
             return true;
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to the ftp server at " + host + ":" + port + " failed");
+            Data.logger.debug("GridStorage.connectFTP/4 trying to connect to the ftp server at " + host + ":" + port + " failed");
             return false;
         }
     }
@@ -55,7 +55,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
             this.ftp = ftp;
             return true;
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to the ftp server failed", e);
+            Data.logger.debug("GridStorage.connectFTP/1 trying to connect to the ftp server failed", e);
             return false;
         }
     }
@@ -70,37 +70,53 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
             this.mcp.getStorage().checkConnection();
             return true;
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to a Storage over MCP at " + host + ":" + port + " failed");
+            Data.logger.debug("GridStorage.connectMCP trying to connect to a Storage over MCP at " + host + ":" + port + " failed");
             return false;
         }
     }
     
     @Override
     public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
-        if (this.ftp != null) try {
-            return this.ftp.getStorage().store(path, asset);
-        } catch (IOException e) {
-            Data.logger.debug("trying to connect to the ftp server failed");
+        if (this.ftp != null) {
+            retryloop: for (int retry = 0; retry < 40; retry++) {
+                try {
+                    return this.ftp.getStorage().store(path, asset);
+                } catch (IOException e) {
+                    String cause = e.getMessage();
+                    // possible causes:
+                    // 421 too many connections. possible counteractions: in apacheftpd, set i.e. ftpserver.user.anonymous.maxloginnumber=200 and ftpserver.user.anonymous.maxloginperip=200
+                    if (cause.indexOf("421") >= 0) {try {Thread.sleep(retry * 500);} catch (InterruptedException e1) {} continue retryloop;}
+                    Data.logger.debug("GridStorage.StorageFactory trying to connect to the ftp server failed: " + cause, e);
+                }
+            }
         }
         if (this.mcp != null) try {
             return this.mcp.getStorage().store(path, asset);
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to the mcp failed", e);
+            Data.logger.debug("GridStorage.StorageFactory trying to connect to the mcp failed: " + e.getMessage(), e);
         }
         return super.store(path, asset);
     }
 
     @Override
     public Asset<byte[]> load(String path) throws IOException {
-        if (this.ftp != null) try {
-            return this.ftp.getStorage().load(path);
-        } catch (IOException e) {
-            Data.logger.debug("trying to connect to the ftp server failed");
+        if (this.ftp != null) {
+            retryloop: for (int retry = 0; retry < 40; retry++) {
+                try {
+                    return this.ftp.getStorage().load(path);
+                } catch (IOException e) {
+                    String cause = e.getMessage();
+                    // possible causes:
+                    // 421 too many connections. possible counteractions: in apacheftpd, set i.e. ftpserver.user.anonymous.maxloginnumber=200 and ftpserver.user.anonymous.maxloginperip=200
+                    if (cause.indexOf("421") >= 0) {try {Thread.sleep(retry * 500);} catch (InterruptedException e1) {} continue retryloop;}
+                    Data.logger.debug("GridStorage.load trying to connect to the ftp server failed: " + cause, e);
+                }
             }
+        }
         if (this.mcp != null) try {
             return this.mcp.getStorage().load(path);
         } catch (IOException e) {
-            Data.logger.debug("trying to connect to the mcp failed", e);
+            Data.logger.debug("GridStorage.load trying to connect to the mcp failed: " + e.getMessage(), e);
         }
         return super.load(path);
     }

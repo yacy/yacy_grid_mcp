@@ -80,9 +80,9 @@ public class ClientConnection {
     public static final byte[] CRLF = {CR, LF};
 
     public final static RequestConfig defaultRequestConfig = RequestConfig.custom()
-            .setSocketTimeout(60000)
-            .setConnectTimeout(60000)
-            .setConnectionRequestTimeout(60000)
+            .setSocketTimeout(600000)
+            .setConnectTimeout(600000)
+            .setConnectionRequestTimeout(600000)
             .setContentCompressionEnabled(true)
             .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
             .build();
