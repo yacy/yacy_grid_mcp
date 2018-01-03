@@ -124,9 +124,13 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         private String queueName;
         public RabbitMessageQueue(String queueName) throws IOException {
             this.queueName = queueName;
-            RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, null);
+            connect();
         }
 
+        private void connect() throws IOException {
+            RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, null);
+        }
+        
         @Override
         public void checkConnection() throws IOException {
             available();
@@ -137,9 +141,10 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             try {
                 channel.basicPublish(DEFAULT_EXCHANGE, this.queueName, MessageProperties.PERSISTENT_BASIC, message);
             } catch (Exception e) {
-                // try to reconnect
-                RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, null);
+                // try to reconnect and re-try once...
+                connect();
                 channel.basicPublish(DEFAULT_EXCHANGE, this.queueName, MessageProperties.PERSISTENT_BASIC, message);
+                // if that fails, it simply throws an exception
             }
             return this;
         }
@@ -148,6 +153,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         public byte[] receive(long timeout) throws IOException {
             if (timeout <= 0) timeout = Long.MAX_VALUE;
             long termination = timeout <= 0 || timeout == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeout;
+            Throwable ee = null;
             while (System.currentTimeMillis() < termination) {
                 try {
                     GetResponse response = channel.basicGet(this.queueName, true);
@@ -155,10 +161,12 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                     //Data.logger.warn("receive failed: response empty");
                 } catch (Throwable e) {
                     Data.logger.warn("receive failed: " + e.getMessage(), e);
+                    ee = e;
                 }
                 try {Thread.sleep(1000);} catch (InterruptedException e) {return null;}
             }
-            return null;
+            if (ee == null) return null;
+            throw new IOException(ee.getMessage());
         }
 
         @Override

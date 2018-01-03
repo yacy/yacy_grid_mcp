@@ -1,5 +1,5 @@
 /**
- *  LocalBroker
+ *  PeerBroker
  *  Copyright 14.01.2017 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
@@ -27,6 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
 
+/**
+ * Peer Broker implementation of the broker function.
+ * This implements a locally running queue broker based on mapdb tables.
+ */
 public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]> {
 
     private File basePath;
@@ -37,12 +41,20 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
         this.clientConnector = new ConcurrentHashMap<>();
     }
     
+    /**
+     * take a connector from a cached map of connectors.
+     * The connectors are created on-the-fly and they hold a database handle for the embedded db
+     * @param service
+     * @return a queue factory for the mapdb instance of the queue
+     */
     private QueueFactory<byte[]> getConnector(Services service) {
         QueueFactory<byte[]> c = this.clientConnector.get(service);
         if (c != null)  return c;
         synchronized (this) {
+            // to overcome synchronization issues, check map entry again
             c = this.clientConnector.get(service);
             if (c != null)  return c;
+            // create a mapdb for this queue. The db is now the queue
             File clientPath = new File(this.basePath, service.name());
             clientPath.mkdirs();
             c = new MapDBStackQueueFactory(clientPath);
