@@ -25,6 +25,7 @@ public enum ShardingMethod {
     LEAST_FILLED,  // take the one which has least entries
     HASH,          // use a hashing key to determine a queue
     LOOKUP,        // lookup a queue with the hashing key; if not determined yet, use LEAST_FILLED
+    BALANCE,       // like LOOKUP, but if LOOKUP would return a queue with most entries and there exist one queue with none entries, the queue is switched to the empty one
     RANDOM,        // just a random queue
     FIRST;          // the last queue
     

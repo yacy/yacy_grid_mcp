@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
+import net.yacy.grid.mcp.Data;
 
 public abstract class AbstractBroker<A> implements Broker<A> {
 
@@ -47,15 +48,18 @@ public abstract class AbstractBroker<A> implements Broker<A> {
 
     @Override
     public QueueName queueName(final Services service, final QueueName[] queueNames, final ShardingMethod shardingMethod, final String hashingKey) throws IOException {
+        if (queueNames.length == 1) return queueNames[0];
         switch (shardingMethod) {
             case ROUND_ROBIN:
                 return queueNames[roundRobin(service, queueNames)];
             case LEAST_FILLED:
-                return queueNames[leastFilled(service, queueNames)];
+                return queueNames[leastFilled(available(service, queueNames))];
             case HASH:
                 return queueNames[hash(service, queueNames, hashingKey)];
             case LOOKUP:
                 return queueNames[lookup(service, queueNames, hashingKey)];
+            case BALANCE:
+                return queueNames[balance(service, queueNames, hashingKey)];
             case RANDOM:
                 return queueNames[random(service, queueNames)];
             case FIRST:
@@ -91,13 +95,27 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         return latestCounter.get();
     }
     
-    private int leastFilled(final Services service, final QueueName[] queueNames) throws IOException {
-        if (queueNames.length == 1) return 0;
-        AvailableContainer[] ac = available(service, queueNames);
+    private int leastFilled(AvailableContainer[] ac) throws IOException {
         int index = -1;
         int leastAvailable = Integer.MAX_VALUE;
         for (int i = 0; i < ac.length; i++) {
-            if (ac[i].getAvailable() < leastAvailable) { leastAvailable = ac[i].getAvailable(); index = i; }
+            if (ac[i].getAvailable() < leastAvailable) {
+                leastAvailable = ac[i].getAvailable();
+                index = i;
+                if (leastAvailable == 0) return index; // it does not get smaller 
+            }
+        }
+        return index;
+    }
+    
+    private int mostFilled(AvailableContainer[] ac) throws IOException {
+        int index = -1;
+        int mostAvailable = 0;
+        for (int i = 0; i < ac.length; i++) {
+            if (ac[i].getAvailable() > mostAvailable) {
+                mostAvailable = ac[i].getAvailable();
+                index = i;
+            }
         }
         return index;
     }
@@ -114,8 +132,35 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         }
         Integer lookupIndex = lookupMap.get(hashingKey);
         if (lookupIndex == null) {
-            lookupIndex = leastFilled(service, queueNames);
+            AvailableContainer[] available = available(service, queueNames);
+            lookupIndex = queueNames.length == 1 ? 0 : leastFilled(available);
             lookupMap.put(hashingKey, lookupIndex);
+        }
+        return lookupIndex;
+    }
+    
+    private int balance(final Services service, final QueueName[] queueNames, final String hashingKey) throws IOException {
+        Map<String, Integer> lookupMap = this.leastFilledLookup.get(service);
+        if (lookupMap == null) {
+            lookupMap = new ConcurrentHashMap<>();
+            this.leastFilledLookup.put(service, lookupMap);
+        }
+        Integer lookupIndex = lookupMap.get(hashingKey);
+        AvailableContainer[] available = available(service, queueNames);
+        int leastFilled = leastFilled(available);
+        if (lookupIndex == null) {
+            // find a new queue with least entries
+            lookupIndex = queueNames.length == 1 ? 0 : leastFilled;
+            lookupMap.put(hashingKey, lookupIndex);
+        } else {
+            // check if this index is identical with the one with most entries
+            // and if an empty queue exist
+            if (available[leastFilled].getAvailable() == 0 && mostFilled(available) == lookupIndex.intValue()) {
+                // switch to leastFilled
+                Data.logger.info("AbstractBroker switching " + hashingKey + " from " + lookupIndex + " to " + leastFilled);
+                lookupIndex = leastFilled;
+                lookupMap.put(hashingKey, lookupIndex);
+            }
         }
         return lookupIndex;
     }
