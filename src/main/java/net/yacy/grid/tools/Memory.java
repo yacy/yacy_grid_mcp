@@ -20,13 +20,18 @@
 package net.yacy.grid.tools;
 
 import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 
 import net.yacy.grid.mcp.Data;
 
 public class Memory {
 
     private static final Runtime runtime = Runtime.getRuntime();
+    public final static OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+    public final static ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+    public final static float shortmemthreshold = 0.9f;
 
     /**
      * memory that is free without increasing of total memory taken from os
@@ -41,14 +46,14 @@ public class Memory {
      * @return bytes
      */
     public static final long available() {
-        return maxMemory() - total() + free();
+        return assigned() - total() + free();
     }
 
     /**
      * maximum memory the Java virtual will allocate machine; may vary over time in some cases
      * @return bytes
      */
-    public static final long maxMemory() {
+    public static final long assigned() {
         return runtime.maxMemory(); // can be Long.MAX_VALUE if unlimited
     }
 
@@ -81,7 +86,7 @@ public class Memory {
      * @return the system load or a negative number if the load is not available
      */
     public static double load() {
-        return ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
+        return osBean.getSystemLoadAverage();
     }
     
     /**
@@ -89,7 +94,7 @@ public class Memory {
      * @return the number of deadlocked threads
      */
     public static long deadlocks() {
-        long[] deadlockIDs = ManagementFactory.getThreadMXBean().findDeadlockedThreads();
+        long[] deadlockIDs = threadBean.findDeadlockedThreads();
         if (deadlockIDs == null) return 0;
         return deadlockIDs.length;
     }
@@ -105,4 +110,29 @@ public class Memory {
             Data.logger.warn("DEADLOCKREPORT: " + ti.toString());
         }
     }
+    
+    private static long lastGCtime = 0;
+
+    /**
+     * run garbage collection
+     * @return true if gc was actually triggered, false if no gc was done because time to latest gc was too short
+     */
+    public final synchronized static boolean lazyGC() {
+        long now = System.currentTimeMillis();
+        if (now - lastGCtime > 10000) {
+            System.gc();
+            lastGCtime = now;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return if last request failed
+     */
+    public static boolean shortStatus() {
+        lazyGC();
+        return used() >= assigned() * shortmemthreshold ;
+    }
+
 }

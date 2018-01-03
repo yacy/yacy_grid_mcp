@@ -39,6 +39,7 @@ import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.messages.MessageContainer;
+import net.yacy.grid.tools.Memory;
 
 public abstract class AbstractBrokerListener implements BrokerListener {
     
@@ -96,15 +97,23 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 if (Data.gridBroker == null) {
                     try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                 } else try {
-                	// wait until an execution thread is available
-                	while (AbstractBrokerListener.this.threadPool.getActiveCount() >= AbstractBrokerListener.this.threads)
-    					try {Thread.sleep(100);} catch (InterruptedException e1) {}
-                	
-                	// wait until message arrives
+                    // wait until short memory status disappears
+                    while (Memory.shortStatus()) {
+                        Data.logger.info("AbstractBrokerListener.QueueListener short memory status, waiting. assigned = " + Memory.assigned() + ", used = " + Memory.used());
+                        try {Thread.sleep(3000);} catch (InterruptedException e1) {}
+                    }
+                    
+                	    // wait until an execution thread is available
+                    while (AbstractBrokerListener.this.threadPool.getActiveCount() >= AbstractBrokerListener.this.threads) {
+                        Data.logger.info("AbstractBrokerListener.QueueListener thread pool full, waiting. assigned = " + AbstractBrokerListener.this.threads + ", active = " + AbstractBrokerListener.this.threadPool.getActiveCount());
+    					    try {Thread.sleep(1000);} catch (InterruptedException e1) {}
+                    }
+                    
+                	    // wait until message arrives
                     MessageContainer<byte[]> mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000);
                     if (mc == null || mc.getPayload() == null || mc.getPayload().length == 0) {
                         try {Thread.sleep(1000);} catch (InterruptedException ee) {}
-                    	continue runloop;
+                        continue runloop;
                     }
                     handleMessage(mc);
                 } catch (JSONException e) {

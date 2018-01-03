@@ -25,10 +25,10 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.tools.Memory;
 
 import java.lang.Thread.State;
 import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
@@ -52,8 +52,6 @@ public class ThreaddumpService extends ObjectAPIHandler implements APIHandler {
     private static final long startupTime = System.currentTimeMillis();
     private static final String multiDumpFilter = ".*((java.net.DatagramSocket.receive)|(java.lang.Thread.getAllStackTraces)|(java.net.SocketInputStream.read)|(java.net.ServerSocket.accept)|(java.net.Socket.connect)).*";
     private static final Pattern multiDumpFilterPattern = Pattern.compile(multiDumpFilter);
-    private static ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-    private static OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
     public static final String NAME = "threaddump";
     
     private static final Thread.State[] ORDERED_STATES = new Thread.State[]{
@@ -73,28 +71,29 @@ public class ThreaddumpService extends ObjectAPIHandler implements APIHandler {
 
         // Thread dump
         final Date dt = new Date();
-        Runtime runtime = Runtime.getRuntime();
 
         int keylen = 30;
         bufferappend(buffer, "************* Start Thread Dump " + dt + " *******************");
         bufferappend(buffer, "");
-        bufferappend(buffer, keylen, "Assigned   Memory", runtime.maxMemory());
-        bufferappend(buffer, keylen, "Used       Memory", runtime.totalMemory() - runtime.freeMemory());
-        bufferappend(buffer, keylen, "Available  Memory", runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory());
-        bufferappend(buffer, keylen, "Cores", runtime.availableProcessors());
+        bufferappend(buffer, keylen, "Assigned   Memory", Memory.assigned());
+        bufferappend(buffer, keylen, "Used       Memory", Memory.used());
+        bufferappend(buffer, keylen, "Available  Memory", Memory.available());
+        bufferappend(buffer, keylen, "Short Status", Memory.shortStatus() ? "true" : "false");
+        bufferappend(buffer, keylen, "Short Threshold", Float.toString(Memory.shortmemthreshold));
+        bufferappend(buffer, keylen, "Cores", Memory.cores());
         bufferappend(buffer, keylen, "Active Thread Count", Thread.activeCount());
-        bufferappend(buffer, keylen, "Total Started Thread Count", threadBean.getTotalStartedThreadCount());
-        bufferappend(buffer, keylen, "Peak Thread Count", threadBean.getPeakThreadCount());
-        bufferappend(buffer, keylen, "System Load Average", osBean.getSystemLoadAverage());
+        bufferappend(buffer, keylen, "Total Started Thread Count", Memory.threadBean.getTotalStartedThreadCount());
+        bufferappend(buffer, keylen, "Peak Thread Count", Memory.threadBean.getPeakThreadCount());
+        bufferappend(buffer, keylen, "System Load Average", Memory.osBean.getSystemLoadAverage());
         long runtimeseconds = (System.currentTimeMillis() - startupTime) / 1000;
         int runtimeminutes = (int) (runtimeseconds / 60); runtimeseconds = runtimeseconds % 60;
         int runtimehours = runtimeminutes / 60; runtimeminutes = runtimeminutes % 60;
         bufferappend(buffer, keylen, "Runtime", runtimehours + "h " + runtimeminutes + "m " + runtimeseconds + "s");
         // print system beans
-        for (Method method : osBean.getClass().getDeclaredMethods()) try {
+        for (Method method : Memory.osBean.getClass().getDeclaredMethods()) try {
             method.setAccessible(true);
             if (method.getName().startsWith("get") && Modifier.isPublic(method.getModifiers())) {
-                bufferappend(buffer, keylen, method.getName(), method.invoke(osBean));
+                bufferappend(buffer, keylen, method.getName(), method.invoke(Memory.osBean));
             }
         } catch (Throwable e) {}
         
@@ -227,7 +226,7 @@ public class ThreaddumpService extends ObjectAPIHandler implements APIHandler {
                 StackTraceElement ste;
                 String tracename = "";
                 final State threadState = thread.getState();
-                final ThreadInfo info = threadBean.getThreadInfo(thread.getId());
+                final ThreadInfo info = Memory.threadBean.getThreadInfo(thread.getId());
                 if (threadState != null && info != null && (stateIn == null || stateIn.equals(threadState)) && stackTraceElements.length > 0) {
                     final StringBuilder sb = new StringBuilder(3000);
                     final String threadtitle = tracename + "THREAD: " + thread.getName() + " " + (thread.isDaemon()?"daemon":"") + " id=" + thread.getId() + " " + threadState.toString() + (info.getLockOwnerId() >= 0 ? " lock owner =" + info.getLockOwnerId() : "");
