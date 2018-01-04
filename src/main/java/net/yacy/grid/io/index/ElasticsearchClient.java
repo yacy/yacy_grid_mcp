@@ -66,7 +66,6 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -95,6 +94,7 @@ public class ElasticsearchClient {
     private static double throttling_factor = 1.0d; // factor applied on update duration if both thresholds are passed
     
     public final static BulkWriteResult EMPTY_BULK_RESULT = new BulkWriteResult();
+    public final static VersionType DEFAULT_VERSION_TYPE = VersionType.INTERNAL;
     
     private Client elasticsearchClient;
 
@@ -544,7 +544,7 @@ public class ElasticsearchClient {
                 .setCreate(true)
                 .setSource(jsonMap)
                 //.setVersion(version == null ? 1 : version.longValue())
-                .setVersionType(VersionType.INTERNAL)
+                .setVersionType(DEFAULT_VERSION_TYPE)
                 .execute()
                 .actionGet();
         } catch (ClusterBlockException e) {
@@ -595,7 +595,7 @@ public class ElasticsearchClient {
             bulkRequest.add(
                     elasticsearchClient.prepareIndex(indexName, be.type, be.id).setSource(be.jsonMap)
                         //.setVersion(be.version == null ? 1 : be.version.longValue())
-                        .setVersionType(VersionType.INTERNAL));
+                        .setVersionType(DEFAULT_VERSION_TYPE));
         }
         BulkResponse bulkResponse = bulkRequest.get();
         BulkWriteResult result = new BulkWriteResult();
