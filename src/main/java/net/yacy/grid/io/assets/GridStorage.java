@@ -109,6 +109,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
                     // possible causes:
                     // 421 too many connections. possible counteractions: in apacheftpd, set i.e. ftpserver.user.anonymous.maxloginnumber=200 and ftpserver.user.anonymous.maxloginperip=200
                     if (cause.indexOf("421") >= 0) {try {Thread.sleep(retry * 500);} catch (InterruptedException e1) {} continue retryloop;}
+                    if (cause.indexOf("refused") >= 0) break retryloop; // this will not go anywhere
                     Data.logger.debug("GridStorage.load trying to connect to the ftp server failed: " + cause, e);
                 }
             }
