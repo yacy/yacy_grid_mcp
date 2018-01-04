@@ -74,13 +74,21 @@ public abstract class AbstractBroker<A> implements Broker<A> {
 
     @Override
     public abstract AvailableContainer available(final Services service, final QueueName queueName) throws IOException;
-
+    
+    private AvailableContainer[] acbuffer = null;
+    private long actime = 0;
+    
     @Override
     public AvailableContainer[] available(final Services service, final QueueName[] queueNames) throws IOException {
+        long now = System.currentTimeMillis();
+        if (acbuffer != null && now - actime < 10000) return acbuffer;
+        
         AvailableContainer[] ac = new AvailableContainer[queueNames.length];
         for (int i = 0; i < queueNames.length; i++) {
             ac[i] = available(service, queueNames[i]);
         }
+        acbuffer = ac;
+        actime = now;
         return ac;
     }
 
@@ -125,6 +133,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     }
     
     private int lookup(final Services service, final QueueName[] queueNames, final String hashingKey) throws IOException {
+        if (queueNames.length == 1) return 0;
         Map<String, Integer> lookupMap = this.leastFilledLookup.get(service);
         if (lookupMap == null) {
             lookupMap = new ConcurrentHashMap<>();
@@ -133,13 +142,14 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         Integer lookupIndex = lookupMap.get(hashingKey);
         if (lookupIndex == null) {
             AvailableContainer[] available = available(service, queueNames);
-            lookupIndex = queueNames.length == 1 ? 0 : leastFilled(available);
+            lookupIndex = leastFilled(available);
             lookupMap.put(hashingKey, lookupIndex);
         }
         return lookupIndex;
     }
     
     private int balance(final Services service, final QueueName[] queueNames, final String hashingKey) throws IOException {
+        if (queueNames.length == 1) return 0;
         Map<String, Integer> lookupMap = this.leastFilledLookup.get(service);
         if (lookupMap == null) {
             lookupMap = new ConcurrentHashMap<>();
@@ -150,7 +160,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         int leastFilled = leastFilled(available);
         if (lookupIndex == null) {
             // find a new queue with least entries
-            lookupIndex = queueNames.length == 1 ? 0 : leastFilled;
+            lookupIndex = leastFilled;
             lookupMap.put(hashingKey, lookupIndex);
         } else {
             // check if this index is identical with the one with most entries
