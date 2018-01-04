@@ -43,7 +43,6 @@ import javax.net.ssl.SSLSession;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.CookieSpecs;
@@ -53,7 +52,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -86,11 +84,23 @@ public class ClientConnection {
             .setContentCompressionEnabled(true)
             .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
             .build();
+
+    private final static CloseableHttpClient httpClient = getClosableHttpClient();
+
+    
+    public final static CloseableHttpClient getClosableHttpClient() {
+        return HttpClients.custom()
+                .useSystemProperties()
+                .setConnectionManager(getConnctionManager())
+                .setDefaultRequestConfig(defaultRequestConfig)
+                .setMaxConnPerRoute(200)
+                .setMaxConnTotal(500)
+                .build();
+    }
     
     private int status;
     public BufferedInputStream inputStream;
     private Map<String, List<String>> header;
-    private CloseableHttpClient httpClient;
     private HttpRequestBase request;
     private HttpResponse httpResponse;
     private ContentType contentType;
@@ -107,24 +117,10 @@ public class ClientConnection {
      * @param useAuthentication
      * @throws IOException
      */
-    public ClientConnection(String urlstring, boolean useAuthentication) throws IOException {
-        this.httpClient = HttpClients.custom()
-            .useSystemProperties()
-            .setConnectionManager(getConnctionManager(useAuthentication))
-            .setDefaultRequestConfig(defaultRequestConfig)
-            .build();
+    public ClientConnection(String urlstring) throws IOException {
         this.request = new HttpGet(urlstring);
         this.request.setHeader("User-Agent", ClientIdentification.getAgent(ClientIdentification.yacyInternetCrawlerAgentName).userAgent);
         this.init();
-    }
-    
-    /**
-     * GET request
-     * @param urlstring
-     * @throws IOException
-     */
-    public ClientConnection(String urlstring) throws IOException {
-        this(urlstring, true);
     }
     
     /**
@@ -136,11 +132,6 @@ public class ClientConnection {
      * @throws IOException
      */
     public ClientConnection(String urlstring, Map<String, byte[]> map, boolean useAuthentication) throws ClientProtocolException, IOException {
-        this.httpClient = HttpClients.custom()
-            .useSystemProperties()
-            .setConnectionManager(getConnctionManager(useAuthentication))
-            .setDefaultRequestConfig(defaultRequestConfig)
-            .build();
         this.request = new HttpPost(urlstring);        
         MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
         entityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
@@ -163,35 +154,29 @@ public class ClientConnection {
         this(urlstring, map, true);
     }
     
-    public static PoolingHttpClientConnectionManager getConnctionManager(boolean useAuthentication){
+    public static PoolingHttpClientConnectionManager getConnctionManager(){
 
-        boolean trustAllCerts = true; // well, yes now, maybe we change our opinion later
-        
         Registry<ConnectionSocketFactory> socketFactoryRegistry = null;
-        if(trustAllCerts){
-            try {
-                SSLConnectionSocketFactory trustSelfSignedSocketFactory = new SSLConnectionSocketFactory(
-                            new SSLContextBuilder().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build(),
-                            new TrustAllHostNameVerifier());
-                socketFactoryRegistry = RegistryBuilder
-                        .<ConnectionSocketFactory> create()
-                        .register("http", new PlainConnectionSocketFactory())
-                        .register("https", trustSelfSignedSocketFactory)
-                        .build();
-            } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
-                Data.logger.warn("", e);
-            }
+        try {
+            SSLConnectionSocketFactory trustSelfSignedSocketFactory = new SSLConnectionSocketFactory(
+                        new SSLContextBuilder().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build(),
+                        new TrustAllHostNameVerifier());
+            socketFactoryRegistry = RegistryBuilder
+                    .<ConnectionSocketFactory> create()
+                    .register("http", new PlainConnectionSocketFactory())
+                    .register("https", trustSelfSignedSocketFactory)
+                    .build();
+        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+            Data.logger.warn("", e);
         }
         
-        PoolingHttpClientConnectionManager cm = (trustAllCerts && socketFactoryRegistry != null) ? 
+        PoolingHttpClientConnectionManager cm = (socketFactoryRegistry != null) ? 
                 new PoolingHttpClientConnectionManager(socketFactoryRegistry):
                 new PoolingHttpClientConnectionManager();
         
         // twitter specific options
-        cm.setMaxTotal(200);
-        cm.setDefaultMaxPerRoute(20);
-        HttpHost twitter = new HttpHost("twitter.com", 443);
-        cm.setMaxPerRoute(new HttpRoute(twitter), 50);
+        cm.setMaxTotal(2000);
+        cm.setDefaultMaxPerRoute(200);
         
         return cm;
     }
@@ -249,14 +234,11 @@ public class ClientConnection {
      * @return the redirect url for the given urlstring
      * @throws IOException if the url is not redirected
      */
-    public static String getRedirect(String urlstring, boolean useAuthentication) throws IOException {
+    public static String getRedirect(String urlstring) throws IOException {
         HttpGet get = new HttpGet(urlstring);
         get.setConfig(RequestConfig.custom().setRedirectsEnabled(false).build());
         get.setHeader("User-Agent", ClientIdentification.getAgent(ClientIdentification.yacyInternetCrawlerAgentName).userAgent);
-        CloseableHttpClient httpClient = HttpClients.custom()
-                .setConnectionManager(getConnctionManager(useAuthentication))
-                .setDefaultRequestConfig(defaultRequestConfig)
-                .build();
+        CloseableHttpClient httpClient = getClosableHttpClient();
         HttpResponse httpResponse = httpClient.execute(get);
         HttpEntity httpEntity = httpResponse.getEntity();
         if (httpEntity != null) {
@@ -278,17 +260,6 @@ public class ClientConnection {
         }
     }
     
-    /**
-     * get a redirect for an url: this method shall be called if it is expected that a url
-     * is redirected to another url. This method then discovers the redirect.
-     * @param urlstring
-     * @return
-     * @throws IOException
-     */
-    public static String getRedirect(String urlstring) throws IOException {
-        return getRedirect(urlstring, true);
-    }
-    
     public void close() {
         HttpEntity httpEntity = this.httpResponse.getEntity();
         if (httpEntity != null) EntityUtils.consumeQuietly(httpEntity);
@@ -299,9 +270,9 @@ public class ClientConnection {
         }
     }
     
-    public static void download(String source_url, File target_file, boolean useAuthentication) {
+    public static void download(String source_url, File target_file) {
         try {
-            ClientConnection connection = new ClientConnection(source_url, useAuthentication);
+            ClientConnection connection = new ClientConnection(source_url);
             try {
                 OutputStream os = new BufferedOutputStream(new FileOutputStream(target_file));
                 int count;
@@ -324,7 +295,7 @@ public class ClientConnection {
     }
     
     public static void load(String source_url, File target_file) {
-        download(source_url, target_file, true);
+        download(source_url, target_file);
     }
     
     /**
