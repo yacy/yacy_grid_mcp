@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
+//import java.util.concurrent.Executors;
+//import java.util.concurrent.ThreadPoolExecutor;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -47,18 +47,18 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     private final Services service;
     private final QueueName[] queueNames;
     private final int threads;
-    private final ThreadPoolExecutor threadPool;
+    //private final ThreadPoolExecutor threadPool;
 
     public AbstractBrokerListener(final YaCyServices service, final int threads) {
-    	this(service, service.getQueues(), threads);
+        this(service, service.getQueues(), threads);
     }
     
     public AbstractBrokerListener(final Services service, final QueueName[] queueNames, final int threads) {
-    	this.service = service;
-    	this.queueNames = queueNames;
-    	this.threads = threads;
-    	this.threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(this.threads);
-    	this.shallRun = true;
+        this.service = service;
+        this.queueNames = queueNames;
+        this.threads = threads;
+        //	this.threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(this.threads);
+        this.shallRun = true;
     }
 
     public abstract boolean processAction(SusiAction action, JSONArray data);
@@ -66,11 +66,15 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     @Override
     public void run() {
         List<QueueListener> threads = new ArrayList<>();
+        int threadsPerQueue = Math.max(1, this.threads / this.queueNames.length);
+        Data.logger.info("Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.queueNames.length + " queues");
         for (QueueName queue: this.queueNames) {
-            QueueListener listener = new QueueListener(queue);
-            listener.start();
-            threads.add(listener);
-            Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + queue + " started");
+            for (int qc = 0; qc < threadsPerQueue; qc++) {
+                QueueListener listener = new QueueListener(queue);
+                listener.start();
+                threads.add(listener);
+                Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + queue + " started thread " + qc);
+            }
         }
         threads.forEach(thread -> {
             try {
@@ -104,10 +108,10 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     }
                     
                 	    // wait until an execution thread is available
-                    while (AbstractBrokerListener.this.threadPool.getActiveCount() >= AbstractBrokerListener.this.threads) {
+                    //while (AbstractBrokerListener.this.threadPool.getActiveCount() >= AbstractBrokerListener.this.threads) {
                         //Data.logger.info("AbstractBrokerListener.QueueListener thread pool full, waiting. assigned = " + AbstractBrokerListener.this.threads + ", active = " + AbstractBrokerListener.this.threadPool.getActiveCount());
-    					    try {Thread.sleep(1000);} catch (InterruptedException e1) {}
-                    }
+    					    //try {Thread.sleep(100);} catch (InterruptedException e1) {}
+                    //}
                     
                 	    // wait until message arrives
                     MessageContainer<byte[]> mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000);
@@ -169,7 +173,8 @@ public abstract class AbstractBrokerListener implements BrokerListener {
             }
 
             // process the action using the previously acquired execution thread
-            this.threadPool.execute(new ActionProcess(action, data));
+            //this.threadPool.execute(new ActionProcess(action, data));
+            new ActionProcess(action, data).run(); // run, not start: we execute this in the current thread
         }
     }
     
