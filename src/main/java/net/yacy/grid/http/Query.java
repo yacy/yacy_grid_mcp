@@ -22,7 +22,7 @@ package net.yacy.grid.http;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,7 +39,7 @@ public class Query {
     private Map<String, byte[]> qm;
     
     public Query(final HttpServletRequest request) {
-        this.qm = new HashMap<>();
+        this.qm = new LinkedHashMap<>();
         if (request != null) for (Map.Entry<String, String[]> entry: request.getParameterMap().entrySet()) {
             this.qm.put(entry.getKey(), entry.getValue()[0].getBytes(StandardCharsets.UTF_8));
         }
@@ -130,6 +130,13 @@ public class Query {
         return this.request;
     }
     public String toString() {
-        return this.qm == null ? "" : this.qm.toString().replaceAll(", ", "&").replaceFirst("\\{", "").replaceAll("\\}", "").replaceAll(" ", "%20");
-    }
+        if (this.qm == null) return "";
+        Map<String, String> outcopy = new LinkedHashMap<>();
+        this.qm.entrySet().stream()
+            .filter(e -> !e.getKey().equals("password"))
+            .filter(e -> !e.getKey().equals("asset"))
+            .forEach(e -> outcopy.put(e.getKey(), new String(e.getValue(), StandardCharsets.UTF_8)));
+        return outcopy.toString().replaceAll(", ", "&").replaceFirst("\\{", "").replaceAll("\\}", "").replaceAll(" ", "%20");
+     }
+    
 }

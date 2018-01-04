@@ -105,7 +105,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     
                 	    // wait until an execution thread is available
                     while (AbstractBrokerListener.this.threadPool.getActiveCount() >= AbstractBrokerListener.this.threads) {
-                        Data.logger.info("AbstractBrokerListener.QueueListener thread pool full, waiting. assigned = " + AbstractBrokerListener.this.threads + ", active = " + AbstractBrokerListener.this.threadPool.getActiveCount());
+                        //Data.logger.info("AbstractBrokerListener.QueueListener thread pool full, waiting. assigned = " + AbstractBrokerListener.this.threads + ", active = " + AbstractBrokerListener.this.threadPool.getActiveCount());
     					    try {Thread.sleep(1000);} catch (InterruptedException e1) {}
                     }
                     
