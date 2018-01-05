@@ -29,7 +29,7 @@ import net.yacy.grid.mcp.Data;
 /**
  * A (Message-) Queue based on a stack
  */
-public class StackQueue<A> implements Queue<A> {
+public class StackQueue<A> extends AbstractQueue<A> implements Queue<A> {
     
     private Stack<A> stack;
     private Semaphore semaphore;

@@ -85,6 +85,13 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
     }
 
     @Override
+    public QueueFactory<byte[]> clear(Services service, QueueName queueName) throws IOException {
+        QueueFactory<byte[]> factory = getConnector(service);
+        factory.getQueue(queueName.name()).clear();
+        return factory;
+    }
+
+    @Override
     public void close() {
         this.clientConnector.values().forEach(connector -> {
             try {connector.close();} catch (Throwable e) {}

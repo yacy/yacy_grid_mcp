@@ -120,7 +120,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
     }
     
-    private class RabbitMessageQueue implements Queue<byte[]> {
+    private class RabbitMessageQueue extends AbstractQueue<byte[]> implements Queue<byte[]> {
         private String queueName;
         public RabbitMessageQueue(String queueName) throws IOException {
             this.queueName = queueName;
