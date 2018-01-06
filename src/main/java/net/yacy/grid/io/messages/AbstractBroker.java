@@ -22,8 +22,11 @@ package net.yacy.grid.io.messages;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.eclipse.jetty.util.ConcurrentHashSet;
 
 import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
@@ -34,6 +37,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     private final static Random random = new Random();
     private final Map<Services, AtomicInteger> roundRobinLookup = new ConcurrentHashMap<>();
     private final Map<Services, Map<String, Integer>> leastFilledLookup = new ConcurrentHashMap<>();
+    private final Set<String> switchedIDs = new ConcurrentHashSet<>();
     
     @Override
     public abstract void close() throws IOException;
@@ -116,6 +120,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         return index;
     }
     
+    /*
     private int mostFilled(AvailableContainer[] ac) throws IOException {
         int index = -1;
         int mostAvailable = 0;
@@ -127,6 +132,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         }
         return index;
     }
+    */
     
     private int hash(final Services service, final QueueName[] queueNames, final String hashingKey) throws IOException {
         return hashingKey.hashCode() % queueNames.length;
@@ -163,9 +169,11 @@ public abstract class AbstractBroker<A> implements Broker<A> {
             lookupIndex = leastFilled;
             lookupMap.put(hashingKey, lookupIndex);
         } else {
-            // check if this index is identical with the one with most entries
-            // and if an empty queue exist
-            if (available[leastFilled].getAvailable() == 0 && mostFilled(available) == lookupIndex.intValue()) {
+            // Check if this hashing key was never switched to a different queue
+            // and if an empty queue exist: then switch to that queue to balance all queues.
+            // That means also that every domain may only switched once
+            if (available[leastFilled].getAvailable() == 0 && !switchedIDs.contains(hashingKey)) {
+                switchedIDs.add(hashingKey);
                 // switch to leastFilled
                 Data.logger.info("AbstractBroker switching " + hashingKey + " from " + lookupIndex + " to " + leastFilled);
                 lookupIndex = leastFilled;
