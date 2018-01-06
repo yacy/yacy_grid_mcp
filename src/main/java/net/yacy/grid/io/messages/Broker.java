@@ -87,5 +87,17 @@ public interface Broker<A> extends Closeable {
      * @throws IOException
      */
     public AvailableContainer[] available(Services service, QueueName[] queueNames) throws IOException;
-    
+
+    /**
+     * send a message to the broker
+     * @param service the name of the grid service
+     * @param queueName the queue name of the service
+     * @param shardingMethod the selected sharding method
+     * @param hashingKey a hashing key for the message to be send
+     * @param message the message to be posted at the broker
+     * @return the Queue Factory which was used to create this broker
+     * @throws IOException
+     */
+    public QueueFactory<A> clear(Services service, QueueName queueName) throws IOException;
+
 }

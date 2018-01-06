@@ -61,13 +61,13 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
     
     public boolean connectRabbitMQ(String host, int port, String username, String password) {
-        boolean firsttry = false;
+        //boolean firsttry = false;
         if (this.rabbitMQ_host == null) {
             this.rabbitMQ_host = host;
             this.rabbitMQ_port = port;
             this.rabbitMQ_username = username;
             this.rabbitMQ_password = password;
-            firsttry = true;
+            //firsttry = true;
         }
         try {
             QueueFactory<byte[]> qc = new RabbitQueueFactory(host, port, username, password);
@@ -85,11 +85,11 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
 
     public boolean connectMCP(String host, int port) {
-        boolean firsttry = false;
+        //boolean firsttry = false;
         if (this.mcp_host == null) {
             this.mcp_host = host;
             this.mcp_port = port;
-            firsttry = true;
+            //firsttry = true;
         }
         try {
             QueueFactory<byte[]> mcpqf = new MCPQueueFactory(this, host, port);
@@ -205,6 +205,39 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         }
         Data.logger.info("Broker/Client: available() on peer broker/local db");
         return super.available(serviceName, queueName);
+    }
+    
+    @Override
+    public QueueFactory<byte[]> clear(Services serviceName, QueueName queueName) throws IOException {
+        if (this.rabbitConnector == null && this.rabbitMQ_host != null) {
+            // try to connect again..
+            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+        }
+        if (this.rabbitConnector == null) {
+            this.rabbitMQ_host = null;
+        } else try {
+            this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).clear();
+            Data.logger.info("Broker/Client: clear rabbitMQ service '" + serviceName + "', queue '" + queueName + "'");
+            return this.rabbitConnector;
+        } catch (IOException e) {
+            /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
+        }
+        if (this.mcpConnector == null && this.mcp_host != null) {
+                // try to connect again..
+                connectMCP(this.mcp_host, this.mcp_port);
+                if (this.mcpConnector == null) {
+                    Data.logger.warn("Broker/Client: FATAL: connection to MCP lost! send mcp service '" + serviceName + "', queue '" + queueName);
+                }
+        }
+        if (this.mcpConnector != null) try {
+            this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).clear();
+            Data.logger.info("Broker/Client: clear mcp service '" + serviceName + "', queue '" + queueName + "'");
+            return this.mcpConnector;
+        } catch (IOException e) {
+            /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
+        }
+        Data.logger.info("Broker/Client: send() on peer broker/local db");
+        return super.clear(serviceName, queueName);
     }
     
     public void close() {
