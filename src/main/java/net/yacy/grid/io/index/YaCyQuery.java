@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.http.HttpStatus;
+import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -36,8 +37,8 @@ public class YaCyQuery {
     static {
         QUERY_DEFAULT_FIELDS.put(WebMapping.url_s, 1000.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.host_organization_s, 1000.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.url_paths_sxt, 500.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.url_file_name_s, 200.0f);
+        QUERY_DEFAULT_FIELDS.put(WebMapping.url_paths_sxt, 30.0f);
+        QUERY_DEFAULT_FIELDS.put(WebMapping.url_file_name_s, 20.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.title, 100.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.description_txt, 100.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.h1_txt, 50.0f);
@@ -48,6 +49,7 @@ public class YaCyQuery {
     }
 
     public static QueryBuilder simpleQueryBuilder(String q) {
+        if (q.equals("yacyall")) return new MatchAllQueryBuilder();
         final MultiMatchQueryBuilder qb = QueryBuilders
                 .multiMatchQuery(q)
                 .operator(Operator.AND)

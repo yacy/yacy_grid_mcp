@@ -55,5 +55,10 @@ public interface Queue<A> {
      * @throws IOException
      */
     public int available() throws IOException;
-    
+
+    /**
+     * clear a queue
+     * @throws IOException
+     */
+    public void clear() throws IOException;
 }

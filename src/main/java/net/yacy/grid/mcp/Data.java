@@ -90,13 +90,13 @@ public class Data {
         
         // create storage
         File assetsPath = new File(gridServicePath, "assets");
-        boolean deleteafterread = cc.get("grid.assets.delete").equals("true");
+        boolean deleteafterread = cc.containsKey("grid.assets.delete") && cc.get("grid.assets.delete").equals("true");
         gridStorage = new GridStorage(assetsPath, deleteafterread);
         
         // connect outside services
         // first try to connect to the configured MCPs.
         // if that fails, try to make all connections self
-        String gridMcpAddressl = config.get("grid.mcp.address");
+        String gridMcpAddressl = config.containsKey("grid.mcp.address") ? config.get("grid.mcp.address") : "";
         String[] gridMcpAddress = gridMcpAddressl.split(",");
         boolean mcpConnected = false;
         for (String address: gridMcpAddress) {
@@ -112,7 +112,7 @@ public class Data {
         
         if (!mcpConnected) {
             // try to connect to local services directly
-            String[] gridBrokerAddress = config.get("grid.broker.address").split(",");
+            String[] gridBrokerAddress = (config.containsKey("grid.broker.address") ? config.get("grid.broker.address") : "").split(",");
             for (String address: gridBrokerAddress) {
                 if (Data.gridBroker.connectRabbitMQ(getHost(address), getPort(address, "-1"), getUser(address, "anonymous"), getPassword(address, "yacy"))) {
                     Data.logger.info("Connected Broker at " + getHost(address));
@@ -122,7 +122,7 @@ public class Data {
             if (!Data.gridBroker.isRabbitMQConnected()) {
                 Data.logger.info("Connected to the embedded Broker");
             }
-            String[] gridFtpAddress = config.get("grid.ftp.address").split(",");
+            String[] gridFtpAddress = (config.containsKey("grid.ftp.address") ? config.get("grid.ftp.address") : "").split(",");
             for (String address: gridFtpAddress) {
                 if (address.length() > 0 && Data.gridStorage.connectFTP(getHost(address), getPort(address, "2121"), getUser(address, "anonymous"), getPassword(address, "yacy"))) {
                     Data.logger.info("Connected Storage at " + getHost(address));

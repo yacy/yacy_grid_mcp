@@ -74,7 +74,7 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
         final JSONObject params = new JSONObject(true);
         params.put("serviceName", serviceQueueName.substring(0, p));
         params.put("queueName", serviceQueueName.substring(p + 1));
-        return new Queue<byte[]>() {
+        return new AbstractQueue<byte[]>() {
 
             @Override
             public void checkConnection() throws IOException {
