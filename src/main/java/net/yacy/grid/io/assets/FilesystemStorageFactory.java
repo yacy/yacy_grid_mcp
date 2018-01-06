@@ -66,7 +66,7 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
                     File parent = f.getParentFile();
                     if (parent.list().length == 0) parent.delete();
                 } catch (Throwable e) {
-                    Data.logger.warn("", e);
+                    Data.logger.warn("FileSystemStorageFactory.load ", e);
                 }
                 return new Asset<byte[]>(FilesystemStorageFactory.this, b);
             }
@@ -77,6 +77,11 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
             }
             
         };
+    }
+
+    @Override
+    public String getSystem() {
+        return "file";
     }
     
     @Override

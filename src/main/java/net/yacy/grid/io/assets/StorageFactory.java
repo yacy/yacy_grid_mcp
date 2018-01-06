@@ -24,6 +24,12 @@ import java.io.IOException;
 public interface StorageFactory<A> {
 
     /**
+     * provides information about the system which has been used to store the asset
+     * @return the system name, i.e. a url protocol prefix (file, ftp, etc)
+     */
+    public String getSystem();
+    
+    /**
      * if the storage is defined using a service, this method provides the service address or name
      * @return the server name or IP or null, if none is defined or used
      */

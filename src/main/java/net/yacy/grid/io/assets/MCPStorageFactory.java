@@ -40,11 +40,18 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
     private GridStorage storage;
     private String server;
     private int port;
+    private String remoteSystem;
     
     public MCPStorageFactory(GridStorage storage, String server, int port) {
         this.storage = storage;
         this.server = server;
         this.port = port;
+        this.remoteSystem = "?";
+    }
+
+    @Override
+    public String getSystem() {
+        return "mcp" + "/" + this.remoteSystem;
     }
     
     @Override
@@ -112,10 +119,12 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
             private void connectMCP(JSONObject response) {
                 if (response.has(ObjectAPIHandler.SERVICE_KEY)) {
                     String server = response.getString(ObjectAPIHandler.SERVICE_KEY);
+                    int p = server.indexOf("://");
+                    if (p > 0) MCPStorageFactory.this.remoteSystem = server.substring(0, p);
                     if (MCPStorageFactory.this.storage.connectFTP(server)) {
-                        Data.logger.info("connected MCP storage at " + server);
+                        Data.logger.info("MCPStorageFactory.connectMCP connected MCP storage at " + server);
                     } else {
-                        Data.logger.error("failed to connect MCP storage at " + server);
+                        Data.logger.error("MCPStorageFactory.connectMCP failed to connect MCP storage at " + server);
                     }
                 }
             }
