@@ -30,7 +30,7 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
     private final Storage<byte[]> storage;
     private boolean deleteafterread;
     
-    FilesystemStorageFactory(File basePath, boolean deleteafterread) {
+    FilesystemStorageFactory(boolean deleteafterread, File basePath) {
         this.deleteafterread = deleteafterread;
         this.storage = new Storage<byte[]>() {
 

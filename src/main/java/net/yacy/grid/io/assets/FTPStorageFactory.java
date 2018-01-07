@@ -36,12 +36,14 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
     private String server, username, password;
     private int port;
     private Storage<byte[]> ftpClient;
+    private boolean deleteafterread;
     
-    public FTPStorageFactory(String server, int port, String username, String password) throws IOException {
+    public FTPStorageFactory(String server, int port, String username, String password, boolean deleteafterread) throws IOException {
         this.server = server;
         this.username = username == null ? "" : username;
         this.password = password == null ? "" : password;
         this.port = port;
+        this.deleteafterread = deleteafterread;
 
         this.ftpClient = new Storage<byte[]>() {
 
@@ -99,16 +101,27 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             public Asset<byte[]> load(String path) throws IOException {
                 FTPClient ftp = initConnection();
                 ByteArrayOutputStream baos = null;
+                byte[] b = null;
                 try {
                     String file = cdPath(ftp, path);
                     baos = new ByteArrayOutputStream();
                     ftp.retrieveFile(file, baos);
+                    b = baos.toByteArray();
+                    if (FTPStorageFactory.this.deleteafterread) try {
+                        ftp.deleteFile(file);
+                        if (ftp.listFiles().length == 0) {
+                            ftp.cwd("/");
+                            ftp.removeDirectory(path);
+                        }
+                    } catch (Throwable e) {
+                        Data.logger.warn("FTPStorageFactory.load failed to remove asset " + path, e );
+                    }
                 } catch (IOException e) {
                     throw e;
                 } finally {
                     if (ftp != null) try {ftp.disconnect();} catch (Throwable ee) {}
                 }
-                return new Asset<byte[]>(FTPStorageFactory.this, baos == null ? null : baos.toByteArray());
+                return new Asset<byte[]>(FTPStorageFactory.this, b);
             }
 
             @Override
