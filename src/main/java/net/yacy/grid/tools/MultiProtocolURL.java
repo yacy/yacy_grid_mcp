@@ -2424,6 +2424,14 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         return Domains.getLocale(this.host);
     }
 
+    public static String getDigest(String url) {
+        return Digest.encodeMD5Hex(url);
+    }
+    
+    public String getDigest() {
+        return getDigest(this.toNormalform(true));
+    }
+    
     //---------------------
 
     private static final String splitrex = " |/|\\(|\\)|-|\\:|_|\\.|,|\\?|!|'|" + '"';
