@@ -91,7 +91,7 @@ public class Data {
         // create storage
         File assetsPath = new File(gridServicePath, "assets");
         boolean deleteafterread = cc.containsKey("grid.assets.delete") && cc.get("grid.assets.delete").equals("true");
-        gridStorage = new GridStorage(assetsPath, deleteafterread);
+        gridStorage = new GridStorage(deleteafterread, assetsPath);
         
         // connect outside services
         // first try to connect to the configured MCPs.

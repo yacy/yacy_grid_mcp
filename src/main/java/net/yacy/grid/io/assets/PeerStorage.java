@@ -27,26 +27,29 @@ public class PeerStorage implements Storage<byte[]> {
     private StorageFactory<byte[]> factory;
     
     public PeerStorage(File basePath, boolean deleteafterread) {
-        this.factory = new FilesystemStorageFactory(basePath, deleteafterread);
+        this.factory = basePath == null ? null : new FilesystemStorageFactory(basePath, deleteafterread);
     }
 
     @Override
     public void checkConnection() throws IOException {
-        // do nothing
+        if (this.factory == null) throw new IOException("peer storage not enabled");
     }
     
     @Override
     public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
+        if (this.factory == null) throw new IOException("peer storage not enabled");
         return this.factory.getStorage().store(path, asset);
     }
 
     @Override
     public Asset<byte[]> load(String path) throws IOException {
+        if (this.factory == null) throw new IOException("peer storage not enabled");
         return this.factory.getStorage().load(path);
     }
 
     @Override
     public void close() {
-        this.factory.close();
+        if (this.factory != null) this.factory.close();
+        this.factory = null;
     }
 }
