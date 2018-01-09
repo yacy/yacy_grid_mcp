@@ -21,10 +21,13 @@ package net.yacy.grid.io.assets;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 
 import net.yacy.grid.mcp.Data;
@@ -108,9 +111,13 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                     ftp.retrieveFile(file, baos);
                     b = baos.toByteArray();
                     if (FTPStorageFactory.this.deleteafterread) try {
-                        ftp.deleteFile(file);
-                        if (ftp.listFiles().length == 0) {
+                        boolean deleted = ftp.deleteFile(file);
+                        FTPFile[] remaining = ftp.listFiles();
+                        if (remaining.length == 0) {
                             ftp.cwd("/");
+                            if (path.startsWith("/")) path = path.substring(1);
+                            int p = path.indexOf('/');
+                            if (p > 0) path = path.substring(0, p);
                             ftp.removeDirectory(path);
                         }
                     } catch (Throwable e) {
@@ -188,4 +195,20 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
         this.ftpClient.close();
     }
 
+    public static void main(String[] args) {
+        try {
+            Data.init(new File("data"), new HashMap<String, String>());
+            FTPStorageFactory ftpc = new FTPStorageFactory("127.0.0.1", 2121, "anonymous", "yacy", true);
+            Storage<byte[]> storage = ftpc.getStorage();
+            String path = "test/file";
+            String data = "123";
+            storage.store(path, data.getBytes());
+            Asset<byte[]> b = storage.load(path);
+            System.out.println(new String(b.getPayload()));
+            Data.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
 }
