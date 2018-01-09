@@ -87,8 +87,8 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                     ftp.enterLocalPassiveMode();
                     boolean success = ftp.storeFile(file, new ByteArrayInputStream(asset));
                     long t3 = System.currentTimeMillis();
+                    if (!success) throw new IOException("storage to path " + path + " was not successful (storeFile=false)");
                     Data.logger.debug("FTPStorageFactory.store ftp store successfull: check connection = " + (t1 - t0) + ", cdPath = " + (t2 - t1) + ", store = " + (t3 - t2));
-                    if (!success) throw new IOException("storage to path " + path + " was not successful");
                 } catch (IOException e) {
                     throw e;
                 } finally {
