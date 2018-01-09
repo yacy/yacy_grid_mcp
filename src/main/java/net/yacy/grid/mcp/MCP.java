@@ -48,6 +48,7 @@ import net.yacy.grid.mcp.api.messages.ClearService;
 import net.yacy.grid.mcp.api.messages.PeekService;
 import net.yacy.grid.mcp.api.messages.ReceiveService;
 import net.yacy.grid.mcp.api.messages.SendService;
+import net.yacy.grid.tools.GitTool;
 import net.yacy.grid.tools.JSONList;
 import net.yacy.grid.tools.MultiProtocolURL;
 
@@ -159,6 +160,8 @@ public class MCP {
         }
         
         // start server
+        Data.logger.info("started MCP");
+        Data.logger.info(new GitTool().toString());
         Service.runService(null);
     }
 
