@@ -139,6 +139,16 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         @Override
         public Queue<byte[]> send(byte[] message) throws IOException {
             try {
+                return sendInternal(message);
+            } catch (IOException e) {
+                // try again
+                RabbitQueueFactory.this.init();
+                connect() ;
+                return sendInternal(message);
+            }
+        }
+        private Queue<byte[]> sendInternal(byte[] message) throws IOException {
+            try {
                 channel.basicPublish(DEFAULT_EXCHANGE, this.queueName, MessageProperties.PERSISTENT_BASIC, message);
             } catch (Exception e) {
                 // try to reconnect and re-try once...
@@ -151,6 +161,16 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         
         @Override
         public byte[] receive(long timeout) throws IOException {
+            try {
+                return receiveInternal(timeout);
+            } catch (IOException e) {
+                // try again
+                RabbitQueueFactory.this.init();
+                connect() ;
+                return receiveInternal(timeout);
+            }
+        }
+        private byte[] receiveInternal(long timeout) throws IOException {
             if (timeout <= 0) timeout = Long.MAX_VALUE;
             long termination = timeout <= 0 || timeout == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeout;
             Throwable ee = null;
@@ -171,6 +191,16 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
 
         @Override
         public int available() throws IOException {
+            try {
+                return availableInternal();
+            } catch (IOException e) {
+                // try again
+                RabbitQueueFactory.this.init();
+                connect() ;
+                return availableInternal();
+            }
+        }
+        private int availableInternal() throws IOException {
             return channel.queueDeclarePassive(this.queueName).getMessageCount();
         }
     }
