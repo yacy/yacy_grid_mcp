@@ -1,0 +1,53 @@
+/**
+ *  Index
+ *  Copyright 7.1.2018 by Michael Peter Christen, @0rb1t3r
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *  
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program in the file lgpl21.txt
+ *  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package net.yacy.grid.io.index;
+
+import java.io.IOException;
+
+import org.json.JSONObject;
+
+import net.yacy.grid.tools.JSONList;
+
+public interface Index {
+    
+    public IndexFactory checkConnection() throws IOException;
+    
+    public IndexFactory add(String indexName, String typeName, final String id, JSONObject object) throws IOException;
+    
+    public boolean exist(String id) throws IOException;
+    
+    public int count(QueryLanguage language, String query) throws IOException;
+
+    public JSONObject query(String id) throws IOException;
+    
+    public JSONList query(QueryLanguage language, String query) throws IOException;
+
+    public boolean delete(String id) throws IOException;
+
+    public int delete(QueryLanguage language, String query) throws IOException;
+    
+    public void close();
+    
+    public static enum QueryLanguage {
+        yacy,   // a YaCy search query, must match all terms and search operators as in https://support.google.com/websearch/answer/2466433?visit_id=1-636509668520326600-1109926908&p=adv_operators&hl=en&rd=1
+        gsa,    // a Google query string as in https://www.google.com/support/enterprise/static/gsa/docs/admin/74/gsa_doc_set/xml_reference/request_format.html#1076993
+        elastic // a Query String Query as in https://www.elastic.co/guide/en/elasticsearch/reference/6.1/query-dsl-query-string-query.html
+    }
+}
