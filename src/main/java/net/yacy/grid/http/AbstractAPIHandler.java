@@ -77,6 +77,23 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
         return path;
     }
     
+    private void setCORS(HttpServletResponse response) {
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "POST");
+        response.setHeader("Access-Control-Allow-Headers", "accept, content-type");
+    }
+    
+    @Override
+    protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        super.doOptions(request, response);
+        setCORS(response); // required by angular framework; detailed CORS can be set within the servlet
+    }
+    
+    @Override
+    protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        super.doHead(request, response);
+    }
+    
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         Query post = RemoteAccess.evaluate(request);
@@ -106,6 +123,9 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
                 logClient(startTime, query, 400, message);
                 response.sendError(400, message);
                 return;
+            }
+            if (serviceResponse.allowCORS()) {
+                setCORS(response);
             }
             
             // write json
