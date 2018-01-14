@@ -50,13 +50,6 @@ public class Query {
             this.qm.put(entry.getKey(), entry.getValue()[0].getBytes(StandardCharsets.UTF_8));
         }
         this.request = request;
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ByteStreams.copy(request.getInputStream(), baos);
-            baos.close();
-            this.qm.put("data", baos.toByteArray());
-        } catch (IOException e) {
-        }
     }
     public Query initGET(final Map<String, String> q) {
         q.forEach((k, v) -> this.qm.put(k, v.getBytes(StandardCharsets.UTF_8)));
@@ -124,13 +117,20 @@ public class Query {
         }
     }
     public JSONObject getJSONBody() {
-        String data = this.get("data");
-        if (data == null || data.length() == 0) return null;
-        data = data.trim();
-        if (data.charAt(0) =='{' && data.charAt(data.length() - 1) == '}') try {
-            return new JSONObject(new JSONTokener(data));
-        } catch (JSONException e) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ByteStreams.copy(request.getInputStream(), baos);
+            baos.close();
+            String data = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+            if (data == null || data.length() == 0) return null;
+            data = data.trim();
+            if (data.charAt(0) =='{' && data.charAt(data.length() - 1) == '}') try {
+                return new JSONObject(new JSONTokener(data));
+            } catch (JSONException e) {
+                return null;
+            }
             return null;
+        } catch (IOException e) {
         }
         return null;
     }
