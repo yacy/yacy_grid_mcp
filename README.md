@@ -107,7 +107,7 @@ ftpserver.user.yacygrid.enableflag=true
 ftpserver.user.yacygrid.writepermission=true
 ftpserver.user.yacygrid.maxloginnumber=2000
 ftpserver.user.yacygrid.maxloginperip=2000
-ftpserver.user.yacygrid.idletime=300
+ftpserver.user.yacygrid.idletime=30000
 ftpserver.user.yacygrid.uploadrate=0
 ftpserver.user.yacygrid.downloadrate=0
 ```

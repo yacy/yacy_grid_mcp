@@ -185,6 +185,12 @@ public class Data {
         return p < 0 ? d : a.substring(p + 1);
     }
     
+    public static void clearCaches() {
+        // should i.e. be called in case of short memory status
+        logAppender.clean(5000);
+        
+    }
+    
     public static void close() {
         peerJsonDB.close();
         peerDB.close();

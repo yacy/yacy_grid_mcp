@@ -101,17 +101,11 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 if (Data.gridBroker == null) {
                     try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                 } else try {
-                    // wait until short memory status disappears
-                    while (Memory.shortStatus()) {
-                        Data.logger.info("AbstractBrokerListener.QueueListener short memory status, waiting. assigned = " + Memory.assigned() + ", used = " + Memory.used());
-                        try {Thread.sleep(3000);} catch (InterruptedException e1) {}
+                    // check short memory status
+                    if (Memory.shortStatus()) {
+                        Data.logger.info("AbstractBrokerListener.QueueListener short memory status: assigned = " + Memory.assigned() + ", used = " + Memory.used());
+                        Data.clearCaches();
                     }
-                    
-                	    // wait until an execution thread is available
-                    //while (AbstractBrokerListener.this.threadPool.getActiveCount() >= AbstractBrokerListener.this.threads) {
-                        //Data.logger.info("AbstractBrokerListener.QueueListener thread pool full, waiting. assigned = " + AbstractBrokerListener.this.threads + ", active = " + AbstractBrokerListener.this.threadPool.getActiveCount());
-    					    //try {Thread.sleep(100);} catch (InterruptedException e1) {}
-                    //}
                     
                 	    // wait until message arrives
                     MessageContainer<byte[]> mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000);

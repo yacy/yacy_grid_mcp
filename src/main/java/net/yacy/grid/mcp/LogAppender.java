@@ -20,16 +20,17 @@
 package net.yacy.grid.mcp;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Layout;
 import org.apache.log4j.spi.LoggingEvent;
 
+import net.yacy.grid.tools.Memory;
+
 public class LogAppender extends AppenderSkeleton {
 
     private int maxlines;
-    private List<String> lines;
+    private ArrayList<String> lines;
 
     public LogAppender(Layout layout, int maxlines) {
         this.layout = layout;
@@ -47,9 +48,7 @@ public class LogAppender extends AppenderSkeleton {
         if (event.getThrowableInformation() != null) {
             for (String t: event.getThrowableStrRep()) this.lines.add(t + "\n");
         }
-        while (this.lines.size() > this.maxlines) {
-            this.lines.remove(0);
-        }
+        clean(this.maxlines);
     }
 
     @Override
@@ -63,7 +62,14 @@ public class LogAppender extends AppenderSkeleton {
         return true;
     }
     
-    public List<String> getLines() {
+    public ArrayList<String> getLines() {
         return this.lines;
+    }
+    
+    public void clean(int remaining) {
+        while (this.lines.size() > remaining) {
+            this.lines.remove(0);
+        }
+        if (Memory.shortStatus()) this.lines.trimToSize();
     }
 }
