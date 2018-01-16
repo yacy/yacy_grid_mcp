@@ -33,9 +33,11 @@ public interface BrokerListener extends Runnable {
      * Process an action from the broker
      * @param action an action
      * @param data additional data that the process can use
+     * @param processName a name for the process
+     * @param processNumber a number of the process within the given name space
      * @return true, if the process was successful AND it is wanted that embedded actions from another "actions" object is executed. If this is true, the process is not executed in the same thread, instead, the process is pushed to the broker to be executed by another thread
      */
-    public boolean processAction(SusiAction action, JSONArray data);
+    public boolean processAction(SusiAction action, JSONArray data, String processName, int processNumber);
 
     /**
      * termination of the thread which runs the listener

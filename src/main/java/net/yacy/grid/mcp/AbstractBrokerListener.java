@@ -61,7 +61,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         this.shallRun = true;
     }
 
-    public abstract boolean processAction(SusiAction action, JSONArray data);
+    public abstract boolean processAction(SusiAction action, JSONArray data, String processName, int processNumber);
 
     @Override
     public void run() {
@@ -70,7 +70,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         Data.logger.info("Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.queueNames.length + " queues");
         for (QueueName queue: this.queueNames) {
             for (int qc = 0; qc < threadsPerQueue; qc++) {
-                QueueListener listener = new QueueListener(queue);
+                QueueListener listener = new QueueListener(queue, qc);
                 listener.start();
                 threads.add(listener);
                 Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + queue + " started thread " + qc);
@@ -88,10 +88,12 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     
     
     private class QueueListener extends Thread {
-        QueueName queueName;
+        private final QueueName queueName;
+        private final int threadCounter;
         
-        public QueueListener(QueueName queueName) {
+        public QueueListener(final QueueName queueName, final int threadCounter) {
             this.queueName = queueName;
+            this.threadCounter = threadCounter;
         }
     
         @Override
@@ -113,7 +115,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                         try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                         continue runloop;
                     }
-                    handleMessage(mc);
+                    handleMessage(mc, this.queueName.name(), this.threadCounter);
                 } catch (JSONException e) {
                     // happens if the payload has a wrong form
                     Data.logger.info("message syntax error with '" + payload + "' in queue: " + e.getMessage(), e);
@@ -136,7 +138,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         }
     }
     
-    private void handleMessage(MessageContainer<byte[]> mc) {
+    private void handleMessage(final MessageContainer<byte[]> mc, final String processName, final int processNumber) {
         String payload = new String(mc.getPayload(), StandardCharsets.UTF_8);
         JSONObject json = new JSONObject(new JSONTokener(payload));
         final SusiThought process = new SusiThought(json);
@@ -168,23 +170,28 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
             // process the action using the previously acquired execution thread
             //this.threadPool.execute(new ActionProcess(action, data));
-            new ActionProcess(action, data).run(); // run, not start: we execute this in the current thread
+            new ActionProcess(action, data, processName, processNumber).run(); // run, not start: we execute this in the current thread
         }
     }
     
     private final class ActionProcess implements Runnable {
-    	
-    	private final SusiAction action;
-    	private final JSONArray data;
-    	
-    	public ActionProcess(SusiAction action, JSONArray data) {
-    		this.action = action;
-    		this.data = data;
-    	}
-		
-    	@Override
+        	
+        	private final SusiAction action;
+        	private final JSONArray data;
+        	private final String processName;
+        	private final int processNumber;
+        	
+        	public ActionProcess(final SusiAction action, final JSONArray data, final String processName, final int processNumber) {
+        		this.action = action;
+        		this.data = data;
+        		this.processName = processName;
+        		this.processNumber = processNumber;
+        	}
+    		
+        	@Override
 		public void run() {
-			boolean processed = processAction(action, data);
+        	    Thread.currentThread().setName(this.processName + "-" + this.processNumber + "-running");
+			boolean processed = processAction(this.action, this.data, this.processName, this.processNumber);
 	        if (processed) {
 	            // send next embedded action(s) to queue
 	            JSONObject ao = action.toJSONClone();

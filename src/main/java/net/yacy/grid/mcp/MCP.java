@@ -96,7 +96,7 @@ public class MCP {
 		}
 
        @Override
-       public boolean processAction(SusiAction action, JSONArray data) {
+       public boolean processAction(SusiAction action, JSONArray data, String processName, int processNumber) {
            // find result of indexing with http://localhost:9200/web/crawler/_search?q=text_t:*
            
            String sourceasset_path = action.getStringAttr("sourceasset");
