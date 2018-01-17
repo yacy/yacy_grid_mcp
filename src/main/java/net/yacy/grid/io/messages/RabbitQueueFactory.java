@@ -142,6 +142,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                 return sendInternal(message);
             } catch (IOException e) {
                 // try again
+                Data.logger.warn("RabbitQueueFactory.send: re-connecting broker");
                 RabbitQueueFactory.this.init();
                 connect() ;
                 return sendInternal(message);
@@ -165,6 +166,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                 return receiveInternal(timeout);
             } catch (IOException e) {
                 // try again
+                Data.logger.warn("RabbitQueueFactory.receive: re-connecting broker");
                 RabbitQueueFactory.this.init();
                 connect() ;
                 return receiveInternal(timeout);
@@ -195,6 +197,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                 return availableInternal();
             } catch (IOException e) {
                 // try again
+                Data.logger.warn("RabbitQueueFactory.available: re-connecting broker");
                 RabbitQueueFactory.this.init();
                 connect() ;
                 return availableInternal();
