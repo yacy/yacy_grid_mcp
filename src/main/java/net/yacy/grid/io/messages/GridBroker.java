@@ -37,8 +37,9 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     private int rabbitMQ_port;
     private String mcp_host;
     private int mcp_port;
+    private boolean lazy;
     
-    public GridBroker(File basePath) {
+    public GridBroker(File basePath, boolean lazy) {
         super(basePath);
         this.rabbitConnector = null;
         this.mcpConnector = null;
@@ -48,6 +49,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         this.rabbitMQ_password = null;
         this.mcp_host = null;
         this.mcp_port = -1;
+        this.lazy = lazy;
     }
     
     public static String serviceQueueName(Services service, QueueName queue) {
@@ -70,7 +72,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             //firsttry = true;
         }
         try {
-            QueueFactory<byte[]> qc = new RabbitQueueFactory(host, port, username, password);
+            QueueFactory<byte[]> qc = new RabbitQueueFactory(host, port, username, password, lazy);
             this.rabbitConnector = qc;
             Data.logger.info("Broker/Client: connected to the rabbitMQ broker at " + host + ":" + port);
             return true;

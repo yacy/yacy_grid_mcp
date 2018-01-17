@@ -86,7 +86,7 @@ public class Data {
         File messagesPath = new File(gridServicePath, "messages");
         if (!messagesPath.exists()) messagesPath.mkdirs();
         peerBroker = new PeerBroker(messagesPath);
-        gridBroker = new GridBroker(messagesPath);
+        gridBroker = new GridBroker(messagesPath, config.get("grid.broker.lazy").equals("true"));
         
         // create storage
         File assetsPath = new File(gridServicePath, "assets");

@@ -29,10 +29,13 @@ import net.yacy.grid.mcp.Data;
 import com.rabbitmq.client.Connection;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.AMQP.Queue.DeleteOk;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 
 /**
@@ -52,6 +55,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     private Connection connection;
     private Channel channel;
     private Map<String, Queue<byte[]>> queues;
+    private boolean lazy;
     
     /**
      * create a queue factory for a rabbitMQ message server
@@ -59,11 +63,12 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
      * @param port a port for the access to the rabbitMQ server. If given -1, then the default port will be used
      * @throws IOException
      */
-    public RabbitQueueFactory(String server, int port, String username, String password) throws IOException {
+    public RabbitQueueFactory(String server, int port, String username, String password, boolean lazy) throws IOException {
         this.server = server;
         this.port = port;
         this.username = username;
         this.password = password;
+        this.lazy = lazy;
         this.init();
     }
     
@@ -129,7 +134,16 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
 
         private void connect() throws IOException {
-            RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, null);
+        	Map<String, Object> arguments = new HashMap<>();
+        	arguments.put("x-queue-mode", "lazy"); // we want to minimize memory usage; see http://www.rabbitmq.com/lazy-queues.html
+        	try {
+        		RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, lazy ? arguments : null);
+        	} catch (AlreadyClosedException e) {
+        		lazy = !lazy;
+                channel = connection.createChannel();
+            	// may happen if a queue was previously not declared "lazy". So we try non-lazy queue setting now.
+            	RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, lazy ? arguments : null);
+            }
         }
         
         @Override
@@ -229,7 +243,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     public static void main(String[] args) {
         RabbitQueueFactory qc;
         try {
-            qc = new RabbitQueueFactory("127.0.0.1", -1, null, null);
+            qc = new RabbitQueueFactory("127.0.0.1", -1, null, null, true);
             qc.getQueue("test").send("Hello World".getBytes());
             System.out.println(qc.getQueue("test2").receive(60000));
             qc.close();
