@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 # to run this script, erlang must be installed
 # Mac OS: brew install erlang
