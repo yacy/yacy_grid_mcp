@@ -200,14 +200,14 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             Throwable ee = null;
             while (System.currentTimeMillis() < termination) {
                 try {
-                    GetResponse response = channel.basicGet(this.queueName, false);
+                    GetResponse response = channel.basicGet(this.queueName, true);
                     if (response != null) {
-                    	Envelope envelope = response.getEnvelope();
-                    	long deliveryTag = envelope.getDeliveryTag();
-                        channel.basicAck(deliveryTag, false);
-                    	return response.getBody();
+                    	    //Envelope envelope = response.getEnvelope();
+                    	    //long deliveryTag = envelope.getDeliveryTag();
+                        //channel.basicAck(deliveryTag, false);
+                        return response.getBody();
                     }
-                    //Data.logger.warn("receive failed: response empty");
+                    Data.logger.warn("receive failed: response empty");
                 } catch (Throwable e) {
                     Data.logger.warn("receive failed: " + e.getMessage(), e);
                     ee = e;
