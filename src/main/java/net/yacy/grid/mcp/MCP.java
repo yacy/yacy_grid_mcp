@@ -59,9 +59,9 @@ import net.yacy.grid.tools.MultiProtocolURL;
  */
 public class MCP {
 
-    private final static YaCyServices MCP_SERVICE = YaCyServices.mcp;
-    private final static YaCyServices INDEXER_SERVICE = YaCyServices.indexer;
-    private final static String DATA_PATH = "data";
+    public final static YaCyServices MCP_SERVICE = YaCyServices.mcp;
+    public final static YaCyServices INDEXER_SERVICE = YaCyServices.indexer;
+    public final static String DATA_PATH = "data";
  
     // define services
     @SuppressWarnings("unchecked")

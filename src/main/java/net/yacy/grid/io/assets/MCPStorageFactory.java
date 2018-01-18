@@ -21,8 +21,14 @@ package net.yacy.grid.io.assets;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
+
+import javax.servlet.Servlet;
 
 import org.json.JSONObject;
 
@@ -31,9 +37,11 @@ import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Service;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
 import net.yacy.grid.mcp.api.info.StatusService;
+import net.yacy.grid.mcp.MCP;
 
 public class MCPStorageFactory implements StorageFactory<byte[]> {
 
@@ -121,10 +129,12 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
                     String server = response.getString(ObjectAPIHandler.SERVICE_KEY);
                     int p = server.indexOf("://");
                     if (p > 0) MCPStorageFactory.this.remoteSystem = server.substring(0, p);
-                    if (MCPStorageFactory.this.storage.connectFTP(server)) {
-                        Data.logger.info("MCPStorageFactory.connectMCP connected MCP storage at " + server);
-                    } else {
-                        Data.logger.error("MCPStorageFactory.connectMCP failed to connect MCP storage at " + server);
+                    if (MCPStorageFactory.this.storage != null) {
+                        if (MCPStorageFactory.this.storage.connectFTP(server)) {
+                            Data.logger.info("MCPStorageFactory.connectMCP connected MCP storage at " + server);
+                        } else {
+                            Data.logger.error("MCPStorageFactory.connectMCP failed to connect MCP storage at " + server);
+                        }
                     }
                 }
             }
@@ -144,4 +154,41 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
         // this is stateless, do nothing
     }
 
+    public static void main(String args[]) {
+        // burn-in test
+        List<Class<? extends Servlet>> services = new ArrayList<>();
+        services.addAll(Arrays.asList(MCP.MCP_SERVICES));
+        Service.initEnvironment(MCP.MCP_SERVICE, services, MCP.DATA_PATH);
+        int threads = 16;
+        final MCPStorageFactory storage = new MCPStorageFactory(null, "127.0.0.1", 8100);
+        final Random random = new Random(System.currentTimeMillis());
+        Thread[] u = new Thread[threads];
+        for (int t = 0; t < threads; t++) {
+            u[t] = new Thread() {
+                public void run() {
+                    while (true) {
+                        byte[] asset = new byte[1000 + random.nextInt(50000)];
+                        random.nextBytes(asset);
+                        String path = "test/" + Math.abs(random.nextLong());
+                        try {
+                            long x0 = System.currentTimeMillis();
+                            storage.getStorage().store(path, asset);
+                            long x1 = System.currentTimeMillis();
+                            System.out.println("stored " + asset.length + " bytes to asset " + path + " in " + (x1 - x0) + " milliseconds");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            };
+            u[t].start();
+        }
+        for (Thread t: u)
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+    }
+    
 }
