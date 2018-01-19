@@ -20,7 +20,10 @@
 package net.yacy.grid.mcp;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -141,21 +144,27 @@ public class Data {
             // create index
             String elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "localhost:9300");
             String elasticsearchClusterName = config.getOrDefault("grid.elasticsearch.clusterName", "");
-            String elasticsearchWebIndexName= config.getOrDefault("grid.elasticsearch.webIndexName", "web");
-            Path webMappingPath = Paths.get("conf/mappings/web.json");
-            if (webMappingPath.toFile().exists()) try {
-                index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName.length() == 0 ? null : elasticsearchClusterName);
-                index.createIndexIfNotExists(elasticsearchWebIndexName, 1 /*shards*/, 1 /*replicas*/);
-                String mapping = new String(Files.readAllBytes(webMappingPath));
-                JSONObject mo = new JSONObject(new JSONTokener(mapping));
-                mo = mo.getJSONObject("mappings").getJSONObject("_default_");
-                index.setMapping("web", mo.toString());
-                Data.logger.info("Connected elasticsearch at " + getHost(elasticsearchAddress));
-            } catch (IOException | NoNodeAvailableException e) {
-                index = null; // index not available
-                Data.logger.info("Failed connecting elasticsearch at " + getHost(elasticsearchAddress) + ": " + e.getMessage(), e);
-            } else {
-                Data.logger.info("no web index mapping available, no connection to elasticsearch attempted");
+            index = new ElasticsearchClient(new String[]{elasticsearchAddress}, elasticsearchClusterName.length() == 0 ? null : elasticsearchClusterName);
+            Data.logger.info("Connected elasticsearch at " + getHost(elasticsearchAddress));
+            
+            Path mappingsPath = Paths.get("conf","mappings");
+            if (mappingsPath.toFile().exists()) {
+            	for (File f: mappingsPath.toFile().listFiles()) {
+	            	if (f.getName().endsWith(".json")) {
+		                String indexName = f.getName();
+		                indexName = indexName.substring(0, indexName.length() - 5); // cut off ".json"
+	            		try {
+			                index.createIndexIfNotExists(indexName, 1 /*shards*/, 1 /*replicas*/);
+			                JSONObject mo = new JSONObject(new JSONTokener(new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8)));
+			                mo = mo.getJSONObject("mappings").getJSONObject("_default_");
+			                index.setMapping(indexName, mo.toString());
+			                Data.logger.info("initiated mapping for index " + indexName);
+			            } catch (IOException | NoNodeAvailableException e) {
+			                index = null; // index not available
+			                Data.logger.info("Failed creating mapping for index " + indexName, e);
+			            }
+	            	}
+            	}
             }
         }
         return index;
