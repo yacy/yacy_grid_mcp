@@ -20,7 +20,6 @@
 package net.yacy.grid.io.messages;
 
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 
@@ -207,7 +206,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                         //channel.basicAck(deliveryTag, false);
                         return response.getBody();
                     }
-                    Data.logger.warn("receive failed: response empty");
+                    //Data.logger.warn("receive failed: response empty");
                 } catch (Throwable e) {
                     Data.logger.warn("receive failed: " + e.getMessage(), e);
                     ee = e;
