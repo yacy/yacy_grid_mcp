@@ -105,6 +105,10 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         }
     }
 
+    private final static String messagePP(byte[] message) {
+        return ((message == null) ? "NULL" : new String(message, 0, Math.min(1000, message.length), StandardCharsets.UTF_8).replaceAll(" *", " ").replace('\n', ' '));
+    }
+    
     @Override
     public QueueFactory<byte[]> send(Services serviceName, QueueName queueName, byte[] message) throws IOException {
         if (this.rabbitConnector == null && this.rabbitMQ_host != null) {
@@ -115,7 +119,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.rabbitMQ_host = null;
         } else try {
             this.rabbitConnector.getQueue(serviceQueueName(serviceName, queueName)).send(message);
-            Data.logger.info("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + ((message == null) ? "NULL" : new String(message, 0, Math.min(80, message.length), StandardCharsets.UTF_8).replace('\n', ' ')));
+            Data.logger.info("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(message));
             return this.rabbitConnector;
         } catch (IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
@@ -129,7 +133,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         }
         if (this.mcpConnector != null) try {
             this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName)).send(message);
-            Data.logger.info("Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "', message:" + ((message == null) ? "NULL" : new String(message, 0, Math.min(80, message.length), StandardCharsets.UTF_8).replace('\n', ' ')));
+            Data.logger.info("Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(message));
             return this.mcpConnector;
         } catch (IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
@@ -151,7 +155,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         	    byte[] message = rabbitQueue.receive(timeout);
         	    if (message == null) return null; // this is not a failure, we actually have a connection but we do not get content because the queue may be empty
             MessageContainer<byte[]> mc = new MessageContainer<byte[]>(this.rabbitConnector, message);
-            if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: received rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, Math.min(80, mc.getPayload().length), StandardCharsets.UTF_8).replace('\n', ' ')));
+            if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: received rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
             return mc;
         } catch (IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: receive rabbitMQ service '" + serviceName + "', queue '" + queueName + "',rabbitmq fail", e);
@@ -167,14 +171,14 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             Queue<byte[]> mcpQueue = this.mcpConnector.getQueue(serviceQueueName(serviceName, queueName));
             byte[] message = mcpQueue.receive(timeout);
             MessageContainer<byte[]> mc = new MessageContainer<byte[]>(this.mcpConnector, message);
-            if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: receive mcp service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, Math.min(80, mc.getPayload().length), StandardCharsets.UTF_8).replace('\n', ' ')));
+            if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: receive mcp service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
             return mc;
         } catch (IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: receive mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
         }
         Data.logger.info("Broker/Client: receive() on peer broker/local db");
         MessageContainer<byte[]> mc = super.receive(serviceName, queueName, timeout);
-        if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: received peer broker/local db service '" + serviceName + "', queue '" + queueName + "', message:" + ((mc.getPayload() == null) ? "NULL" : new String(mc.getPayload(), 0, Math.min(80, mc.getPayload().length), StandardCharsets.UTF_8).replace('\n', ' ')));
+        if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: received peer broker/local db service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
         return mc;  
     }
 
