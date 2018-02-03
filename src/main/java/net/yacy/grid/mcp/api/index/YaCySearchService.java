@@ -62,6 +62,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         String callback = call.get("callback", "");
         boolean jsonp = callback != null && callback.length() > 0;
         boolean minified = call.get("minified", false);
+        boolean explain = call.get("explain", false);
         String query = call.get("query", "");
         //String contentdom = call.get("contentdom", "text");
         int maximumRecords = call.get("maximumRecords", 10);
@@ -76,10 +77,10 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         List<WebMapping> facetFieldMapping = new ArrayList<>();
         for (String s: facetFields.split(",")) facetFieldMapping.add(WebMapping.valueOf(s));
         
-        QueryBuilder qb = YaCyQuery.simpleQueryBuilder(query);
+        QueryBuilder qb = new YaCyQuery(query, timezoneOffset).queryBuilder; // was: YaCyQuery.simpleQueryBuilder(query);
         ElasticsearchClient.Query eq = Data.getIndex().query(
                 "web", qb, null, null, timezoneOffset, startRecord, maximumRecords,
-                facetLimit, facetFieldMapping.toArray(new WebMapping[facetFieldMapping.size()]));
+                facetLimit, explain, facetFieldMapping.toArray(new WebMapping[facetFieldMapping.size()]));
 
         JSONObject json = new JSONObject(true);
         JSONArray channels = new JSONArray();
@@ -94,7 +95,11 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         channel.put("searchTerms", query);
         channel.put("totalResults", Integer.toString(eq.hitCount));
         channel.put("items", items);
-        eq.result.forEach(map -> {
+        
+        List<Map<String, Object>> result = eq.results;
+        List<String> explanations = eq.explanations;
+        for (int hitc = 0; hitc < result.size(); hitc++) {
+            Map<String, Object> map = result.get(hitc);
             JSONObject hit = new JSONObject(true);
             List<?> title = (List<?>) map.get(WebMapping.title.getSolrFieldName());
             String titleString = title == null || title.isEmpty() ? "" : title.iterator().next().toString();
@@ -115,8 +120,11 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
             hit.put("size", size.toString());
             hit.put("sizename", size_string);
             hit.put("host", host);
+            if (explain) {
+                hit.put("explanation", explanations.get(hitc));
+            }
             items.put(hit);
-        });
+        };
         JSONArray navigation = new JSONArray();
         channel.put("navigation", navigation);
         

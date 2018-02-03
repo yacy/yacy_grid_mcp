@@ -76,10 +76,11 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         String site = call.get("site", "");
         String[] sites = site.length() == 0 ? new String[0] : site.split("\\|");
         int timezoneOffset = call.get("timezoneOffset", -1);
+        boolean explain = call.get("explain", false);
         String queryXML = XML.escape(q);
         
         // prepare a query
-        QueryBuilder termQuery = YaCyQuery.simpleQueryBuilder(q);
+        QueryBuilder termQuery = new YaCyQuery(q, timezoneOffset).queryBuilder; // was: YaCyQuery.simpleQueryBuilder(q);
         BoolQueryBuilder qb = QueryBuilders.boolQuery().must(termQuery);
         if (sites.length > 0) {
             BoolQueryBuilder collectionQuery = QueryBuilders.boolQuery();
@@ -88,8 +89,9 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         }
 
         HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getSolrFieldName()).preTags("").postTags("").fragmentSize(140);
-        ElasticsearchClient.Query query = Data.getIndex().query("web", qb, null, hb, timezoneOffset, start, num, 0);
-        List<Map<String, Object>> result = query.result;
+        ElasticsearchClient.Query query = Data.getIndex().query("web", qb, null, hb, timezoneOffset, start, num, 0, explain);
+        List<Map<String, Object>> result = query.results;
+        List<String> explanations = query.explanations;
  
         // no xml encoder here on purpose, we will try to not have such things into our software in the future!
         StringBuffer sb = new StringBuffer(2048);
@@ -147,6 +149,9 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
 	        sb.append("<COLS>dht</COLS>\n");
 	        sb.append("<HAS><L/><C SZ=\"").append(size_string).append("\" CID=\"").append(urlhash).append("\" ENC=\"UTF-8\"/></HAS>\n");
 	        //sb.append("<ENT_SOURCE>yacy_v1.921_20170616_9248.tar.gz/amBzuRuUFyt6</ENT_SOURCE>\n");
+	        if (explain) {
+	            sb.append("<EXPLANATION><![CDATA[" +explanations.get(hitc) + "]]></EXPLANATION>\n"); 
+	        }
 	        sb.append("</R>\n");
         };
         

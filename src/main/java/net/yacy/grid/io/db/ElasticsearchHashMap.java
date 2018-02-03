@@ -43,8 +43,8 @@ public class ElasticsearchHashMap extends AbstractMap<String, String> implements
     
     @Override
     public Set<Map.Entry<String, String>> entrySet() {
-        Query query = this.elastic.query(this.index, QueryBuilders.matchAllQuery(), null, null, 0, 0, Integer.MAX_VALUE, 0);
-        List<Map<String, Object>> result = query.result;
+        Query query = this.elastic.query(this.index, QueryBuilders.matchAllQuery(), null, null, 0, 0, Integer.MAX_VALUE, 0, false);
+        List<Map<String, Object>> result = query.results;
         Set<Map.Entry<String, String>> set = new HashSet<>();
         for (Map<String, Object> r: result) {
             set.add(new AbstractMap.SimpleEntry<>((String) r.get("key"), (String) r.get("value")));

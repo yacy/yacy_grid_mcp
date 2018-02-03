@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.apache.lucene.search.Explanation;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsAction;
@@ -684,12 +685,13 @@ public class ElasticsearchClient {
         return map;
     }
     
-    public Query query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, WebMapping... aggregationFields) {
-        return new Query(indexName,  queryBuilder, postFilter, hb, timezoneOffset, from, resultCount, aggregationLimit, aggregationFields);
+    public Query query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
+        return new Query(indexName,  queryBuilder, postFilter, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
     }
     
     public class Query {
-        public List<Map<String, Object>> result;
+        public List<Map<String, Object>> results;
+        public List<String> explanations;
         public List<Map<String, HighlightField>> highlights;
         public int hitCount;
         public Map<String, List<Map.Entry<String, Long>>> aggregations;
@@ -705,9 +707,10 @@ public class ElasticsearchClient {
          * @param aggregationLimit - the maximum count of facet entities, not search results
          * @param aggregationFields - names of the aggregation fields. If no aggregation is wanted, pass no (zero) field(s)
          */
-        public Query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, WebMapping... aggregationFields) {
+        public Query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
             // prepare request
             SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName)
+                    .setExplain(explain)
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
                     .setQuery(queryBuilder)
                     .setFrom(from)
@@ -723,16 +726,23 @@ public class ElasticsearchClient {
             SearchResponse response = request.execute().actionGet();
             SearchHits searchHits = response.getHits();
             hitCount = (int) searchHits.getTotalHits();
-                    
+            
             // evaluate search result
             //long totalHitCount = response.getHits().getTotalHits();
             SearchHit[] hits = searchHits.getHits();
-            this.result = new ArrayList<Map<String, Object>>(hitCount);
+            this.results = new ArrayList<Map<String, Object>>(hitCount);
+            this.explanations = new ArrayList<String>(hitCount);
             this.highlights = new ArrayList<Map<String, HighlightField>>(hitCount);
             for (SearchHit hit: hits) {
                 Map<String, Object> map = hit.getSourceAsMap();
-                this.result.add(map);
+                this.results.add(map);
                 this.highlights.add(hit.getHighlightFields());
+                if (explain) {
+                    Explanation explanation = hit.getExplanation();
+                    this.explanations.add(explanation.toString());
+                } else {
+                    this.explanations.add("");
+                }
             }
             
             // evaluate aggregation

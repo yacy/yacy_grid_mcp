@@ -1,36 +1,62 @@
+/**
+ *  YaCyQuery
+ *  Copyright 03.02.2018 by Michael Peter Christen, @0rb1t3r
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program in the file lgpl21.txt
+ *  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 package net.yacy.grid.io.index;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.HttpStatus;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.search.MatchQuery.ZeroTermsQuery;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import net.yacy.grid.mcp.Data;
+import net.yacy.grid.tools.DateParser;
 
 public class YaCyQuery {
     
     private static char space = ' ';
     private static char sq = '\'';
     private static char dq = '"';
-    private static String seps = ".:;#*`,!$%()=?^<>/&_";
+    //private static String seps = ".:;#*`,!$%()=?^<>/&";
     
     public String query_original;
-    private final Set<String> include_words, exclude_words;
-    private final ArrayList<String> include_strings, exclude_strings;
     
     public final static String FACET_DEFAULT_PARAMETER = "host_s,url_file_ext_s,author_sxt,dates_in_content_dts,language_s,url_protocol_s,collection_sxt";
     private final static Map<WebMapping, Float> QUERY_DEFAULT_FIELDS = new HashMap<>();
@@ -47,134 +73,6 @@ public class YaCyQuery {
         QUERY_DEFAULT_FIELDS.put(WebMapping.h4_txt, 3.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.text_t, 1.0f);
     }
-
-    public static QueryBuilder simpleQueryBuilder(String q) {
-        if (q.equals("yacyall")) return new MatchAllQueryBuilder();
-        final MultiMatchQueryBuilder qb = QueryBuilders
-                .multiMatchQuery(q)
-                .operator(Operator.AND)
-                .zeroTermsQuery(ZeroTermsQuery.ALL);
-        QUERY_DEFAULT_FIELDS.forEach((mapping, boost) -> qb.field(mapping.getSolrFieldName(), boost));
-        return qb;
-    }
-    
-    public YaCyQuery(String query) {
-        assert query != null;
-        this.query_original = query;
-        this.include_words = new HashSet<String>();
-        this.exclude_words = new HashSet<String>();
-        this.include_strings = new ArrayList<String>();
-        this.exclude_strings = new ArrayList<String>();
-
-        // remove funny symbols
-        int c;
-        for (int i = 0; i < seps.length(); i++) {
-            while ((c = query.indexOf(seps.charAt(i))) >= 0) {
-                query = query.substring(0, c) + (((c + 1) < query.length()) ? (' ' + query.substring(c + 1)) : "");
-            }
-        }
-
-        // parse first quoted strings
-        parseQuery(query, this.include_strings, this.exclude_strings);
-        
-        // .. end then take these strings apart to generate word lists
-        for (String s: this.include_strings) parseQuery(s, this.include_words, this.include_words);
-        for (String s: this.exclude_strings) parseQuery(s, this.exclude_words, this.exclude_words);
-    }
-
-    private static void parseQuery(String query, Collection<String> include_string, Collection<String> exclude_string) {
-        while (query.length() > 0) {
-            // parse query
-            int p = 0;
-            while (p < query.length() && query.charAt(p) == space) p++;
-            query = query.substring(p);
-            if (query.length() == 0) return;
-
-            // parse phrase
-            boolean inc = true;
-            if (query.charAt(0) == '-') {
-                inc = false;
-                query = query.substring(1);
-            } else if (query.charAt(0) == '+') {
-                inc = true;
-                query = query.substring(1);
-            }
-            if (query.length() == 0) return;
-            
-            // parse string
-            char stop = space;
-            if (query.charAt(0) == dq) {
-                stop = query.charAt(0);
-                query = query.substring(1);
-            } else if (query.charAt(0) == sq) {
-                stop = query.charAt(0);
-                query = query.substring(1);
-            }
-            p = 0;
-            while (p < query.length() && query.charAt(p) != stop) p++;
-            String string = query.substring(0, p);
-            p++; // go behind the stop character (eats up space, sq and dq)
-            query = p < query.length() ? query.substring(p) : "";
-            if (string.length() > 0) {
-                if (inc) {
-                    if (!include_string.contains(string)) include_string.add(string);
-                } else {
-                    if (!exclude_string.contains(string)) exclude_string.add(string);
-                }
-            }
-        }
-        // in case that the include_string contains several entries including 1-char tokens and also more-than-1-char tokens,
-        // then remove the 1-char tokens to prevent that we are to strict. This will make it possible to be a bit more fuzzy
-        // in the search where it is appropriate
-        boolean contains_single = false, contains_multiple = false;
-        for (String token: include_string) {
-            if (token.length() == 1) contains_single = true; else contains_multiple = true;
-        }
-        if (contains_single && contains_multiple) {
-            Iterator<String> i = include_string.iterator();
-            while (i.hasNext()) if (i.next().length() == 1) i.remove();
-        }
-    }
-
-    /**
-     * Search query string (without YaCy specific modifier like site:xxx or /smb)
-     * the modifier are held separately in a search paramter modifier
-     *
-     * @param encodeHTML
-     * @return the search query string
-     */
-    public String getQueryString(final boolean encodeHTML) {
-        if (this.query_original == null) return null;
-        String ret;
-        if (encodeHTML){
-            try {
-                ret = URLEncoder.encode(this.query_original, StandardCharsets.UTF_8.name());
-            } catch (final UnsupportedEncodingException e) {
-                ret = this.query_original;
-            }
-        } else {
-            ret = this.query_original;
-        }
-        return ret;
-    }
-
-    /**
-     * the include string may be useful (and better) for highlight/snippet computation 
-     * @return the query string containing only the positive literals (includes) and without whitespace characters
-     */
-    public String getIncludeString() {
-        if (this.include_strings.size() == 0) return "";
-        StringBuilder sb = new StringBuilder(10 * include_strings.size());
-        for (String s: this.include_strings) sb.append(s).append(' ');
-        return sb.toString().substring(0, sb.length() - 1);
-    }
-    
-    public boolean containsInclude(String word) {
-        if (word == null || word.length() == 0) return false;
-        
-        String t = word.toLowerCase(Locale.ENGLISH);
-        return this.include_strings.contains(t) || this.include_words.contains(t);
-    }
     
     public List<String> collectionTextFilterQuery(boolean noimages) {
         final ArrayList<String> fqs = new ArrayList<>();
@@ -189,4 +87,235 @@ public class YaCyQuery {
         return fqs;
     }
 
+    private final static Pattern term4ORPattern = Pattern.compile("(?:^| )(\\S*(?: OR \\S*)+)(?: |$)"); // Pattern.compile("(^\\s*(?: OR ^\\s*+)+)");
+    private final static Pattern tokenizerPattern = Pattern.compile("([^\"]\\S*|\".+?\")\\s*"); // tokenizes Strings into terms respecting quoted parts
+    
+    public QueryBuilder queryBuilder;
+    public Date since;
+    public Date until;
+
+    public YaCyQuery(String q, int timezoneOffset) {
+        // default values for since and util
+        this.since = new Date(0);
+        this.until = new Date(Long.MAX_VALUE);
+        // parse the query
+        this.queryBuilder = preparse(q, timezoneOffset);
+        Data.logger.info("YaCyQuery: " + this.queryBuilder.toString());
+    }
+    
+    private static List<String> splitIntoORGroups(String q) {
+        // detect usage of OR junctor usage. Right now we cannot have mixed AND and OR usage. Thats a hack right now
+        q = q.replaceAll(" AND ", " "); // AND is default
+        
+        // tokenize the query
+        ArrayList<String> list = new ArrayList<>();
+        Matcher m = term4ORPattern.matcher(q);
+        while (m.find()) {
+            String d = m.group(1);
+            q = q.replace(d, "").replace("  ", " ");
+            list.add(d);
+            m = term4ORPattern.matcher(q);
+        }
+        q = q.trim();
+        if (q.length() > 0) list.add(0, q);
+        return list;
+    }
+    
+    /**
+     * fixing a query mistake covers most common wrong queries from the user
+     * @param q
+     * @return the fixed query
+     */
+    public static String fixQueryMistakes(String q) {
+        q = q.replaceAll("\\*:\\*", ""); // no solr hacking here
+        q = q.replaceAll(" AND ", " "); // AND is default
+        return q;
+    }
+    
+
+    private QueryBuilder preparse(String q, int timezoneOffset) {
+        // detect usage of OR connector usage.
+        q = fixQueryMistakes(q);
+        List<String> terms = splitIntoORGroups(q); // OR binds stronger than AND
+        //if (terms.size() == 0) QueryBuilders.constantScoreQuery(QueryBuilders.matchAllQuery());
+        
+        // special handling: we don't need a boolean query builder on top; just return one parse object
+        if (terms.size() == 1) return parse(terms.get(0), timezoneOffset);
+
+        // generic handling: all of those OR groups MUST match. That is done with the filter query
+        BoolQueryBuilder aquery = QueryBuilders.boolQuery();
+        for (String t: terms) {
+            QueryBuilder partial = parse(t, timezoneOffset);
+            aquery.filter(partial);
+        }
+        return aquery;
+    }
+    
+    private QueryBuilder parse(String q, int timezoneOffset) {
+        // detect usage of OR ORconnective usage. Because of the preparse step we will have only OR or only AND here.
+        q = q.replaceAll(" AND ", " "); // AND is default
+        boolean ORconnective = q.indexOf(" OR ") >= 0;
+        q = q.replaceAll(" OR ", " "); // if we know that all terms are OR, we remove that and apply it later. Because we splitted into OR groups it is right to use OR here only
+        
+        // tokenize the query
+        Set<String> qe = new LinkedHashSet<String>();
+        Matcher m = tokenizerPattern.matcher(q);
+        while (m.find()) qe.add(m.group(1));
+        
+        // twitter search syntax:
+        //   term1 term2 term3 - all three terms shall appear
+        //   "term1 term2 term3" - exact match of all terms
+        //   term1 OR term2 OR term3 - any of the three terms shall appear
+        //   from:user - tweets posted from that user
+        //   to:user - tweets posted to that user
+        //   @user - tweets which mention that user
+        //   near:"location" within:xmi - tweets that are near that location
+        //   #hashtag - tweets containing the given hashtag
+        //   since:2015-04-01 until:2015-04-03 - tweets within given time range
+        // additional constraints:
+        //   /image /audio /video /place - restrict to tweets which have attached images, audio, video or place
+        ArrayList<String> text_positive_match = new ArrayList<>();
+        ArrayList<String> text_negative_match = new ArrayList<>();
+        ArrayList<String> text_positive_filter = new ArrayList<>();
+        ArrayList<String> text_negative_filter = new ArrayList<>();
+        Multimap<String, String> modifier = HashMultimap.create();
+        Set<String> constraints_positive = new HashSet<>();
+        Set<String> constraints_negative = new HashSet<>();
+        for (String t: qe) {
+            if (t.length() == 0) continue;
+            if (t.startsWith("/")) {
+                constraints_positive.add(t.substring(1));
+                continue;
+            } else if (t.startsWith("-/")) {
+                constraints_negative.add(t.substring(2));
+                continue;
+            } else if (t.indexOf(':') > 0) {
+                int p = t.indexOf(':');
+                modifier.put(t.substring(0, p).toLowerCase(), t.substring(p + 1));
+                continue;
+            } else {
+                // patch characters that will confuse elasticsearch or have a different meaning
+                boolean negative = t.startsWith("-");
+                if (negative) t = t.substring(1);
+                if (t.length() == 0) continue;
+                if ((t.charAt(0) == dq && t.charAt(t.length() - 1) == dq) || (t.charAt(0) == sq && t.charAt(t.length() - 1) == sq)) {
+                    t = t.substring(1, t.length() - 1);
+                    if (negative) text_negative_filter.add(t); else text_positive_filter.add(t);
+                } else if (t.indexOf('-') > 0) {
+                    // this must be handled like a quoted string without the minus
+                    t = t.replace('-', space);
+                    if (negative) text_negative_filter.add(t); else text_positive_filter.add(t);
+                } else {
+                    if (negative) text_negative_match.add(t); else text_positive_match.add(t);
+                }
+                continue;
+            }
+        }
+
+        // special constraints
+        //boolean constraint_about = constraints_positive.remove("about");
+        //if (constraints_negative.remove("about")) constraint_about = false;
+        
+        // compose query for text
+        List<QueryBuilder> queries = new ArrayList<>();
+        // fuzzy matching
+        if (!text_positive_match.isEmpty()) queries.add(simpleQueryBuilder(String.join(" ", text_positive_match), ORconnective));
+        if (!text_negative_match.isEmpty()) queries.add(QueryBuilders.boolQuery().mustNot(simpleQueryBuilder(String.join(" ", text_negative_match), ORconnective)));
+        // exact matching
+        for (String text: text_positive_filter) {
+            queries.add(exactMatchQueryBuilder(text));
+        }
+        for (String text: text_negative_filter) {
+            queries.add(QueryBuilders.boolQuery().mustNot(exactMatchQueryBuilder(text)));
+        }
+        
+        // apply modifiers
+        if (modifier.containsKey("id")) {
+            queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery("_id", modifier.get("id"))));
+        }
+        if (modifier.containsKey("-id")) {
+            queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery("_id", modifier.get("-id")))));
+        }
+
+        if (modifier.containsKey("intitle")) {
+            for (String intitle: modifier.get("intitle")) {
+                queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(WebMapping.title.getSolrFieldName(), intitle)));
+            }
+        }
+        if (modifier.containsKey("-intitle")) {
+            for (String intitle: modifier.get("-intitle")) {
+                queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(WebMapping.title.getSolrFieldName(), intitle))));
+            }
+        }
+        if (modifier.containsKey("inurl")) {
+            for (String inurl: modifier.get("inurl")) {
+                queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(WebMapping.url_file_name_tokens_t.getSolrFieldName(), inurl)));
+            }
+        }
+        if (modifier.containsKey("-inurl")) {
+            for (String inurl: modifier.get("-inurl")) {
+                queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(WebMapping.url_file_name_tokens_t.getSolrFieldName(), inurl))));
+            }
+        }
+        if (modifier.containsKey("since")) try {
+            Calendar since = DateParser.parse(modifier.get("since").iterator().next(), timezoneOffset);
+            this.since = since.getTime();
+            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.dates_in_content_dts.getSolrFieldName()).from(this.since);
+            if (modifier.containsKey("until")) {
+                Calendar until = DateParser.parse(modifier.get("until").iterator().next(), timezoneOffset);
+                if (until.get(Calendar.HOUR) == 0 && until.get(Calendar.MINUTE) == 0) {
+                    // until must be the day which is included in results.
+                    // To get the result within the same day, we must add one day.
+                    until.add(Calendar.DATE, 1);
+                }
+                this.until = until.getTime();
+                rangeQuery.to(this.until);
+            } else {
+                this.until = new Date(Long.MAX_VALUE);
+            }
+            queries.add(rangeQuery);
+        } catch (ParseException e) {} else if (modifier.containsKey("until")) try {
+            Calendar until = DateParser.parse(modifier.get("until").iterator().next(), timezoneOffset);
+            if (until.get(Calendar.HOUR) == 0 && until.get(Calendar.MINUTE) == 0) {
+                // until must be the day which is included in results.
+                // To get the result within the same day, we must add one day.
+                until.add(Calendar.DATE, 1);
+            }
+            this.until = until.getTime();
+            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.dates_in_content_dts.getSolrFieldName()).to(this.until);
+            queries.add(rangeQuery);
+        } catch (ParseException e) {}
+
+        // now combine queries with OR or AND operator
+        
+        // simple case where we have one query only
+        if (queries.size() == 1) {
+            return queries.iterator().next();
+        }
+        
+        BoolQueryBuilder b = QueryBuilders.boolQuery();
+        for (QueryBuilder filter : queries){
+            if (ORconnective) b.should(filter); else b.filter(filter);
+        }
+        if (ORconnective) b.minimumShouldMatch(1);
+        
+        return b;
+    }
+    
+    public static QueryBuilder simpleQueryBuilder(String q, boolean or) {
+        if (q.equals("yacyall")) return new MatchAllQueryBuilder();
+        final MultiMatchQueryBuilder qb = QueryBuilders
+                .multiMatchQuery(q)
+                .operator(or ? Operator.OR : Operator.AND)
+                .zeroTermsQuery(ZeroTermsQuery.ALL);
+        QUERY_DEFAULT_FIELDS.forEach((mapping, boost) -> qb.field(mapping.getSolrFieldName(), boost));
+        return qb;
+    }
+    
+    public static QueryBuilder exactMatchQueryBuilder(String q) {
+        BoolQueryBuilder qb = QueryBuilders.boolQuery();
+        QUERY_DEFAULT_FIELDS.forEach((mapping, boost) -> qb.should(QueryBuilders.termQuery(mapping.getSolrFieldName(), q)));
+        qb.minimumShouldMatch(1);
+        return qb;
+    }
 }
