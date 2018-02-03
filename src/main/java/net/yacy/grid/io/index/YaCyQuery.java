@@ -23,6 +23,7 @@ package net.yacy.grid.io.index;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,6 +48,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import net.yacy.grid.mcp.Data;
+import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.DateParser;
 
 public class YaCyQuery {
@@ -93,13 +95,37 @@ public class YaCyQuery {
     public QueryBuilder queryBuilder;
     public Date since;
     public Date until;
+    public String[] collections;
 
-    public YaCyQuery(String q, int timezoneOffset) {
+    public YaCyQuery(String q, String[] collections, Classification.ContentDomain contentdom, int timezoneOffset) {
         // default values for since and util
         this.since = new Date(0);
         this.until = new Date(Long.MAX_VALUE);
-        // parse the query
+        this.collections = collections;
+        
+        // parse the query string
         this.queryBuilder = preparse(q, timezoneOffset);
+        
+        // handle constraints and document types
+        if (this.collections != null && this.collections.length > 0) {
+            // attach collection constraint
+            BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
+            BoolQueryBuilder collectionQuery = QueryBuilders.boolQuery();
+            for (String s: this.collections) collectionQuery.should(QueryBuilders.termQuery(WebMapping.collection_sxt.getSolrFieldName(), s));
+            qb.must(QueryBuilders.constantScoreQuery(collectionQuery));
+            this.queryBuilder = qb;
+        }
+        if (contentdom == Classification.ContentDomain.IMAGE) {
+            BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
+            qb.must(QueryBuilders.rangeQuery(WebMapping.imagescount_i.getSolrFieldName()).gt(new Integer(0)));
+            this.queryBuilder = qb;
+        }
+        if (contentdom == Classification.ContentDomain.VIDEO) {
+            BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
+            qb.must(QueryBuilders.rangeQuery(WebMapping.videolinkscount_i.getSolrFieldName()).gt(new Integer(0)));
+            this.queryBuilder = qb;
+        }
+        // ready
         Data.logger.info("YaCyQuery: " + this.queryBuilder.toString());
     }
     
@@ -257,6 +283,10 @@ public class YaCyQuery {
                 queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(WebMapping.url_file_name_tokens_t.getSolrFieldName(), inurl))));
             }
         }
+        if (modifier.containsKey("collection") && (this.collections == null || this.collections.length == 0)) {
+            Collection<String> c = modifier.get("collection");
+            this.collections = c.toArray(new String[c.size()]);
+        }
         if (modifier.containsKey("since")) try {
             Calendar since = DateParser.parse(modifier.get("since").iterator().next(), timezoneOffset);
             this.since = since.getTime();
@@ -317,5 +347,36 @@ public class YaCyQuery {
         QUERY_DEFAULT_FIELDS.forEach((mapping, boost) -> qb.should(QueryBuilders.termQuery(mapping.getSolrFieldName(), q)));
         qb.minimumShouldMatch(1);
         return qb;
+    }
+    
+    public static String pickBestImage(Map<String, Object> hit, String dflt) {
+        Object images_height = hit.get(WebMapping.images_height_val.getSolrFieldName());
+        Object images_width = hit.get(WebMapping.images_width_val.getSolrFieldName());
+        Object images = hit.get(WebMapping.images_sxt.getSolrFieldName());
+        if (images instanceof List && images_height instanceof List && images_width instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<String> links = (List<String>) images;
+            @SuppressWarnings("unchecked")
+            List<Integer> heights = (List<Integer>) images_height;
+            @SuppressWarnings("unchecked")
+            List<Integer> widths = (List<Integer>) images_width;
+            if (links.size() == heights.size() && heights.size() == widths.size()) {
+                int maxsize = 0;
+                int maxi = 0;
+                for (int i = 0; i < heights.size(); i++) {
+                    int pixel = heights.get(i) * widths.get(i);
+                    if (pixel > maxsize) {
+                        maxsize = pixel;
+                        maxi = i;
+                    }
+                }
+                String link = links.get(maxi);
+                return link;
+            } else {
+                String link = links.get(0);
+                return link;
+            }
+        }
+        return dflt;
     }
 }

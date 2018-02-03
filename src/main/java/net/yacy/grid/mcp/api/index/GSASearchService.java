@@ -28,9 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.json.XML;
@@ -43,6 +41,7 @@ import net.yacy.grid.io.index.ElasticsearchClient;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.io.index.YaCyQuery;
 import net.yacy.grid.mcp.Data;
+import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.DateParser;
 import net.yacy.grid.tools.Digest;
 
@@ -73,23 +72,18 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         String q = call.get("q", "");
         int num = call.get("num", 10); // in GSA: the maximum value of this parameter is 1000
         int start = call.get("startRecord", call.get("start", 0)); // The index number of the results is 0-based
-        String site = call.get("site", "");
+        Classification.ContentDomain contentdom =  Classification.ContentDomain.contentdomParser(call.get("contentdom", "all"));
+        String site = call.get("site", call.get("collection", "").replace(',', '|'));  // important: call arguments may overrule parsed collection values if not empty. This can be used for authentified indexes!
         String[] sites = site.length() == 0 ? new String[0] : site.split("\\|");
         int timezoneOffset = call.get("timezoneOffset", -1);
         boolean explain = call.get("explain", false);
         String queryXML = XML.escape(q);
         
         // prepare a query
-        QueryBuilder termQuery = new YaCyQuery(q, timezoneOffset).queryBuilder; // was: YaCyQuery.simpleQueryBuilder(q);
-        BoolQueryBuilder qb = QueryBuilders.boolQuery().must(termQuery);
-        if (sites.length > 0) {
-            BoolQueryBuilder collectionQuery = QueryBuilders.boolQuery();
-            for (String s: sites) collectionQuery.should(QueryBuilders.termQuery(WebMapping.collection_sxt.getSolrFieldName(), s));
-            qb.must(QueryBuilders.constantScoreQuery(collectionQuery));
-        }
+        QueryBuilder termQuery = new YaCyQuery(q, sites, contentdom, timezoneOffset).queryBuilder;
 
         HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getSolrFieldName()).preTags("").postTags("").fragmentSize(140);
-        ElasticsearchClient.Query query = Data.getIndex().query("web", qb, null, hb, timezoneOffset, start, num, 0, explain);
+        ElasticsearchClient.Query query = Data.getIndex().query("web", termQuery, null, hb, timezoneOffset, start, num, 0, explain);
         List<Map<String, Object>> result = query.results;
         List<String> explanations = query.explanations;
  
@@ -124,6 +118,7 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
             List<?> title = (List<?>) map.get(WebMapping.title.getSolrFieldName());
             String titleXML = title == null || title.isEmpty() ? "" : XML.escape(title.iterator().next().toString());
             Object link = map.get(WebMapping.url_s.getSolrFieldName());
+            if (Classification.ContentDomain.IMAGE == contentdom) link = YaCyQuery.pickBestImage(map, (String) link);
             String linkXML = XML.escape(link.toString());
             String urlhash = Digest.encodeMD5Hex(link.toString());
             
