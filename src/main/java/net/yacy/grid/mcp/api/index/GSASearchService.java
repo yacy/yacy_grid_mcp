@@ -70,7 +70,7 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         // query Attributes:
         // for original GSA query attributes, see https://www.google.com/support/enterprise/static/gsa/docs/admin/74/gsa_doc_set/xml_reference/request_format.html#1082911
         String q = call.get("q", "");
-        int num = call.get("num", 10); // in GSA: the maximum value of this parameter is 1000
+        int num = call.get("num", call.get("rows", call.get("maximumRecords", 10))); // in GSA: the maximum value of this parameter is 1000
         int start = call.get("startRecord", call.get("start", 0)); // The index number of the results is 0-based
         Classification.ContentDomain contentdom =  Classification.ContentDomain.contentdomParser(call.get("contentdom", "all"));
         String site = call.get("site", call.get("collection", "").replace(',', '|'));  // important: call arguments may overrule parsed collection values if not empty. This can be used for authentified indexes!

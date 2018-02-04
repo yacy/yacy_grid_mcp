@@ -69,8 +69,8 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         String collection = call.get("collection", ""); // important: call arguments may overrule parsed collection values if not empty. This can be used for authentified indexes!
         collection = collection.replace(',', '|'); // to be compatible with the site-operator of GSA, we use a vertical pipe symbol here to divide collections.
         String[] collections = collection.length() == 0 ? new String[0] : collection.split("\\|");
-        int maximumRecords = call.get("maximumRecords", 10);
-        int startRecord = call.get("startRecord", 0);
+        int maximumRecords = call.get("maximumRecords", call.get("rows", call.get("num", 10)));
+        int startRecord = call.get("startRecord", call.get("start", 0));
         //int meanCount = call.get("meanCount", 5);
         int timezoneOffset = call.get("timezoneOffset", -1);
         //String nav = call.get("nav", "");
