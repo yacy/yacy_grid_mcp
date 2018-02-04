@@ -177,6 +177,15 @@ public class YaCyQuery {
         return aquery;
     }
     
+    private final static String[][] modifierTypes = new String[][] {
+        new String[] {"id", "_id"},
+        new String[] {"intitle", WebMapping.title.getSolrFieldName()},
+        new String[] {"inurlinurl", WebMapping.url_file_name_tokens_t.getSolrFieldName()},
+        new String[] {"filetype", WebMapping.url_file_ext_s.getSolrFieldName()},
+        new String[] {"site", WebMapping.host_s.getSolrFieldName()},
+        new String[] {"author", WebMapping.author_sxt.getSolrFieldName()}
+    };
+    
     private QueryBuilder parse(String q, int timezoneOffset) {
         // detect usage of OR ORconnective usage. Because of the preparse step we will have only OR or only AND here.
         q = q.replaceAll(" AND ", " "); // AND is default
@@ -256,31 +265,12 @@ public class YaCyQuery {
         }
         
         // apply modifiers
-        if (modifier.containsKey("id")) {
-            queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery("_id", modifier.get("id"))));
-        }
-        if (modifier.containsKey("-id")) {
-            queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery("_id", modifier.get("-id")))));
-        }
-
-        if (modifier.containsKey("intitle")) {
-            for (String intitle: modifier.get("intitle")) {
-                queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(WebMapping.title.getSolrFieldName(), intitle)));
+        for (String[] modifierType: modifierTypes) {
+            if (modifier.containsKey(modifierType[0])) {
+                queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery(modifierType[1], modifier.get(modifierType[0]))));
             }
-        }
-        if (modifier.containsKey("-intitle")) {
-            for (String intitle: modifier.get("-intitle")) {
-                queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(WebMapping.title.getSolrFieldName(), intitle))));
-            }
-        }
-        if (modifier.containsKey("inurl")) {
-            for (String inurl: modifier.get("inurl")) {
-                queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(WebMapping.url_file_name_tokens_t.getSolrFieldName(), inurl)));
-            }
-        }
-        if (modifier.containsKey("-inurl")) {
-            for (String inurl: modifier.get("-inurl")) {
-                queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(WebMapping.url_file_name_tokens_t.getSolrFieldName(), inurl))));
+            if (modifier.containsKey("-" + modifierType[0])) {
+                queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery(modifierType[1], modifier.get("-" + modifierType[0])))));
             }
         }
         if (modifier.containsKey("collection") && (this.collections == null || this.collections.length == 0)) {
