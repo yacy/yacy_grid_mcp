@@ -108,7 +108,12 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
             List<?> title = (List<?>) map.get(WebMapping.title.getSolrFieldName());
             String titleString = title == null || title.isEmpty() ? "" : title.iterator().next().toString();
             Object link = map.get(WebMapping.url_s.getSolrFieldName());
-            if (Classification.ContentDomain.IMAGE == contentdom) link = YaCyQuery.pickBestImage(map, (String) link);
+            if (Classification.ContentDomain.IMAGE == contentdom) {
+                hit.put("url", link); // the url before we extract the link
+                link = YaCyQuery.pickBestImage(map, (String) link);
+                hit.put("icon", link);
+                hit.put("image", link);
+            }
             List<?> description = (List<?>) map.get(WebMapping.description_txt.getSolrFieldName());
             String descriptionString = description == null || description.isEmpty() ? "" : description.iterator().next().toString();
             String last_modified = (String) map.get(WebMapping.last_modified.getSolrFieldName());
