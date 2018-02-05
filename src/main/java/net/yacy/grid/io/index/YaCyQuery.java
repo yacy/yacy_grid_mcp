@@ -61,20 +61,6 @@ public class YaCyQuery {
     public String query_original;
     
     public final static String FACET_DEFAULT_PARAMETER = "host_s,url_file_ext_s,author_sxt,dates_in_content_dts,language_s,url_protocol_s,collection_sxt";
-    private final static Map<WebMapping, Float> QUERY_DEFAULT_FIELDS = new HashMap<>();
-    static {
-        QUERY_DEFAULT_FIELDS.put(WebMapping.url_s, 1000.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.host_organization_s, 1000.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.url_paths_sxt, 30.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.url_file_name_s, 20.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.title, 100.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.description_txt, 100.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.h1_txt, 50.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.h2_txt, 10.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.h3_txt, 6.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.h4_txt, 3.0f);
-        QUERY_DEFAULT_FIELDS.put(WebMapping.text_t, 1.0f);
-    }
     
     public List<String> collectionTextFilterQuery(boolean noimages) {
         final ArrayList<String> fqs = new ArrayList<>();
@@ -246,22 +232,24 @@ public class YaCyQuery {
                 continue;
             }
         }
-
-        // special constraints
-        //boolean constraint_about = constraints_positive.remove("about");
-        //if (constraints_negative.remove("about")) constraint_about = false;
+        
+        // construct a ranking
+        Boosts boosts = new Boosts(); // creates a clone of a standard boost mapping
+        if (modifier.containsKey("boost")) {
+        	boosts.patchWithModifier(modifier.get("boost").iterator().next());
+        }
         
         // compose query for text
         List<QueryBuilder> queries = new ArrayList<>();
         // fuzzy matching
-        if (!text_positive_match.isEmpty()) queries.add(simpleQueryBuilder(String.join(" ", text_positive_match), ORconnective));
-        if (!text_negative_match.isEmpty()) queries.add(QueryBuilders.boolQuery().mustNot(simpleQueryBuilder(String.join(" ", text_negative_match), ORconnective)));
+        if (!text_positive_match.isEmpty()) queries.add(simpleQueryBuilder(String.join(" ", text_positive_match), ORconnective, boosts));
+        if (!text_negative_match.isEmpty()) queries.add(QueryBuilders.boolQuery().mustNot(simpleQueryBuilder(String.join(" ", text_negative_match), ORconnective, boosts)));
         // exact matching
         for (String text: text_positive_filter) {
-            queries.add(exactMatchQueryBuilder(text));
+            queries.add(exactMatchQueryBuilder(text, boosts));
         }
         for (String text: text_negative_filter) {
-            queries.add(QueryBuilders.boolQuery().mustNot(exactMatchQueryBuilder(text)));
+            queries.add(QueryBuilders.boolQuery().mustNot(exactMatchQueryBuilder(text, boosts)));
         }
         
         // apply modifiers
@@ -322,19 +310,19 @@ public class YaCyQuery {
         return b;
     }
     
-    public static QueryBuilder simpleQueryBuilder(String q, boolean or) {
+    public static QueryBuilder simpleQueryBuilder(String q, boolean or, Boosts boosts) {
         if (q.equals("yacyall")) return new MatchAllQueryBuilder();
         final MultiMatchQueryBuilder qb = QueryBuilders
                 .multiMatchQuery(q)
                 .operator(or ? Operator.OR : Operator.AND)
                 .zeroTermsQuery(ZeroTermsQuery.ALL);
-        QUERY_DEFAULT_FIELDS.forEach((mapping, boost) -> qb.field(mapping.getSolrFieldName(), boost));
+        boosts.forEach((mapping, boost) -> qb.field(mapping.getSolrFieldName(), boost));
         return qb;
     }
     
-    public static QueryBuilder exactMatchQueryBuilder(String q) {
+    public static QueryBuilder exactMatchQueryBuilder(String q, Boosts boosts) {
         BoolQueryBuilder qb = QueryBuilders.boolQuery();
-        QUERY_DEFAULT_FIELDS.forEach((mapping, boost) -> qb.should(QueryBuilders.termQuery(mapping.getSolrFieldName(), q)));
+        boosts.forEach((mapping, boost) -> qb.should(QueryBuilders.termQuery(mapping.getSolrFieldName(), q)));
         qb.minimumShouldMatch(1);
         return qb;
     }
