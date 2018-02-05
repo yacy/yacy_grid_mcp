@@ -20,6 +20,8 @@
 package net.yacy.grid.io.messages;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -108,31 +110,21 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     }
     
     private int leastFilled(AvailableContainer[] ac) throws IOException {
-        int index = -1;
+        int index = random.nextInt(ac.length);
         int leastAvailable = Integer.MAX_VALUE;
+        List<Integer> zeroCandidates = new ArrayList<>();
         for (int i = 0; i < ac.length; i++) {
-            if (ac[i].getAvailable() < leastAvailable) {
+            if (ac[i].getAvailable() <= leastAvailable) {
                 leastAvailable = ac[i].getAvailable();
                 index = i;
-                if (leastAvailable == 0) return index; // it does not get smaller 
+                if (leastAvailable == 0) zeroCandidates.add(index); // it does not get smaller 
             }
+        }
+        if (zeroCandidates.size() > 0) {
+        	return zeroCandidates.get(random.nextInt(zeroCandidates.size()));
         }
         return index;
     }
-    
-    /*
-    private int mostFilled(AvailableContainer[] ac) throws IOException {
-        int index = -1;
-        int mostAvailable = 0;
-        for (int i = 0; i < ac.length; i++) {
-            if (ac[i].getAvailable() > mostAvailable) {
-                mostAvailable = ac[i].getAvailable();
-                index = i;
-            }
-        }
-        return index;
-    }
-    */
     
     private int hash(final Services service, final QueueName[] queueNames, final String hashingKey) throws IOException {
         return hashingKey.hashCode() % queueNames.length;
