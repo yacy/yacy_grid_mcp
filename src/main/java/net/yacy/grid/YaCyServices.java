@@ -19,6 +19,8 @@
 
 package net.yacy.grid;
 
+import net.yacy.grid.io.messages.GridQueue;
+
 /**
  * Service name declaration with default port numbers.
  * These port numbers are just recommendations for standard ports.
@@ -36,17 +38,17 @@ package net.yacy.grid;
 public enum YaCyServices implements Services {
 
     mcp(8100),                      // the master connect program which orchestrates all other services
-    loader(8200, new QueueName[]{
-            new QueueName("webloader_00"), new QueueName("webloader_01"), new QueueName("webloader_02"), new QueueName("webloader_03"),
-            new QueueName("webloader_04"), new QueueName("webloader_05"), new QueueName("webloader_06"), new QueueName("webloader_07"),
-            new QueueName("webloader_08"), new QueueName("webloader_09"), new QueueName("webloader_10"), new QueueName("webloader_11"),
-            new QueueName("webloader_12"), new QueueName("webloader_13"), new QueueName("webloader_14"), new QueueName("webloader_15")
+    loader(8200, new GridQueue[]{
+            new GridQueue("webloader_00"), new GridQueue("webloader_01"), new GridQueue("webloader_02"), new GridQueue("webloader_03"),
+            new GridQueue("webloader_04"), new GridQueue("webloader_05"), new GridQueue("webloader_06"), new GridQueue("webloader_07"),
+            new GridQueue("webloader_08"), new GridQueue("webloader_09"), new GridQueue("webloader_10"), new GridQueue("webloader_11"),
+            new GridQueue("webloader_12"), new GridQueue("webloader_13"), new GridQueue("webloader_14"), new GridQueue("webloader_15")
     }),      // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
-    crawler(8300, new QueueName[]{new QueueName("webcrawler")}),    // a crawler which loads a lot of documents from web or other network resources
+    crawler(8300, new GridQueue[]{new GridQueue("webcrawler")}),    // a crawler which loads a lot of documents from web or other network resources
     warcmanager(8400),              // a process which combines single WARC files to bigger ones to create archives
-    parser(8500, new QueueName[]{new QueueName("yacyparser")}),     // a parser service which turns WARC into YaCy JSON
+    parser(8500, new GridQueue[]{new GridQueue("yacyparser")}),     // a parser service which turns WARC into YaCy JSON
     enricher(8600),                 // a semantic enricher for YaCy JSON objects
-    indexer(8700, new QueueName[]{new QueueName("elasticsearch")}), // a loader which pushes parsed/enriched YaCy JSON content to a search index
+    indexer(8700, new GridQueue[]{new GridQueue("elasticsearch")}), // a loader which pushes parsed/enriched YaCy JSON content to a search index
     aggregation(8800),              // a search front-end which combines different index sources into one
     moderation(8900),               // a search front-end which for content moderation, i.e. search index account management
     successmessages(10100),         // a service which handles the successful operation messages
@@ -57,14 +59,14 @@ public enum YaCyServices implements Services {
     elastic(9300);                  // an elasticsearch server or main cluster address for global database storage
 
     private int default_port;
-    private QueueName[] queues;
+    private GridQueue[] queues;
 
     private YaCyServices(int default_port) {
         this.default_port = default_port;
         this.queues = null;
     }
     
-    private YaCyServices(int default_port, QueueName[] queues) {
+    private YaCyServices(int default_port, GridQueue[] queues) {
         this.default_port = default_port;
         this.queues = queues;
     }
@@ -75,7 +77,7 @@ public enum YaCyServices implements Services {
     }
 
     @Override
-    public QueueName[] getQueues() {
+    public GridQueue[] getQueues() {
         return this.queues;
     }
     

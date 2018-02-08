@@ -25,13 +25,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
 
-import net.yacy.grid.QueueName;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.messages.AvailableContainer;
+import net.yacy.grid.io.messages.GridQueue;
 import net.yacy.grid.mcp.Data;
 
 /**
@@ -55,7 +55,7 @@ public class AvailableService extends ObjectAPIHandler implements APIHandler {
         JSONObject json = new JSONObject(true);
         if (serviceName.length() > 0 && queueName.length() > 0) {
             try {
-                AvailableContainer available = Data.gridBroker.available(YaCyServices.valueOf(serviceName), new QueueName(queueName));
+                AvailableContainer available = Data.gridBroker.available(YaCyServices.valueOf(serviceName), new GridQueue(queueName));
                 String url = available.getFactory().getConnectionURL();
                 json.put(ObjectAPIHandler.AVAILABLE_KEY, available.getAvailable());
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);

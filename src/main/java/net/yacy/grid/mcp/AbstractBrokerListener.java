@@ -35,9 +35,9 @@ import com.rabbitmq.client.AlreadyClosedException;
 
 import ai.susi.mind.SusiAction;
 import ai.susi.mind.SusiThought;
-import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
 import net.yacy.grid.YaCyServices;
+import net.yacy.grid.io.messages.GridQueue;
 import net.yacy.grid.io.messages.MessageContainer;
 import net.yacy.grid.tools.Memory;
 
@@ -45,7 +45,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     
     public boolean shallRun;
     private final Services service;
-    private final QueueName[] queueNames;
+    private final GridQueue[] queueNames;
     private final int threads;
     //private final ThreadPoolExecutor threadPool;
 
@@ -53,7 +53,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         this(service, service.getQueues(), threads);
     }
     
-    public AbstractBrokerListener(final Services service, final QueueName[] queueNames, final int threads) {
+    public AbstractBrokerListener(final Services service, final GridQueue[] queueNames, final int threads) {
         this.service = service;
         this.queueNames = queueNames;
         this.threads = threads;
@@ -68,7 +68,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         List<QueueListener> threads = new ArrayList<>();
         int threadsPerQueue = Math.max(1, this.threads / this.queueNames.length);
         Data.logger.info("Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.queueNames.length + " queues");
-        for (QueueName queue: this.queueNames) {
+        for (GridQueue queue: this.queueNames) {
             for (int qc = 0; qc < threadsPerQueue; qc++) {
                 QueueListener listener = new QueueListener(queue, qc);
                 listener.start();
@@ -88,10 +88,10 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     
     
     private class QueueListener extends Thread {
-        private final QueueName queueName;
+        private final GridQueue queueName;
         private final int threadCounter;
         
-        public QueueListener(final QueueName queueName, final int threadCounter) {
+        public QueueListener(final GridQueue queueName, final int threadCounter) {
             this.queueName = queueName;
             this.threadCounter = threadCounter;
         }
@@ -229,7 +229,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 .put("data", data)
                 .put("actions", new JSONArray().put(action.toJSONClone()));
         byte[] b = nextProcess.toString(2).getBytes(StandardCharsets.UTF_8);
-        Data.gridBroker.send(YaCyServices.valueOf(type), new QueueName(queue), b);
+        Data.gridBroker.send(YaCyServices.valueOf(type), new GridQueue(queue), b);
     }
 
     @Override

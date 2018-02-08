@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.mcp.Data;
@@ -52,7 +51,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         this.lazy = lazy;
     }
     
-    public static String serviceQueueName(Services service, QueueName queue) {
+    public static String serviceQueueName(Services service, GridQueue queue) {
         return service.name() + '_' + queue.name();
     }
 
@@ -110,7 +109,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
     
     @Override
-    public QueueFactory<byte[]> send(Services serviceName, QueueName queueName, byte[] message) throws IOException {
+    public QueueFactory<byte[]> send(Services serviceName, GridQueue queueName, byte[] message) throws IOException {
         if (this.rabbitConnector == null && this.rabbitMQ_host != null) {
             // try to connect again..
             connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
@@ -143,7 +142,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
 
     @Override
-    public MessageContainer<byte[]> receive(Services serviceName, QueueName queueName, long timeout) throws IOException {
+    public MessageContainer<byte[]> receive(Services serviceName, GridQueue queueName, long timeout) throws IOException {
         if (this.rabbitConnector == null && this.rabbitMQ_host != null) {
             // try to connect again..
             connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
@@ -183,7 +182,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
 
     @Override
-    public AvailableContainer available(Services serviceName, QueueName queueName) throws IOException {
+    public AvailableContainer available(Services serviceName, GridQueue queueName) throws IOException {
         if (this.rabbitConnector == null && this.rabbitMQ_host != null) {
             // try to connect again..
             connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
@@ -214,7 +213,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
     
     @Override
-    public QueueFactory<byte[]> clear(Services serviceName, QueueName queueName) throws IOException {
+    public QueueFactory<byte[]> clear(Services serviceName, GridQueue queueName) throws IOException {
         if (this.rabbitConnector == null && this.rabbitMQ_host != null) {
             // try to connect again..
             connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);

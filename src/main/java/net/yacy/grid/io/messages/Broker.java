@@ -22,7 +22,6 @@ package net.yacy.grid.io.messages;
 import java.io.Closeable;
 import java.io.IOException;
 
-import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
 
 public interface Broker<A> extends Closeable {
@@ -30,74 +29,78 @@ public interface Broker<A> extends Closeable {
     /**
      * send a message to the broker
      * @param service the name of the grid service
-     * @param queueName the queue name of the service
+     * @param queue the queue of the service
      * @param message the message to be posted at the broker
      * @return the Queue Factory which was used to create this broker
      * @throws IOException
      */
-    public QueueFactory<A> send(Services service, QueueName queueName, byte[] message) throws IOException;
+    public QueueFactory<A> send(Services service, GridQueue queue, byte[] message) throws IOException;
 
     /**
      * send a message to the broker
      * @param service the name of the grid service
-     * @param queueNames the queue names of the service
+     * @param queues the queues of the service
      * @param shardingMethod the selected sharding method
+     * @param priorityDimensions number of queues for each dimension; sum must be actual number of queue names
+     * @param priority the wanted priority
      * @param hashingKey a hashing key for the message to be send
      * @param message the message to be posted at the broker
      * @return the Queue Factory which was used to create this broker
      * @throws IOException
      */
-    public QueueFactory<A> send(Services service, QueueName[] queueNames, ShardingMethod shardingMethod, String hashingKey, byte[] message) throws IOException;
+    public QueueFactory<A> send(Services service, GridQueue[] queues, ShardingMethod shardingMethod, int[] priorityDimensions, int priority, String hashingKey, byte[] message) throws IOException;
 
     /**
      * get the best queue for a given sharding method, service, queues and a hashing key
      * @param service the name of the grid service
-     * @param queueNames the queue names of the service
+     * @param queues the queues of the service
      * @param shardingMethod the selected sharding method
+     * @param priorityDimensions number of queues for each dimension; sum must be actual number of queue names
+     * @param priority the wanted priority
      * @param hashingKey a hashing key for the message to be send
      * @return
      * @throws IOException
      */
-    public QueueName queueName(final Services service, final QueueName[] queueNames, final ShardingMethod shardingMethod, final String hashingKey) throws IOException;
+    public GridQueue queueName(final Services service, final GridQueue[] queues, final ShardingMethod shardingMethod, int[] priorityDimensions, int priority, final String hashingKey) throws IOException;
     
     /**
      * receive a message from the broker. This method blocks until a message is available
      * @param service the name of the grid service
-     * @param queueName the queue name of the service
+     * @param queue the queue of the service
      * @param timeout the maximum time to wait for a message. if zero or negative, the method blocks forever or until a message arrives
      * @return the message inside a message container
      * @throws IOException
      */
-    public MessageContainer<A> receive(Services service, QueueName queueName, long timeout) throws IOException;
+    public MessageContainer<A> receive(Services service, GridQueue queue, long timeout) throws IOException;
 
     /**
      * count the number of available messages on the broker
      * @param service the name of the grid service
-     * @param queueName the queue name of the service
+     * @param queue the queue of the service
      * @return the number of pending messages which can be received inside a container
      * @throws IOException
      */
-    public AvailableContainer available(Services service, QueueName queueName) throws IOException;
+    public AvailableContainer available(Services service, GridQueue queue) throws IOException;
 
     /**
      * count the number of available messages on the broker
      * @param service the name of the grid service
-     * @param queueNames the queue names of the service
+     * @param queues the queues of the service
      * @return an array of the number of pending messages which can be received inside a container
      * @throws IOException
      */
-    public AvailableContainer[] available(Services service, QueueName[] queueNames) throws IOException;
+    public AvailableContainer[] available(Services service, GridQueue[] queues) throws IOException;
 
     /**
      * send a message to the broker
      * @param service the name of the grid service
-     * @param queueName the queue name of the service
+     * @param queue the queue of the service
      * @param shardingMethod the selected sharding method
      * @param hashingKey a hashing key for the message to be send
      * @param message the message to be posted at the broker
      * @return the Queue Factory which was used to create this broker
      * @throws IOException
      */
-    public QueueFactory<A> clear(Services service, QueueName queueName) throws IOException;
+    public QueueFactory<A> clear(Services service, GridQueue queue) throws IOException;
 
 }

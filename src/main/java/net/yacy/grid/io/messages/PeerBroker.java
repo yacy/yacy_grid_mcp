@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
 
 /**
@@ -64,14 +63,14 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
     }
 
     @Override
-    public QueueFactory<byte[]> send(Services service, QueueName queueName, byte[] message) throws IOException {
+    public QueueFactory<byte[]> send(Services service, GridQueue queueName, byte[] message) throws IOException {
         QueueFactory<byte[]> factory = getConnector(service);
         factory.getQueue(queueName.name()).send(message);
         return factory;
     }
 
     @Override
-    public MessageContainer<byte[]> receive(Services service, QueueName queueName, long timeout) throws IOException {
+    public MessageContainer<byte[]> receive(Services service, GridQueue queueName, long timeout) throws IOException {
         QueueFactory<byte[]> factory = getConnector(service);
         Queue<byte[]> mq = factory.getQueue(queueName.name());
         byte[] message = mq.receive(timeout);
@@ -79,13 +78,13 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
     }
 
     @Override
-    public AvailableContainer available(Services service, QueueName queueName) throws IOException {
+    public AvailableContainer available(Services service, GridQueue queueName) throws IOException {
         QueueFactory<byte[]> factory = getConnector(service);
         return new AvailableContainer(factory, getConnector(service).getQueue(queueName.name()).available());
     }
 
     @Override
-    public QueueFactory<byte[]> clear(Services service, QueueName queueName) throws IOException {
+    public QueueFactory<byte[]> clear(Services service, GridQueue queueName) throws IOException {
         QueueFactory<byte[]> factory = getConnector(service);
         factory.getQueue(queueName.name()).clear();
         return factory;
