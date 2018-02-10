@@ -22,6 +22,7 @@ package net.yacy.grid.io.messages;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 import net.yacy.grid.Services;
 import net.yacy.grid.YaCyServices;
@@ -104,8 +105,18 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         }
     }
 
+    private final static Pattern SPACE2 = Pattern.compile("  ");
+    
     private final static String messagePP(byte[] message) {
-        return ((message == null) ? "NULL" : new String(message, 0, Math.min(1000, message.length), StandardCharsets.UTF_8).replaceAll(" *", " ").replace('\n', ' '));
+        if (message == null) return "NULL";
+        String m = new String(message, 0, Math.min(1000, message.length), StandardCharsets.UTF_8);
+        m = m.replace('\n', ' ');
+        while (true) {
+            int l = m.length();
+            m = SPACE2.matcher(m).replaceAll(" ");
+            if (m.length() == l) break;
+        }
+        return m;
     }
     
     @Override
