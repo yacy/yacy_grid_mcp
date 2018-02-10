@@ -35,6 +35,7 @@ import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.index.ElasticsearchClient;
+import net.yacy.grid.io.index.Sort;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.io.index.YaCyQuery;
 import net.yacy.grid.mcp.Data;
@@ -80,10 +81,11 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         String facetFields = call.get("facetFields", YaCyQuery.FACET_DEFAULT_PARAMETER);
         List<WebMapping> facetFieldMapping = new ArrayList<>();
         for (String s: facetFields.split(",")) facetFieldMapping.add(WebMapping.valueOf(s));
+        Sort sort = new Sort(call.get("sort", ""));
         
         QueryBuilder qb = new YaCyQuery(query, collections, contentdom, timezoneOffset).queryBuilder;
         ElasticsearchClient.Query eq = Data.getIndex().query(
-                "web", qb, null, null, timezoneOffset, startRecord, maximumRecords,
+                "web", qb, null, sort, null, timezoneOffset, startRecord, maximumRecords,
                 facetLimit, explain, facetFieldMapping.toArray(new WebMapping[facetFieldMapping.size()]));
 
         JSONObject json = new JSONObject(true);

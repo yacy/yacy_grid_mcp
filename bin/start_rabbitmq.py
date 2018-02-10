@@ -25,20 +25,19 @@ def checkportopen(port):
 
 def mkapps():
     if not os.path.isdir(path_apphome + '/data'): os.makedirs(path_apphome + '/data')
-    if not os.path.isdir(path_apphome + '/data/mcp-8100'): os.makedirs(path_apphome + '/data/mcp-8100')
-    if not os.path.isdir(path_apphome + '/data/mcp-8100/apps'): os.makedirs(path_apphome + '/data/mcp-8100/apps')
+    if not os.path.isdir(path_apphome + '/data/apps'): os.makedirs(path_apphome + '/data/apps')
 
 if not checkportopen(5672):
     print('rabbitmq is not running')
     mkapps()
-    if not os.path.isfile(path_apphome + '/data/mcp-8100/apps/' + rabbitversion + '.tar.xz'):
+    if not os.path.isfile(path_apphome + '/data/apps/' + rabbitversion + '.tar.xz'):
         print('downloading ' + rabbitversion)
-        urllib.urlretrieve ('http://dl.bintray.com/rabbitmq/binaries/' + rabbitversion + '.tar.xz', path_apphome + '/data/mcp-8100/apps/' + rabbitversion + '.tar.xz')
-    rabbitpath = path_apphome + '/data/mcp-8100/apps/rabbitmq'
+        urllib.urlretrieve ('http://dl.bintray.com/rabbitmq/binaries/' + rabbitversion + '.tar.xz', path_apphome + '/data/apps/' + rabbitversion + '.tar.xz')
+    rabbitpath = path_apphome + '/data/apps/rabbitmq'
     if not os.path.isdir(rabbitpath):
         print('decompressing' + rabbitversion)
-        os.system('tar xfz ' + path_apphome + '/data/mcp-8100/apps/' + rabbitversion + '.tar.xz -C ' + path_apphome + '/data/mcp-8100/apps/')
-        os.rename(path_apphome + '/data/mcp-8100/apps/' + rabbitfilename, rabbitpath)
+        os.system('tar xfz ' + path_apphome + '/data/apps/' + rabbitversion + '.tar.xz -C ' + path_apphome + '/data/apps/')
+        os.rename(path_apphome + '/data/apps/' + rabbitfilename, rabbitpath)
     # run rabbitmq
     print('running rabbitmq')
     os.chdir(rabbitpath + '/sbin')

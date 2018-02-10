@@ -38,6 +38,7 @@ import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.index.ElasticsearchClient;
+import net.yacy.grid.io.index.Sort;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.io.index.YaCyQuery;
 import net.yacy.grid.mcp.Data;
@@ -77,13 +78,14 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         String[] sites = site.length() == 0 ? new String[0] : site.split("\\|");
         int timezoneOffset = call.get("timezoneOffset", -1);
         boolean explain = call.get("explain", false);
+        Sort sort = new Sort(call.get("sort", ""));
         String queryXML = XML.escape(q);
         
         // prepare a query
         QueryBuilder termQuery = new YaCyQuery(q, sites, contentdom, timezoneOffset).queryBuilder;
 
         HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getSolrFieldName()).preTags("").postTags("").fragmentSize(140);
-        ElasticsearchClient.Query query = Data.getIndex().query("web", termQuery, null, hb, timezoneOffset, start, num, 0, explain);
+        ElasticsearchClient.Query query = Data.getIndex().query("web", termQuery, null, sort, hb, timezoneOffset, start, num, 0, explain);
         List<Map<String, Object>> result = query.results;
         List<String> explanations = query.explanations;
  

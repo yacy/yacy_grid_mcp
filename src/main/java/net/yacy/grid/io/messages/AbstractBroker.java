@@ -28,8 +28,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.eclipse.jetty.util.ConcurrentHashSet;
-
 import net.yacy.grid.Services;
 import net.yacy.grid.mcp.Data;
 
@@ -38,7 +36,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     private final static Random random = new Random();
     private final Map<Services, AtomicInteger> roundRobinLookup = new ConcurrentHashMap<>();
     private final Map<Services, Map<String, Integer>> leastFilledLookup = new ConcurrentHashMap<>();
-    private final Set<String> switchedIDs = new ConcurrentHashSet<>();
+    private final Set<String> switchedIDs = ConcurrentHashMap.newKeySet();
     
     @Override
     public abstract void close() throws IOException;
