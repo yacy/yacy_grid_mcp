@@ -18,23 +18,22 @@ def checkportopen(port):
 
 def mkapps():
     if not os.path.isdir(path_apphome + '/data'): os.makedirs(path_apphome + '/data')
-    if not os.path.isdir(path_apphome + '/data/mcp-8100'): os.makedirs(path_apphome + '/data/mcp-8100')
-    if not os.path.isdir(path_apphome + '/data/mcp-8100/apps'): os.makedirs(path_apphome + '/data/mcp-8100/apps')
+    if not os.path.isdir(path_apphome + '/data/apps'): os.makedirs(path_apphome + '/data/apps')
 
 if checkportopen(9200):
     print('elasticsearch is already running!')
 else:
     print('elasticsearch is not running')
     mkapps()
-    if not os.path.isfile(path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz'):
+    if not os.path.isfile(path_apphome + '/data/apps/' + elasticversion + '.tar.gz'):
         print('downloading ' + elasticversion)
-        urllib.urlretrieve ('https://artifacts.elastic.co/downloads/elasticsearch/' + elasticversion + '.tar.gz', path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz')
-    elasticpath = path_apphome + '/data/mcp-8100/apps/elasticsearch'
+        urllib.urlretrieve ('https://artifacts.elastic.co/downloads/elasticsearch/' + elasticversion + '.tar.gz', path_apphome + '/data/apps/' + elasticversion + '.tar.gz')
+    elasticpath = path_apphome + '/data/apps/elasticsearch'
     firstrun = False
     if not os.path.isdir(elasticpath):
         print('decompressing' + elasticversion)
-        os.system('tar xfz ' + path_apphome + '/data/mcp-8100/apps/' + elasticversion + '.tar.gz -C ' + path_apphome + '/data/mcp-8100/apps/')
-        os.rename(path_apphome + '/data/mcp-8100/apps/' + elasticversion, elasticpath)
+        os.system('tar xfz ' + path_apphome + '/data/apps/' + elasticversion + '.tar.gz -C ' + path_apphome + '/data/apps/')
+        os.rename(path_apphome + '/data/apps/' + elasticversion, elasticpath)
         firstrun = True
     # run elasticsearch
     print('starting elasticsearch...')
