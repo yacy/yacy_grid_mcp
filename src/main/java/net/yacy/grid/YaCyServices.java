@@ -42,13 +42,24 @@ public enum YaCyServices implements Services {
             new GridQueue("webloader_00"), new GridQueue("webloader_01"), new GridQueue("webloader_02"), new GridQueue("webloader_03"),
             new GridQueue("webloader_04"), new GridQueue("webloader_05"), new GridQueue("webloader_06"), new GridQueue("webloader_07"),
             new GridQueue("webloader_08"), new GridQueue("webloader_09"), new GridQueue("webloader_10"), new GridQueue("webloader_11"),
-            new GridQueue("webloader_12"), new GridQueue("webloader_13"), new GridQueue("webloader_14"), new GridQueue("webloader_15")
+            new GridQueue("webloader_12"), new GridQueue("webloader_13"), new GridQueue("webloader_14"), new GridQueue("webloader_15"),
+            new GridQueue("webloader_16"), new GridQueue("webloader_17"), new GridQueue("webloader_18"), new GridQueue("webloader_19"),
+            new GridQueue("webloader_20"), new GridQueue("webloader_21"), new GridQueue("webloader_22"), new GridQueue("webloader_23"),
+            new GridQueue("webloader_24"), new GridQueue("webloader_25"), new GridQueue("webloader_26"), new GridQueue("webloader_27"),
+            new GridQueue("webloader_28"), new GridQueue("webloader_29"), new GridQueue("webloader_30"), new GridQueue("webloader_31")
     }),      // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
-    crawler(8300, new GridQueue[]{new GridQueue("webcrawler")}),    // a crawler which loads a lot of documents from web or other network resources
+    crawler(8300, new GridQueue[]{  // a crawler which loads a lot of documents from web or other network resources
+            new GridQueue("webcrawler_00"), new GridQueue("webcrawler_01"), new GridQueue("webcrawler_02"), new GridQueue("webcrawler_03"),
+            new GridQueue("webcrawler_04"), new GridQueue("webcrawler_05"), new GridQueue("webcrawler_06"), new GridQueue("webcrawler_07")
+    }),
     warcmanager(8400),              // a process which combines single WARC files to bigger ones to create archives
-    parser(8500, new GridQueue[]{new GridQueue("yacyparser")}),     // a parser service which turns WARC into YaCy JSON
+    parser(8500, new GridQueue[]{   // a parser service which turns WARC into YaCy JSON
+            new GridQueue("yacyparser_00") // parsing is fast, we do not need more queues here
+    }),
     enricher(8600),                 // a semantic enricher for YaCy JSON objects
-    indexer(8700, new GridQueue[]{new GridQueue("elasticsearch")}), // a loader which pushes parsed/enriched YaCy JSON content to a search index
+    indexer(8700, new GridQueue[]{  // an uploader which pushes parsed/enriched YaCy JSON content to a search index
+            new GridQueue("elasticsearch_00") // indexing is fast, we do no need more queues here
+    }),
     aggregation(8800),              // a search front-end which combines different index sources into one
     moderation(8900),               // a search front-end which for content moderation, i.e. search index account management
     successmessages(10100),         // a service which handles the successful operation messages
