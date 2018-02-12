@@ -91,5 +91,5 @@ public enum YaCyServices implements Services {
     public GridQueue[] getQueues() {
         return this.queues;
     }
-    
+
 }

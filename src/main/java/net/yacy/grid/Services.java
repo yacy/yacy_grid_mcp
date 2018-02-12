@@ -29,4 +29,8 @@ public interface Services {
     
     public String name();
     
+    public boolean equals(Object o);
+    
+    public int hashCode();
+    
 }

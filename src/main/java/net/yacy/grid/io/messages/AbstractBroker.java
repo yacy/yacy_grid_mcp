@@ -36,7 +36,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     private final static Random random = new Random();
     private final Map<Services, AtomicInteger> roundRobinLookup = new ConcurrentHashMap<>();
     private final Map<Services, Map<String, Integer>> leastFilledLookup = new ConcurrentHashMap<>();
-    private final Set<String> switchedIDs = ConcurrentHashMap.newKeySet();
+    private final Map<Services, Set<String>> switchedIDsMap = new ConcurrentHashMap<>();
     
     @Override
     public abstract void close() throws IOException;
@@ -57,25 +57,37 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         for (int i = 0; i < priority; i++) queuesBeforeCurrentDimension += priorityDimensions[i];
         int priorityDimension = priorityDimensions[priority];
         GridQueue[] psq = new GridQueue[priorityDimension];
-        System.arraycopy(queues, 0, psq, queuesBeforeCurrentDimension, priorityDimension);
+        System.arraycopy(queues, queuesBeforeCurrentDimension, psq, 0, priorityDimension);
+        int idx = 0;
         switch (shardingMethod) {
             case ROUND_ROBIN:
-                return psq[roundRobin(service, psq)];
+                idx = roundRobin(service, psq);
+                break;
             case LEAST_FILLED:
-                return psq[leastFilled(available(service, psq))];
+                idx = leastFilled(available(service, psq));
+                break;
             case HASH:
-                return psq[hash(service, psq, hashingKey)];
+                idx = hash(service, psq, hashingKey);
+                break;
             case LOOKUP:
-                return psq[lookup(service, psq, hashingKey)];
+                idx = lookup(service, psq, hashingKey);
+                break;
             case BALANCE:
-                return psq[balance(service, psq, hashingKey)];
+                idx = balance(service, psq, hashingKey);
+                break;
             case RANDOM:
-                return psq[random(service, psq)];
+                idx = random(service, psq);
+                break;
             case FIRST:
-                return psq[first(service, psq)];
+                idx = first(service, psq);
+                break;
             default:
-                return psq[first(service, psq)];
+                idx = first(service, psq);
+                break;
         }
+        assert idx < psq.length;
+        if (idx >= psq.length) idx = 0;
+        return psq[idx];
     }
     
 
@@ -84,21 +96,29 @@ public abstract class AbstractBroker<A> implements Broker<A> {
 
     @Override
     public abstract AvailableContainer available(final Services service, final GridQueue queue) throws IOException;
-    
-    private AvailableContainer[] acbuffer = null;
-    private long actime = 0;
+
+    private Map<String, AvailableContainer> acbuffers = new ConcurrentHashMap<>();
+    private Map<String, Long> actime = new ConcurrentHashMap<>();
+    public AvailableContainer bufferedAvailable(final Services service, final GridQueue queue) throws IOException {
+        String bkey = service.name() + "_" + queue.name();
+        Long lacc = actime.get(bkey);
+        long laccl = lacc == null ? 0 : lacc.longValue();
+        long now = System.currentTimeMillis();
+        AvailableContainer ac = acbuffers.get(bkey);
+        if (ac == null || now - laccl > 10000) {
+            ac = available(service, queue);
+            acbuffers.put(bkey, ac);
+            actime.put(bkey, now);
+        }
+        return ac;
+    }
     
     @Override
     public AvailableContainer[] available(final Services service, final GridQueue[] queues) throws IOException {
-        long now = System.currentTimeMillis();
-        if (acbuffer != null && now - actime < 10000) return acbuffer;
-        
         AvailableContainer[] ac = new AvailableContainer[queues.length];
         for (int i = 0; i < queues.length; i++) {
-            ac[i] = available(service, queues[i]);
+            ac[i] = bufferedAvailable(service, queues[i]);
         }
-        acbuffer = ac;
-        actime = now;
         return ac;
     }
 
@@ -113,19 +133,28 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         return latestCounter.get();
     }
     
+    /**
+     * pick one container out of the given one which has the least number of entries.
+     * Because the input container may be outdated right now (it comes from a buffer)
+     * it is important to pick random elements out of it.
+     * @param ac
+     * @return
+     * @throws IOException
+     */
     private int leastFilled(AvailableContainer[] ac) throws IOException {
+        if (ac.length == 1) return 0;
         int index = random.nextInt(ac.length);
         int leastAvailable = Integer.MAX_VALUE;
         List<Integer> zeroCandidates = new ArrayList<>();
         for (int i = 0; i < ac.length; i++) {
-            if (ac[i].getAvailable() <= leastAvailable) {
+            if (ac[i].getAvailable() == 0) zeroCandidates.add(i);
+            if (ac[i].getAvailable() < leastAvailable) {
                 leastAvailable = ac[i].getAvailable();
                 index = i;
-                if (leastAvailable == 0) zeroCandidates.add(index); // it does not get smaller 
             }
         }
         if (zeroCandidates.size() > 0) {
-        	return zeroCandidates.get(random.nextInt(zeroCandidates.size()));
+            	return zeroCandidates.get(random.nextInt(zeroCandidates.size()));
         }
         return index;
     }
@@ -159,7 +188,10 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         }
         Integer lookupIndex = lookupMap.get(hashingKey);
         AvailableContainer[] available = available(service, queues);
+        // because this available object comes from a buffered object which may be outdated right now already it is important to pick random elements out of it!
+        assert available.length == queues.length;
         int leastFilled = leastFilled(available);
+        assert leastFilled < queues.length;
         if (lookupIndex == null) {
             // find a new queue with least entries
             lookupIndex = leastFilled;
@@ -168,6 +200,11 @@ public abstract class AbstractBroker<A> implements Broker<A> {
             // Check if this hashing key was never switched to a different queue
             // and if an empty queue exist: then switch to that queue to balance all queues.
             // That means also that every domain may only switched once
+            Set<String> switchedIDs = switchedIDsMap.get(service);
+            if (switchedIDs == null) {
+                switchedIDs = ConcurrentHashMap.newKeySet();
+                switchedIDsMap.put(service, switchedIDs);
+            }
             if (available[leastFilled].getAvailable() == 0 && !switchedIDs.contains(hashingKey)) {
                 switchedIDs.add(hashingKey);
                 // switch to leastFilled
@@ -176,6 +213,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
                 lookupMap.put(hashingKey, lookupIndex);
             }
         }
+        assert lookupIndex < queues.length;
         return lookupIndex;
     }
     
