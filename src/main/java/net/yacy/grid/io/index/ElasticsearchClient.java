@@ -685,8 +685,8 @@ public class ElasticsearchClient {
         return map;
     }
     
-    public Query query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
-        return new Query(indexName,  queryBuilder, postFilter, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+    public Query query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
+        return new Query(indexName,  queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
     }
     
     public class Query {
@@ -707,7 +707,7 @@ public class ElasticsearchClient {
          * @param aggregationLimit - the maximum count of facet entities, not search results
          * @param aggregationFields - names of the aggregation fields. If no aggregation is wanted, pass no (zero) field(s)
          */
-        public Query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
+        public Query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
             // prepare request
             SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName)
                     .setExplain(explain)
@@ -722,6 +722,8 @@ public class ElasticsearchClient {
             for (WebMapping field: aggregationFields) {
                 request.addAggregation(AggregationBuilders.terms(field.getSolrFieldName()).field(field.getSolrFieldName()).minDocCount(1).size(aggregationLimit));
             }
+            // apply sort
+            request = sort.sort(request);
             // get response
             SearchResponse response = request.execute().actionGet();
             SearchHits searchHits = response.getHits();

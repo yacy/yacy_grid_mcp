@@ -28,9 +28,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.eclipse.jetty.util.ConcurrentHashSet;
-
-import net.yacy.grid.QueueName;
 import net.yacy.grid.Services;
 import net.yacy.grid.mcp.Data;
 
@@ -39,99 +36,135 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     private final static Random random = new Random();
     private final Map<Services, AtomicInteger> roundRobinLookup = new ConcurrentHashMap<>();
     private final Map<Services, Map<String, Integer>> leastFilledLookup = new ConcurrentHashMap<>();
-    private final Set<String> switchedIDs = new ConcurrentHashSet<>();
+    private final Map<Services, Set<String>> switchedIDsMap = new ConcurrentHashMap<>();
     
     @Override
     public abstract void close() throws IOException;
 
     @Override
-    public abstract QueueFactory<A> send(final Services service, final QueueName queueName, final byte[] message) throws IOException;
+    public abstract QueueFactory<A> send(final Services service, final GridQueue queue, final byte[] message) throws IOException;
 
     @Override
-    public QueueFactory<A> send(final Services service, final QueueName[] queueNames, final ShardingMethod shardingMethod, final String hashingKey, final byte[] message) throws IOException {
-        return send(service, queueName(service, queueNames, shardingMethod, hashingKey), message);
+    public QueueFactory<A> send(final Services service, final GridQueue[] queues, final ShardingMethod shardingMethod, int[] priorityDimensions, int priority, final String hashingKey, final byte[] message) throws IOException {
+        return send(service, queueName(service, queues, shardingMethod, priorityDimensions, priority, hashingKey), message);
     }
 
     @Override
-    public QueueName queueName(final Services service, final QueueName[] queueNames, final ShardingMethod shardingMethod, final String hashingKey) throws IOException {
-        if (queueNames.length == 1) return queueNames[0];
+    public GridQueue queueName(final Services service, final GridQueue[] queues, final ShardingMethod shardingMethod, int[] priorityDimensions, int priority, final String hashingKey) throws IOException {
+        if (queues.length == 1) return queues[0];
+        assert priorityDimensions.length > priority;
+        int queuesBeforeCurrentDimension = 0;
+        for (int i = 0; i < priority; i++) queuesBeforeCurrentDimension += priorityDimensions[i];
+        int priorityDimension = priorityDimensions[priority];
+        GridQueue[] psq = new GridQueue[priorityDimension];
+        System.arraycopy(queues, queuesBeforeCurrentDimension, psq, 0, priorityDimension);
+        int idx = 0;
         switch (shardingMethod) {
             case ROUND_ROBIN:
-                return queueNames[roundRobin(service, queueNames)];
+                idx = roundRobin(service, psq);
+                break;
             case LEAST_FILLED:
-                return queueNames[leastFilled(available(service, queueNames))];
+                idx = leastFilled(available(service, psq));
+                break;
             case HASH:
-                return queueNames[hash(service, queueNames, hashingKey)];
+                idx = hash(service, psq, hashingKey);
+                break;
             case LOOKUP:
-                return queueNames[lookup(service, queueNames, hashingKey)];
+                idx = lookup(service, psq, hashingKey);
+                break;
             case BALANCE:
-                return queueNames[balance(service, queueNames, hashingKey)];
+                idx = balance(service, psq, hashingKey);
+                break;
             case RANDOM:
-                return queueNames[random(service, queueNames)];
+                idx = random(service, psq);
+                break;
             case FIRST:
-                return queueNames[first(service, queueNames)];
+                idx = first(service, psq);
+                break;
             default:
-                return queueNames[first(service, queueNames)];
+                idx = first(service, psq);
+                break;
         }
+        assert idx < psq.length;
+        if (idx >= psq.length) idx = 0;
+        return psq[idx];
     }
+    
 
     @Override
-    public abstract MessageContainer<A> receive(final Services service, final QueueName queueName, long timeout) throws IOException;
+    public abstract MessageContainer<A> receive(final Services service, final GridQueue queue, long timeout) throws IOException;
 
     @Override
-    public abstract AvailableContainer available(final Services service, final QueueName queueName) throws IOException;
-    
-    private AvailableContainer[] acbuffer = null;
-    private long actime = 0;
-    
-    @Override
-    public AvailableContainer[] available(final Services service, final QueueName[] queueNames) throws IOException {
+    public abstract AvailableContainer available(final Services service, final GridQueue queue) throws IOException;
+
+    private Map<String, AvailableContainer> acbuffers = new ConcurrentHashMap<>();
+    private Map<String, Long> actime = new ConcurrentHashMap<>();
+    public AvailableContainer bufferedAvailable(final Services service, final GridQueue queue) throws IOException {
+        String bkey = service.name() + "_" + queue.name();
+        Long lacc = actime.get(bkey);
+        long laccl = lacc == null ? 0 : lacc.longValue();
         long now = System.currentTimeMillis();
-        if (acbuffer != null && now - actime < 10000) return acbuffer;
-        
-        AvailableContainer[] ac = new AvailableContainer[queueNames.length];
-        for (int i = 0; i < queueNames.length; i++) {
-            ac[i] = available(service, queueNames[i]);
+        AvailableContainer ac = acbuffers.get(bkey);
+        if (ac == null || now - laccl > 10000) {
+            ac = available(service, queue);
+            acbuffers.put(bkey, ac);
+            actime.put(bkey, now);
         }
-        acbuffer = ac;
-        actime = now;
+        return ac;
+    }
+    
+    @Override
+    public AvailableContainer[] available(final Services service, final GridQueue[] queues) throws IOException {
+        AvailableContainer[] ac = new AvailableContainer[queues.length];
+        for (int i = 0; i < queues.length; i++) {
+            ac[i] = bufferedAvailable(service, queues[i]);
+        }
         return ac;
     }
 
-    private int roundRobin(final Services service, final QueueName[] queueNames) throws IOException {
+    private int roundRobin(final Services service, final GridQueue[] queues) throws IOException {
         AtomicInteger latestCounter = this.roundRobinLookup.get(service);
         if (latestCounter == null) {
             latestCounter = new AtomicInteger(0);
             this.roundRobinLookup.put(service, latestCounter);
             return 0;
         }
-        if (latestCounter.incrementAndGet() >= queueNames.length) latestCounter.set(0);
+        if (latestCounter.incrementAndGet() >= queues.length) latestCounter.set(0);
         return latestCounter.get();
     }
     
+    /**
+     * pick one container out of the given one which has the least number of entries.
+     * Because the input container may be outdated right now (it comes from a buffer)
+     * it is important to pick random elements out of it.
+     * @param ac
+     * @return
+     * @throws IOException
+     */
     private int leastFilled(AvailableContainer[] ac) throws IOException {
+        if (ac.length == 1) return 0;
         int index = random.nextInt(ac.length);
         int leastAvailable = Integer.MAX_VALUE;
         List<Integer> zeroCandidates = new ArrayList<>();
         for (int i = 0; i < ac.length; i++) {
-            if (ac[i].getAvailable() <= leastAvailable) {
+            if (ac[i].getAvailable() == 0) zeroCandidates.add(i);
+            if (ac[i].getAvailable() < leastAvailable) {
                 leastAvailable = ac[i].getAvailable();
                 index = i;
-                if (leastAvailable == 0) zeroCandidates.add(index); // it does not get smaller 
             }
         }
         if (zeroCandidates.size() > 0) {
-        	return zeroCandidates.get(random.nextInt(zeroCandidates.size()));
+            	return zeroCandidates.get(random.nextInt(zeroCandidates.size()));
         }
         return index;
     }
     
-    private int hash(final Services service, final QueueName[] queueNames, final String hashingKey) throws IOException {
-        return hashingKey.hashCode() % queueNames.length;
+    private int hash(final Services service, final GridQueue[] queues, final String hashingKey) throws IOException {
+        return hashingKey.hashCode() % queues.length;
     }
     
-    private int lookup(final Services service, final QueueName[] queueNames, final String hashingKey) throws IOException {
-        if (queueNames.length == 1) return 0;
+    private int lookup(final Services service, final GridQueue[] queues, final String hashingKey) throws IOException {
+        if (queues.length == 1) return 0;
         Map<String, Integer> lookupMap = this.leastFilledLookup.get(service);
         if (lookupMap == null) {
             lookupMap = new ConcurrentHashMap<>();
@@ -139,23 +172,26 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         }
         Integer lookupIndex = lookupMap.get(hashingKey);
         if (lookupIndex == null) {
-            AvailableContainer[] available = available(service, queueNames);
+            AvailableContainer[] available = available(service, queues);
             lookupIndex = leastFilled(available);
             lookupMap.put(hashingKey, lookupIndex);
         }
         return lookupIndex;
     }
     
-    private int balance(final Services service, final QueueName[] queueNames, final String hashingKey) throws IOException {
-        if (queueNames.length == 1) return 0;
+    private int balance(final Services service, final GridQueue[] queues, final String hashingKey) throws IOException {
+        if (queues.length == 1) return 0;
         Map<String, Integer> lookupMap = this.leastFilledLookup.get(service);
         if (lookupMap == null) {
             lookupMap = new ConcurrentHashMap<>();
             this.leastFilledLookup.put(service, lookupMap);
         }
         Integer lookupIndex = lookupMap.get(hashingKey);
-        AvailableContainer[] available = available(service, queueNames);
+        AvailableContainer[] available = available(service, queues);
+        // because this available object comes from a buffered object which may be outdated right now already it is important to pick random elements out of it!
+        assert available.length == queues.length;
         int leastFilled = leastFilled(available);
+        assert leastFilled < queues.length;
         if (lookupIndex == null) {
             // find a new queue with least entries
             lookupIndex = leastFilled;
@@ -164,6 +200,11 @@ public abstract class AbstractBroker<A> implements Broker<A> {
             // Check if this hashing key was never switched to a different queue
             // and if an empty queue exist: then switch to that queue to balance all queues.
             // That means also that every domain may only switched once
+            Set<String> switchedIDs = switchedIDsMap.get(service);
+            if (switchedIDs == null) {
+                switchedIDs = ConcurrentHashMap.newKeySet();
+                switchedIDsMap.put(service, switchedIDs);
+            }
             if (available[leastFilled].getAvailable() == 0 && !switchedIDs.contains(hashingKey)) {
                 switchedIDs.add(hashingKey);
                 // switch to leastFilled
@@ -172,14 +213,15 @@ public abstract class AbstractBroker<A> implements Broker<A> {
                 lookupMap.put(hashingKey, lookupIndex);
             }
         }
+        assert lookupIndex < queues.length;
         return lookupIndex;
     }
     
-    private int random(final Services service, final QueueName[] queueNames) throws IOException {
-        return random.nextInt(queueNames.length);
+    private int random(final Services service, final GridQueue[] queues) throws IOException {
+        return random.nextInt(queues.length);
     }
     
-    private int first(final Services service, final QueueName[] queueNames) throws IOException {
+    private int first(final Services service, final GridQueue[] queues) throws IOException {
         return 0;
     }
     

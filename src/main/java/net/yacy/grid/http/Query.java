@@ -94,24 +94,38 @@ public class Query {
     }
     public int get(String key, int dflt) {
         String val = get(key);
-        return val == null || val.length() == 0 ? dflt : Integer.parseInt(val.trim());
+        if (val == null || val.length() == 0) return dflt;
+        val = val.trim().toLowerCase();
+        if ("false".equals(val)) return 0;
+        if ("true".equals(val)) return 1;
+        return Integer.parseInt(val.trim());
     }
     public long get(String key, long dflt) {
         String val = get(key);
-        return val == null || val.length() == 0 ? dflt : Long.parseLong(val.trim());
+        if (val == null || val.length() == 0) return dflt;
+        val = val.trim().toLowerCase();
+        if ("false".equals(val)) return 0;
+        if ("true".equals(val)) return 1;
+        return Long.parseLong(val.trim());
     }
     public double get(String key, double dflt) {
         String val = get(key);
-        return val == null || val.length() == 0 ? dflt : Double.parseDouble(val.trim());
+        if (val == null || val.length() == 0) return dflt;
+        val = val.trim().toLowerCase();
+        return Double.parseDouble(val);
     }
     public boolean get(String key, boolean dflt) {
         String val = get(key);
-        return val == null ? dflt : "true".equals(val = val.trim()) || "1".equals(val);
+        if (val == null || val.length() == 0) return dflt;
+        val = val.trim().toLowerCase();
+        return "true".equals(val) || "1".equals(val);
     }
     public Date get(String key, Date dflt, int timezoneOffset) {
         String val = get(key);
+        if (val == null || val.length() == 0) return dflt;
+        val = val.trim().toLowerCase();
         try {
-            return val == null || val.length() == 0 ? dflt : DateParser.parse(val.trim(), timezoneOffset).getTime();
+            return DateParser.parse(val, timezoneOffset).getTime();
         } catch (ParseException e) {
             return dflt;
         }

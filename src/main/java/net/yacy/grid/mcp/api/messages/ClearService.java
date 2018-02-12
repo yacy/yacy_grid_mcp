@@ -25,12 +25,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
 
-import net.yacy.grid.QueueName;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.io.messages.GridQueue;
 import net.yacy.grid.io.messages.QueueFactory;
 import net.yacy.grid.mcp.Data;
 
@@ -55,7 +55,7 @@ public class ClearService extends ObjectAPIHandler implements APIHandler {
         JSONObject json = new JSONObject(true);
         if (serviceName.length() > 0 && queueName.length() > 0) {
             try {
-                QueueFactory<byte[]> qf = Data.gridBroker.clear(YaCyServices.valueOf(serviceName), new QueueName(queueName));
+                QueueFactory<byte[]> qf = Data.gridBroker.clear(YaCyServices.valueOf(serviceName), new GridQueue(queueName));
                 String url = qf.getConnectionURL();
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);

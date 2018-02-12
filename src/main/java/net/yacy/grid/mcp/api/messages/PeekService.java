@@ -27,13 +27,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import net.yacy.grid.QueueName;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.messages.AvailableContainer;
+import net.yacy.grid.io.messages.GridQueue;
 import net.yacy.grid.io.messages.MessageContainer;
 import net.yacy.grid.mcp.Data;
 
@@ -59,7 +59,7 @@ public class PeekService extends ObjectAPIHandler implements APIHandler {
         if (serviceName.length() > 0 && queueName.length() > 0) {
             try {
                 YaCyServices service = YaCyServices.valueOf(serviceName);
-                QueueName queue = new QueueName(queueName);
+                GridQueue queue = new GridQueue(queueName);
                 AvailableContainer available = Data.gridBroker.available(service, queue);
                 int ac = available.getAvailable();
                 String url = available.getFactory().getConnectionURL();

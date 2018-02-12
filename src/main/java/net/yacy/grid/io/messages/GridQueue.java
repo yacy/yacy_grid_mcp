@@ -17,16 +17,16 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.yacy.grid;
+package net.yacy.grid.io.messages;
 
 /**
  * This is is used to provide an abstraction on queue names
  */
-public class QueueName {
+public class GridQueue {
 
     final String name;
     
-    public QueueName(String name) {
+    public GridQueue(String name) {
         this.name = name;
     }
     

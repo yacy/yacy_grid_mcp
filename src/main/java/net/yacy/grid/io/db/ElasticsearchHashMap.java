@@ -29,6 +29,7 @@ import java.util.Set;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import net.yacy.grid.io.index.ElasticsearchClient;
+import net.yacy.grid.io.index.Sort;
 import net.yacy.grid.io.index.ElasticsearchClient.Query;
 
 public class ElasticsearchHashMap extends AbstractMap<String, String> implements CloseableMap<String, String> {
@@ -43,7 +44,7 @@ public class ElasticsearchHashMap extends AbstractMap<String, String> implements
     
     @Override
     public Set<Map.Entry<String, String>> entrySet() {
-        Query query = this.elastic.query(this.index, QueryBuilders.matchAllQuery(), null, null, 0, 0, Integer.MAX_VALUE, 0, false);
+        Query query = this.elastic.query(this.index, QueryBuilders.matchAllQuery(), null, Sort.DEFAULT, null, 0, 0, Integer.MAX_VALUE, 0, false);
         List<Map<String, Object>> result = query.results;
         Set<Map.Entry<String, String>> set = new HashSet<>();
         for (Map<String, Object> r: result) {

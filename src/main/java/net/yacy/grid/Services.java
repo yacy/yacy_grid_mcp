@@ -19,12 +19,18 @@
 
 package net.yacy.grid;
 
+import net.yacy.grid.io.messages.GridQueue;
+
 public interface Services {
 
     public int getDefaultPort();
 
-    public QueueName[] getQueues();
+    public GridQueue[] getQueues();
     
     public String name();
+    
+    public boolean equals(Object o);
+    
+    public int hashCode();
     
 }
