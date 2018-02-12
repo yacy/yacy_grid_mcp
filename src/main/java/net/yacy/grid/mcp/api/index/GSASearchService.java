@@ -46,6 +46,14 @@ import net.yacy.grid.tools.DateParser;
 import net.yacy.grid.tools.Digest;
 
 /**
+ * This is a implementation of the GSA Google Search Appliance API as documented in
+ * https://www.google.com/support/enterprise/static/gsa/docs/admin/74/gsa_doc_set/xml_reference/index.html
+ * 
+ * We re-implement here functionality as given in the YaCy/1 implementation from
+ * https://github.com/yacy/yacy_search_server/blob/master/source/net/yacy/http/servlets/GSAsearchServlet.java
+ * which used a de-published API reference from
+ * https://developers.google.com/search-appliance/documentation/614/xml_reference 
+ * 
  * test: call
  * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=*
  * compare with
