@@ -23,6 +23,11 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
 
+/**
+ * Grid-Service key-value store Interface for grid-wide properties
+ * 
+ *
+ */
 public interface Database extends Closeable {
     
     public long size(String serviceName, String tableName) throws IOException;

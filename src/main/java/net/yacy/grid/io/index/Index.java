@@ -25,6 +25,11 @@ import org.json.JSONObject;
 
 import net.yacy.grid.tools.JSONList;
 
+/**
+ * Grid-Service index Interface for grid-wide search
+ * 
+ *
+ */
 public interface Index {
     
     public IndexFactory checkConnection() throws IOException;

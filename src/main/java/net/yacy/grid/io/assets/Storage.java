@@ -21,6 +21,11 @@ package net.yacy.grid.io.assets;
 
 import java.io.IOException;
 
+/**
+ * Grid-Service storage Interface for grid-wide assets
+ *
+ * @param <A> the asset data type
+ */
 public interface Storage<A> {
     
     public void checkConnection() throws IOException;

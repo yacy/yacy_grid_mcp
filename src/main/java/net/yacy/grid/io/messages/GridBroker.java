@@ -28,6 +28,12 @@ import net.yacy.grid.Services;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.mcp.Data;
 
+/**
+ * This GridBroker is a local implementation of the broker interface, using either a connection to a RabbitMQ
+ * or another MCP on the grid. As a fail-over, the PeerBroker is used to connect a local database as broker.
+ * 
+ * Key element of the usage of an external MCP as broker is the connection 
+ */
 public class GridBroker extends PeerBroker implements Broker<byte[]> {
 
     private QueueFactory<byte[]> rabbitConnector;

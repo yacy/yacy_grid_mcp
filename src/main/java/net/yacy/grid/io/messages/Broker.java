@@ -24,6 +24,15 @@ import java.io.IOException;
 
 import net.yacy.grid.Services;
 
+/**
+ * Grid-Service Broker Interface for grid-wide messages.
+ * 
+ * This interface is implemented by
+ * - the GridBroker: this class uses a locally connected RabbitMQ or an connection to another MCP
+ * - the PeerBroker: this class implements a queue based on a local database in the peer.
+ * 
+ * @param <A> the object passed to and from the broker
+ */
 public interface Broker<A> extends Closeable {
 
     /**
