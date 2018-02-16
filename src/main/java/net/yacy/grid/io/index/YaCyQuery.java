@@ -41,6 +41,7 @@ import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.index.search.MatchQuery.ZeroTermsQuery;
 
 import com.google.common.collect.HashMultimap;
@@ -82,7 +83,7 @@ public class YaCyQuery {
     public Date until;
     public String[] collections;
 
-    public YaCyQuery(String q, String[] collections, Classification.ContentDomain contentdom, int timezoneOffset) {
+    public YaCyQuery(String q, String[] collections, Date from, Date to, Classification.ContentDomain contentdom, int timezoneOffset) {
         // default values for since and util
         this.since = new Date(0);
         this.until = new Date(Long.MAX_VALUE);
@@ -100,6 +101,8 @@ public class YaCyQuery {
             qb.must(QueryBuilders.constantScoreQuery(collectionQuery));
             this.queryBuilder = qb;
         }
+
+        // add content domain
         if (contentdom == Classification.ContentDomain.IMAGE) {
             BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
             qb.must(QueryBuilders.rangeQuery(WebMapping.imagescount_i.getSolrFieldName()).gt(new Integer(0)));
@@ -110,6 +113,18 @@ public class YaCyQuery {
             qb.must(QueryBuilders.rangeQuery(WebMapping.videolinkscount_i.getSolrFieldName()).gt(new Integer(0)));
             this.queryBuilder = qb;
         }
+        
+        // add dates
+        if (from != null || to != null) {
+        	RangeQueryBuilder rqb = QueryBuilders.rangeQuery(WebMapping.last_modified.getSolrFieldName());
+        	if (from != null) rqb = rqb.from(from);
+        	if (to != null) rqb = rqb.to(to);
+        	BoolQueryBuilder qb = QueryBuilders.boolQuery()
+        			.must(this.queryBuilder)
+            		.must(rqb);
+            this.queryBuilder = qb;
+        }        
+        
         // ready
         Data.logger.info("YaCyQuery: " + this.queryBuilder.toString());
     }
@@ -211,7 +226,16 @@ public class YaCyQuery {
                 continue;
             } else if (t.indexOf(':') > 0) {
                 int p = t.indexOf(':');
-                modifier.put(t.substring(0, p).toLowerCase(), t.substring(p + 1));
+                String name = t.substring(0, p).toLowerCase();
+                String value = t.substring(p + 1);
+                if (value.indexOf('|') > 0) {
+                	String[] values = value.split("\\|");
+                	for (String v: values) {
+                    	modifier.put(name, v);
+                	}
+                } else {
+                	modifier.put(name, value);
+                }
                 continue;
             } else {
                 // patch characters that will confuse elasticsearch or have a different meaning
@@ -253,11 +277,16 @@ public class YaCyQuery {
         
         // apply modifiers
         for (String[] modifierType: modifierTypes) {
+        	String name = modifierType[1];
             if (modifier.containsKey(modifierType[0])) {
-                queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery(modifierType[1], modifier.get(modifierType[0]))));
+            	Collection<String> values = modifier.get(modifierType[0]);
+            	TermsQueryBuilder tqb = QueryBuilders.termsQuery(name, values);
+                queries.add(QueryBuilders.constantScoreQuery(tqb));
             }
             if (modifier.containsKey("-" + modifierType[0])) {
-                queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery(modifierType[1], modifier.get("-" + modifierType[0])))));
+            	Collection<String> values = modifier.get("-" + modifierType[0]);
+            	TermsQueryBuilder tqb = QueryBuilders.termsQuery(name, values);
+                queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(tqb)));
             }
         }
         if (modifier.containsKey("collection") && (this.collections == null || this.collections.length == 0)) {

@@ -83,7 +83,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         for (String s: facetFields.split(",")) facetFieldMapping.add(WebMapping.valueOf(s));
         Sort sort = new Sort(call.get("sort", ""));
         
-        QueryBuilder qb = new YaCyQuery(query, collections, contentdom, timezoneOffset).queryBuilder;
+        QueryBuilder qb = new YaCyQuery(query, collections, null, null, contentdom, timezoneOffset).queryBuilder;
         ElasticsearchClient.Query eq = Data.getIndex().query(
                 "web", qb, null, sort, null, timezoneOffset, startRecord, maximumRecords,
                 facetLimit, explain, facetFieldMapping.toArray(new WebMapping[facetFieldMapping.size()]));
