@@ -19,11 +19,8 @@
 
 package net.yacy.grid.mcp.api.index;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -58,6 +55,11 @@ import net.yacy.grid.tools.Digest;
  * 
  * test: call
  * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=*
+ * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=*%20daterange:2017-01-01..2018-01-01
+ * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=site:heise.de
+ * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=*&as_sitesearch=heise.de
+ * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=filetype:pdf
+ * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=*&as_filetype=pdf
  * compare with
  * http://localhost:9200/web/crawler/_search?q=*:*
  */
@@ -88,7 +90,7 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         String translatedQ = q;
         
         String as_filetype = call.get("as_filetype", "");
-        String as_ft = call.get("as_ft", ""); // refers to as_filetype: only 'i' (include) or 'e' (exclude) allowed
+        String as_ft = call.get("as_ft", "i"); // refers to as_filetype: only 'i' (include) or 'e' (exclude) allowed
         if (as_filetype.length() > 0) translatedQ += (as_ft.equals("i") ? " " : " -") + "filetype:" + as_filetype;
         String as_sitesearch = call.get("as_sitesearch", "");
         String as_dt = call.get("as_dt", "i"); // refers to as_sitesearch: only 'i' (include) or 'e' (exclude) allowed
