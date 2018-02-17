@@ -83,7 +83,7 @@ public class YaCyQuery {
     public Date until;
     public String[] collections;
 
-    public YaCyQuery(String q, String[] collections, Date from, Date to, Classification.ContentDomain contentdom, int timezoneOffset) {
+    public YaCyQuery(String q, String[] collections, Classification.ContentDomain contentdom, int timezoneOffset) {
         // default values for since and util
         this.since = new Date(0);
         this.until = new Date(Long.MAX_VALUE);
@@ -113,17 +113,6 @@ public class YaCyQuery {
             qb.must(QueryBuilders.rangeQuery(WebMapping.videolinkscount_i.getSolrFieldName()).gt(new Integer(0)));
             this.queryBuilder = qb;
         }
-        
-        // add dates
-        if (from != null || to != null) {
-        	RangeQueryBuilder rqb = QueryBuilders.rangeQuery(WebMapping.last_modified.getSolrFieldName());
-        	if (from != null) rqb = rqb.from(from);
-        	if (to != null) rqb = rqb.to(to);
-        	BoolQueryBuilder qb = QueryBuilders.boolQuery()
-        			.must(this.queryBuilder)
-            		.must(rqb);
-            this.queryBuilder = qb;
-        }        
         
         // ready
         Data.logger.info("YaCyQuery: " + this.queryBuilder.toString());
@@ -259,7 +248,7 @@ public class YaCyQuery {
         // construct a ranking
         Boosts boosts = new Boosts(); // creates a clone of a standard boost mapping
         if (modifier.containsKey("boost")) {
-        	boosts.patchWithModifier(modifier.get("boost").iterator().next());
+            boosts.patchWithModifier(modifier.get("boost").iterator().next());
         }
         
         // compose query for text
@@ -293,10 +282,24 @@ public class YaCyQuery {
             Collection<String> c = modifier.get("collection");
             this.collections = c.toArray(new String[c.size()]);
         }
+        if (modifier.containsKey("daterange")) {
+            String dr = modifier.get("daterange").iterator().next();
+            if (dr.length() > 0) {
+                String from_to[] = dr.endsWith("..") ? new String[]{dr.substring(0, dr.length() - 2), ""} : dr.startsWith("..") ? new String[]{"", dr.substring(2)} : dr.split("\\.\\.");
+                if (from_to.length == 2)  {
+                    if (from_to[0] != null && from_to[0].length() > 0) try {
+                        modifier.put("since", DateParser.dayDateFormat.format(DateParser.parse(from_to[0], timezoneOffset).getTime()));
+                    } catch (ParseException e) {}
+                    if (from_to[1] != null && from_to[1].length() > 0) try {
+                        modifier.put("until", DateParser.dayDateFormat.format(DateParser.parse(from_to[1], timezoneOffset).getTime()));
+                    } catch (ParseException e) {}
+                }
+            }
+        }
         if (modifier.containsKey("since")) try {
             Calendar since = DateParser.parse(modifier.get("since").iterator().next(), timezoneOffset);
             this.since = since.getTime();
-            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.dates_in_content_dts.getSolrFieldName()).from(this.since);
+            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.last_modified.getSolrFieldName()).from(DateParser.formatGSAFS(this.since));
             if (modifier.containsKey("until")) {
                 Calendar until = DateParser.parse(modifier.get("until").iterator().next(), timezoneOffset);
                 if (until.get(Calendar.HOUR) == 0 && until.get(Calendar.MINUTE) == 0) {
@@ -305,7 +308,7 @@ public class YaCyQuery {
                     until.add(Calendar.DATE, 1);
                 }
                 this.until = until.getTime();
-                rangeQuery.to(this.until);
+                rangeQuery.to(DateParser.formatGSAFS(this.until));
             } else {
                 this.until = new Date(Long.MAX_VALUE);
             }
@@ -318,7 +321,7 @@ public class YaCyQuery {
                 until.add(Calendar.DATE, 1);
             }
             this.until = until.getTime();
-            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.dates_in_content_dts.getSolrFieldName()).to(this.until);
+            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.last_modified.getSolrFieldName()).to(DateParser.formatGSAFS(this.until));
             queries.add(rangeQuery);
         } catch (ParseException e) {}
 
