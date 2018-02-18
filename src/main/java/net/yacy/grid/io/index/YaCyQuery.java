@@ -34,6 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.http.HttpStatus;
+import org.apache.lucene.search.TermQuery;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
@@ -41,6 +42,7 @@ import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.index.search.MatchQuery.ZeroTermsQuery;
 
@@ -97,7 +99,17 @@ public class YaCyQuery {
             // attach collection constraint
             BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
             BoolQueryBuilder collectionQuery = QueryBuilders.boolQuery();
-            for (String s: this.collections) collectionQuery.should(QueryBuilders.termQuery(WebMapping.collection_sxt.getSolrFieldName(), s));
+            for (String s: this.collections) {
+                int p = s.indexOf('^');
+                TermQueryBuilder tq;
+                if (p >= 0) {
+                    tq = QueryBuilders.termQuery(WebMapping.collection_sxt.getSolrFieldName(), s.substring(0, p));
+                    tq.boost(Float.parseFloat(s.substring(p + 1)));
+                } else {
+                    tq = QueryBuilders.termQuery(WebMapping.collection_sxt.getSolrFieldName(), s);
+                }
+                collectionQuery.should(tq);
+            }
             qb.must(QueryBuilders.constantScoreQuery(collectionQuery));
             this.queryBuilder = qb;
         }
