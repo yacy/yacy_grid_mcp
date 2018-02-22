@@ -89,6 +89,8 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         Sort sort = new Sort(call.get("sort", ""));
         String translatedQ = q;
         
+        String daterange = call.get("daterange", "");
+        if (daterange.length() > 0) translatedQ += " daterange:" + daterange;
         String as_filetype = call.get("as_filetype", "");
         String as_ft = call.get("as_ft", "i"); // refers to as_filetype: only 'i' (include) or 'e' (exclude) allowed
         if (as_filetype.length() > 0) translatedQ += (as_ft.equals("i") ? " " : " -") + "filetype:" + as_filetype;
