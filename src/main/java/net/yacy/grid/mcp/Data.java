@@ -24,7 +24,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -89,7 +88,7 @@ public class Data {
         File messagesPath = new File(gridServicePath, "messages");
         if (!messagesPath.exists()) messagesPath.mkdirs();
         peerBroker = new PeerBroker(messagesPath);
-        gridBroker = new GridBroker(messagesPath, config.get("grid.broker.lazy").equals("true"));
+        gridBroker = new GridBroker(messagesPath, config.containsKey("grid.broker.lazy") && config.get("grid.broker.lazy").equals("true"));
         
         // create storage
         File assetsPath = new File(gridServicePath, "assets");
