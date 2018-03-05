@@ -1,0 +1,23 @@
+{"mappings":{"_default_":{"properties":{
+  "crawl_id_s": {
+    "type": "keyword"
+  },  
+  "url_s": {
+    "type": "keyword"
+  },
+  "status_s": {
+    "type": "keyword"
+  },
+  "init_date_dt": {
+    "type": "date"
+  },
+  "status_date_dt": {
+    "type": "date"
+  },
+  "collection_sxt": {
+    "type": "keyword"
+  },
+  "comment_t": {
+    "type": "text"
+  }
+}}}}
