@@ -1,6 +1,6 @@
 /**
  *  ElasticIndexFactory
- *  Copyright 07.01.2018 by Michael Peter Christen, @0rb1t3r
+ *  Copyright 04.03.2018 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -19,26 +19,65 @@
 
 package net.yacy.grid.io.index;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
 
+import org.elasticsearch.client.transport.NoNodeAvailableException;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
+import net.yacy.grid.mcp.Data;
+import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.JSONList;
 
 public class ElasticIndexFactory implements IndexFactory {
-
-    private static int DEFAULT_PORT = 9300;
     
-    private String server, username, password;
-    private int port;
+    public final static String PROTOCOL_PREFIX = "elastic://";
+    
+    private ElasticsearchClient elasticsearchClient = null;
+    private String elasticsearchAddress;
+    private String elasticsearchClusterName;
     private Index index;
     
-    public ElasticIndexFactory(String server, int port, String username, String password) throws IOException {
-        this.server = server;
-        this.username = username == null ? "" : username;
-        this.password = password == null ? "" : password;
-        this.port = port;
-
+    public ElasticIndexFactory(String elasticsearchAddress, String elasticsearchClusterName) throws IOException {
+        if (elasticsearchAddress == null || elasticsearchAddress.length() == 0) throw new IOException("the elasticsearch Address must be given");
+        
+        this.elasticsearchAddress = elasticsearchAddress;
+        this.elasticsearchClusterName = elasticsearchClusterName;
+        
+        // create elasticsearch connection
+        this.elasticsearchClient = new ElasticsearchClient(new String[]{this.elasticsearchAddress}, this.elasticsearchClusterName.length() == 0 ? null : this.elasticsearchClusterName);
+        Data.logger.info("Connected elasticsearch at " + Data.getHost(this.elasticsearchAddress));
+        
+        Path mappingsPath = Paths.get("conf","mappings");
+        if (mappingsPath.toFile().exists()) {
+            for (File f: mappingsPath.toFile().listFiles()) {
+                if (f.getName().endsWith(".json")) {
+                    String indexName = f.getName();
+                    indexName = indexName.substring(0, indexName.length() - 5); // cut off ".json"
+                    try {
+                        this.elasticsearchClient.createIndexIfNotExists(indexName, 1 /*shards*/, 1 /*replicas*/);
+                        JSONObject mo = new JSONObject(new JSONTokener(new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8)));
+                        mo = mo.getJSONObject("mappings").getJSONObject("_default_");
+                        this.elasticsearchClient.setMapping(indexName, mo.toString());
+                        Data.logger.info("initiated mapping for index " + indexName);
+                    } catch (IOException | NoNodeAvailableException e) {
+                        this.elasticsearchClient = null; // index not available
+                        Data.logger.info("Failed creating mapping for index " + indexName, e);
+                    }
+                }
+            }
+        }
+        
+        // create index
         this.index = new Index() {
 
             @Override
@@ -48,75 +87,81 @@ public class ElasticIndexFactory implements IndexFactory {
 
             @Override
             public IndexFactory add(String indexName, String typeName, String id, JSONObject object) throws IOException {
-                
+                ElasticIndexFactory.this.elasticsearchClient.writeMap(indexName, typeName, id, object.toMap());
                 return ElasticIndexFactory.this;
             }
 
             @Override
-            public boolean exist(String id) throws IOException {
-                // TODO Auto-generated method stub
-                return false;
+            public boolean exist(String indexName, String typeName, String id) throws IOException {
+                return ElasticIndexFactory.this.elasticsearchClient.exist(indexName, typeName, id);
             }
 
             @Override
-            public int count(QueryLanguage language, String query) throws IOException {
-                // TODO Auto-generated method stub
-                return 0;
+            public long count(String indexName, String typeName, QueryLanguage language, String query) throws IOException {
+                QueryBuilder termQuery = new YaCyQuery(query, null, Classification.ContentDomain.ALL, 0).queryBuilder;
+                return ElasticIndexFactory.this.elasticsearchClient.count(termQuery, indexName, typeName);
             }
 
             @Override
-            public JSONObject query(String id) throws IOException {
-                // TODO Auto-generated method stub
-                return null;
+            public JSONObject query(String indexName, String typeName, String id) throws IOException {
+                Map<String, Object> map = ElasticIndexFactory.this.elasticsearchClient.readMap(indexName, typeName, id);
+                if (map == null) return null;
+                return new JSONObject(map);
             }
 
             @Override
-            public JSONList query(QueryLanguage language, String query) throws IOException {
-                // TODO Auto-generated method stub
-                return null;
+            public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException {
+                QueryBuilder termQuery = new YaCyQuery(query, null, null, 0).queryBuilder;
+                ElasticsearchClient.Query q = ElasticIndexFactory.this.elasticsearchClient.query(indexName, null, termQuery, null, Sort.DEFAULT, null, 0, start, count, 0, false);
+                List<Map<String, Object>> result = q.results;
+                JSONList list = new JSONList();
+                for (int hitc = 0; hitc < result.size(); hitc++) {
+                    Map<String, Object> map = result.get(hitc);
+                    list.add(new JSONObject(map));
+                }
+                return list;
             }
 
             @Override
-            public boolean delete(String id) throws IOException {
-                // TODO Auto-generated method stub
-                return false;
+            public boolean delete(String indexName, String typeName, String id) throws IOException {
+                return ElasticIndexFactory.this.elasticsearchClient.delete(indexName, typeName, id);
             }
 
             @Override
-            public int delete(QueryLanguage language, String query) throws IOException {
-                // TODO Auto-generated method stub
-                return 0;
+            public long delete(String indexName, String typeName, QueryLanguage language, String query) throws IOException {
+                QueryBuilder termQuery = new YaCyQuery(query, null, Classification.ContentDomain.ALL, 0).queryBuilder;
+                return ElasticIndexFactory.this.elasticsearchClient.deleteByQuery(indexName, typeName, termQuery);
             }
 
             @Override
             public void close() {
-                // TODO Auto-generated method stub
-                
             }
-
+            
         };
+    }
+    
+    public ElasticsearchClient getClient() {
+        return this.elasticsearchClient;
     }
     
     @Override
     public String getConnectionURL() {
-        return "elastic://" +
-                (this.username != null && this.username.length() > 0 ? username + (this.password != null && this.password.length() > 0 ? ":" + this.password : "") + "@" : "") +
-                this.getHost() + ((this.hasDefaultPort() ? "" : ":" + this.getPort()));
+        return PROTOCOL_PREFIX + this.elasticsearchAddress + "/" + this.elasticsearchClusterName;
     }
 
     @Override
     public String getHost() {
-        return this.server;
+        return Data.getHost(this.elasticsearchAddress);
     }
 
     @Override
     public boolean hasDefaultPort() {
-        return this.port == -1 || this.port == DEFAULT_PORT;
+        return true;
     }
 
     @Override
     public int getPort() {
-        return hasDefaultPort() ? DEFAULT_PORT : this.port;
+        return 9300;
     }
 
     @Override
@@ -126,7 +171,7 @@ public class ElasticIndexFactory implements IndexFactory {
 
     @Override
     public void close() {
-        this.index.close();
+        this.elasticsearchClient.close();
     }
 
 

@@ -104,7 +104,8 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         QueryBuilder termQuery = new YaCyQuery(translatedQ, sites, contentdom, timezoneOffset).queryBuilder;
 
         HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getSolrFieldName()).preTags("").postTags("").fragmentSize(140);
-        ElasticsearchClient.Query query = Data.getIndex().query("web", termQuery, null, sort, hb, timezoneOffset, start, num, 0, explain);
+        ElasticsearchClient ec = Data.gridIndex.getElasticClient();
+        ElasticsearchClient.Query query = ec.query("web", null, termQuery, null, sort, hb, timezoneOffset, start, num, 0, explain);
         List<Map<String, Object>> result = query.results;
         List<String> explanations = query.explanations;
  

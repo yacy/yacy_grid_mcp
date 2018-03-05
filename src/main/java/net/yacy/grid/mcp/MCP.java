@@ -37,7 +37,13 @@ import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
+import net.yacy.grid.mcp.api.index.AddService;
+import net.yacy.grid.mcp.api.index.CheckService;
+import net.yacy.grid.mcp.api.index.CountService;
+import net.yacy.grid.mcp.api.index.DeleteService;
+import net.yacy.grid.mcp.api.index.ExistService;
 import net.yacy.grid.mcp.api.index.GSASearchService;
+import net.yacy.grid.mcp.api.index.QueryService;
 import net.yacy.grid.mcp.api.index.YaCySearchService;
 import net.yacy.grid.mcp.api.info.LogService;
 import net.yacy.grid.mcp.api.info.ServicesService;
@@ -86,7 +92,13 @@ public class MCP {
             
             // search services
             YaCySearchService.class,
-            GSASearchService.class
+            GSASearchService.class,
+            AddService.class,
+            CheckService.class,
+            CountService.class,
+            DeleteService.class,
+            ExistService.class,
+            QueryService.class
     };
 
     public static class IndexListener extends AbstractBrokerListener implements BrokerListener {
@@ -127,7 +139,7 @@ public class MCP {
                    if (date == null && json.has(WebMapping.fresh_date_dt.getSolrFieldName())) date = WebMapping.fresh_date_dt.getSolrFieldName();
                    String url = json.getString(WebMapping.url_s.getSolrFieldName());
                    String id = MultiProtocolURL.getDigest(url);
-                   boolean created = Data.getIndex().writeMap("web", json.toMap(), "crawler", id);
+                   boolean created = Data.gridIndex.getElasticClient().writeMap("web", "crawler", id, json.toMap());
                    Data.logger.info("MCP.processAction indexed " + ((line + 1)/2)  + "/" + jsonlist.length()/2 + "(" + (created ? "created" : "updated")+ "): " + url);
                    //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
                    //bulk.add(be);
@@ -154,10 +166,8 @@ public class MCP {
         Service.initEnvironment(MCP_SERVICE, services, DATA_PATH);
         
         // start listener
-        if (Data.getIndex() != null) {
-            BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);
-            new Thread(brokerListener).start();
-        }
+        BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);
+        new Thread(brokerListener).start();
         
         // start server
         Data.logger.info("started MCP");

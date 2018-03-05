@@ -84,8 +84,9 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         Sort sort = new Sort(call.get("sort", ""));
         
         QueryBuilder qb = new YaCyQuery(query, collections, contentdom, timezoneOffset).queryBuilder;
-        ElasticsearchClient.Query eq = Data.getIndex().query(
-                "web", qb, null, sort, null, timezoneOffset, startRecord, maximumRecords,
+        ElasticsearchClient es = Data.gridIndex.getElasticClient();
+        ElasticsearchClient.Query eq = es.query(
+                "web", null, qb, null, sort, null, timezoneOffset, startRecord, maximumRecords,
                 facetLimit, explain, facetFieldMapping.toArray(new WebMapping[facetFieldMapping.size()]));
 
         JSONObject json = new JSONObject(true);

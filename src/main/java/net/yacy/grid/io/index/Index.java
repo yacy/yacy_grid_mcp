@@ -36,17 +36,17 @@ public interface Index {
     
     public IndexFactory add(String indexName, String typeName, final String id, JSONObject object) throws IOException;
     
-    public boolean exist(String id) throws IOException;
+    public boolean exist(String indexName, String typeName, String id) throws IOException;
     
-    public int count(QueryLanguage language, String query) throws IOException;
+    public long count(String indexName, String typeName, QueryLanguage language, String query) throws IOException;
 
-    public JSONObject query(String id) throws IOException;
+    public JSONObject query(String indexName, String typeName, String id) throws IOException;
     
-    public JSONList query(QueryLanguage language, String query) throws IOException;
+    public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException;
 
-    public boolean delete(String id) throws IOException;
+    public boolean delete(String indexName, String typeName, String id) throws IOException;
 
-    public int delete(QueryLanguage language, String query) throws IOException;
+    public long delete(String indexName, String typeName, QueryLanguage language, String query) throws IOException;
     
     public void close();
     

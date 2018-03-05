@@ -34,7 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.http.HttpStatus;
-import org.apache.lucene.search.TermQuery;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
@@ -43,7 +42,6 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
-import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.index.search.MatchQuery.ZeroTermsQuery;
 
 import com.google.common.collect.HashMultimap;
@@ -277,17 +275,27 @@ public class YaCyQuery {
         }
         
         // apply modifiers
-        for (String[] modifierType: modifierTypes) {
-        	String name = modifierType[1];
-            if (modifier.containsKey(modifierType[0])) {
-            	Collection<String> values = modifier.get(modifierType[0]);
-            	TermsQueryBuilder tqb = QueryBuilders.termsQuery(name, values);
-                queries.add(QueryBuilders.constantScoreQuery(tqb));
+        Collection<String> values;
+        modifier_handling: for (String[] modifierType: modifierTypes) {
+            String modifier_name = modifierType[0];
+            String index_name = modifierType[1];
+
+            if ((values = modifier.get(modifier_name)).size() > 0) {
+                if (modifier_name.equals("site") && values.size() == 1) {
+                    String host = values.iterator().next();
+                    if (host.startsWith("www.")) values.add(host.substring(4)); else values.add("www." + host);
+                }
+                queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery(index_name, values)));
+                continue modifier_handling;
             }
-            if (modifier.containsKey("-" + modifierType[0])) {
-            	Collection<String> values = modifier.get("-" + modifierType[0]);
-            	TermsQueryBuilder tqb = QueryBuilders.termsQuery(name, values);
-                queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(tqb)));
+           
+            if ((values = modifier.get("-" + modifier_name)).size() > 0) {
+                if (modifier_name.equals("site") && values.size() == 1) {
+                    String host = values.iterator().next();
+                    if (host.startsWith("www.")) values.add(host.substring(4)); else values.add("www." + host);
+                }
+                queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery(index_name, values))));
+                continue modifier_handling;
             }
         }
         if (modifier.containsKey("collection") && (this.collections == null || this.collections.length == 0)) {
