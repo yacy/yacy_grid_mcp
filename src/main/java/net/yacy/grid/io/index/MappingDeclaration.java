@@ -1,5 +1,5 @@
 /**
- *  SchemaDeclaration
+ *  MappingDeclaration
  *  Copyright 2011 by Michael Peter Christen
  *  First released 14.04.2011 at http://yacy.net
  *
@@ -20,8 +20,6 @@
 
 package net.yacy.grid.io.index;
 
-import org.json.JSONObject;
-
 public interface MappingDeclaration {
 
     /**
@@ -30,42 +28,5 @@ public interface MappingDeclaration {
      */
     public String name(); // default field name (according to SolCell default schema) <= enum.name()
     
-    /**
-     * @return the default or custom solr field name to use for solr requests
-     */
-    public String getSolrFieldName();
-
-    public MappingType getType();
-
-    public boolean isIndexed();
-
-    public boolean isStored();
-
-    public boolean isMultiValued();
-
-    public boolean isSearchable();
-
-    public boolean isOmitNorms();
-    
-    public boolean isDocValue();
-
-    public String getComment();
-
-    public String getFacetname();
-    
-    public String getDisplayname();
-    
-    public String getFacettype();
-
-    public String getFacetmodifier();
-
-    /**
-     * @return true when this field is mandatory for proper operation
-     */
-    public boolean isMandatory();
-
-    public void setSolrFieldName(String name);
-    
-    public JSONObject toJSON();
-
+    public Mapping getMapping();
 }

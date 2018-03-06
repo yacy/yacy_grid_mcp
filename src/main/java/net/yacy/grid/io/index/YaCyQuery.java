@@ -66,10 +66,10 @@ public class YaCyQuery {
         final ArrayList<String> fqs = new ArrayList<>();
 
         // add filter to prevent that results come from failed urls
-        fqs.add(WebMapping.httpstatus_i.getSolrFieldName() + ":" + HttpStatus.SC_OK);
+        fqs.add(WebMapping.httpstatus_i.getMapping().name() + ":" + HttpStatus.SC_OK);
         if (noimages) {
-            fqs.add("-" + WebMapping.content_type.getSolrFieldName() + ":(image/*)");
-            fqs.add("-" + WebMapping.url_file_ext_s.getSolrFieldName() + ":(jpg OR png OR gif)");
+            fqs.add("-" + WebMapping.content_type.getMapping().name() + ":(image/*)");
+            fqs.add("-" + WebMapping.url_file_ext_s.getMapping().name() + ":(jpg OR png OR gif)");
         }
         
         return fqs;
@@ -101,10 +101,10 @@ public class YaCyQuery {
                 int p = s.indexOf('^');
                 TermQueryBuilder tq;
                 if (p >= 0) {
-                    tq = QueryBuilders.termQuery(WebMapping.collection_sxt.getSolrFieldName(), s.substring(0, p));
+                    tq = QueryBuilders.termQuery(WebMapping.collection_sxt.getMapping().name(), s.substring(0, p));
                     tq.boost(Float.parseFloat(s.substring(p + 1)));
                 } else {
-                    tq = QueryBuilders.termQuery(WebMapping.collection_sxt.getSolrFieldName(), s);
+                    tq = QueryBuilders.termQuery(WebMapping.collection_sxt.getMapping().name(), s);
                 }
                 collectionQuery.should(tq);
             }
@@ -115,12 +115,12 @@ public class YaCyQuery {
         // add content domain
         if (contentdom == Classification.ContentDomain.IMAGE) {
             BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
-            qb.must(QueryBuilders.rangeQuery(WebMapping.imagescount_i.getSolrFieldName()).gt(new Integer(0)));
+            qb.must(QueryBuilders.rangeQuery(WebMapping.imagescount_i.getMapping().name()).gt(new Integer(0)));
             this.queryBuilder = qb;
         }
         if (contentdom == Classification.ContentDomain.VIDEO) {
             BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
-            qb.must(QueryBuilders.rangeQuery(WebMapping.videolinkscount_i.getSolrFieldName()).gt(new Integer(0)));
+            qb.must(QueryBuilders.rangeQuery(WebMapping.videolinkscount_i.getMapping().name()).gt(new Integer(0)));
             this.queryBuilder = qb;
         }
         
@@ -178,11 +178,11 @@ public class YaCyQuery {
     
     private final static String[][] modifierTypes = new String[][] {
         new String[] {"id", "_id"},
-        new String[] {"intitle", WebMapping.title.getSolrFieldName()},
-        new String[] {"inurlinurl", WebMapping.url_file_name_tokens_t.getSolrFieldName()},
-        new String[] {"filetype", WebMapping.url_file_ext_s.getSolrFieldName()},
-        new String[] {"site", WebMapping.host_s.getSolrFieldName()},
-        new String[] {"author", WebMapping.author_sxt.getSolrFieldName()}
+        new String[] {"intitle", WebMapping.title.getMapping().name()},
+        new String[] {"inurlinurl", WebMapping.url_file_name_tokens_t.getMapping().name()},
+        new String[] {"filetype", WebMapping.url_file_ext_s.getMapping().name()},
+        new String[] {"site", WebMapping.host_s.getMapping().name()},
+        new String[] {"author", WebMapping.author_sxt.getMapping().name()}
     };
     
     private QueryBuilder parse(String q, int timezoneOffset) {
@@ -319,7 +319,7 @@ public class YaCyQuery {
         if (modifier.containsKey("since")) try {
             Calendar since = DateParser.parse(modifier.get("since").iterator().next(), timezoneOffset);
             this.since = since.getTime();
-            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.last_modified.getSolrFieldName()).from(DateParser.formatGSAFS(this.since));
+            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.last_modified.getMapping().name()).from(DateParser.formatGSAFS(this.since));
             if (modifier.containsKey("until")) {
                 Calendar until = DateParser.parse(modifier.get("until").iterator().next(), timezoneOffset);
                 if (until.get(Calendar.HOUR) == 0 && until.get(Calendar.MINUTE) == 0) {
@@ -341,7 +341,7 @@ public class YaCyQuery {
                 until.add(Calendar.DATE, 1);
             }
             this.until = until.getTime();
-            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.last_modified.getSolrFieldName()).to(DateParser.formatGSAFS(this.until));
+            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.last_modified.getMapping().name()).to(DateParser.formatGSAFS(this.until));
             queries.add(rangeQuery);
         } catch (ParseException e) {}
 
@@ -367,21 +367,21 @@ public class YaCyQuery {
                 .multiMatchQuery(q)
                 .operator(or ? Operator.OR : Operator.AND)
                 .zeroTermsQuery(ZeroTermsQuery.ALL);
-        boosts.forEach((mapping, boost) -> qb.field(mapping.getSolrFieldName(), boost));
+        boosts.forEach((mapping, boost) -> qb.field(mapping.getMapping().name(), boost));
         return qb;
     }
     
     public static QueryBuilder exactMatchQueryBuilder(String q, Boosts boosts) {
         BoolQueryBuilder qb = QueryBuilders.boolQuery();
-        boosts.forEach((mapping, boost) -> qb.should(QueryBuilders.termQuery(mapping.getSolrFieldName(), q)));
+        boosts.forEach((mapping, boost) -> qb.should(QueryBuilders.termQuery(mapping.getMapping().name(), q)));
         qb.minimumShouldMatch(1);
         return qb;
     }
     
     public static String pickBestImage(Map<String, Object> hit, String dflt) {
-        Object images_height = hit.get(WebMapping.images_height_val.getSolrFieldName());
-        Object images_width = hit.get(WebMapping.images_width_val.getSolrFieldName());
-        Object images = hit.get(WebMapping.images_sxt.getSolrFieldName());
+        Object images_height = hit.get(WebMapping.images_height_val.getMapping().name());
+        Object images_width = hit.get(WebMapping.images_width_val.getMapping().name());
+        Object images = hit.get(WebMapping.images_sxt.getMapping().name());
         if (images instanceof List && images_height instanceof List && images_width instanceof List) {
             @SuppressWarnings("unchecked")
             List<String> links = (List<String>) images;

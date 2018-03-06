@@ -108,24 +108,24 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         for (int hitc = 0; hitc < result.size(); hitc++) {
             Map<String, Object> map = result.get(hitc);
             JSONObject hit = new JSONObject(true);
-            List<?> title = (List<?>) map.get(WebMapping.title.getSolrFieldName());
+            List<?> title = (List<?>) map.get(WebMapping.title.getMapping().name());
             String titleString = title == null || title.isEmpty() ? "" : title.iterator().next().toString();
-            Object link = map.get(WebMapping.url_s.getSolrFieldName());
+            Object link = map.get(WebMapping.url_s.getMapping().name());
             if (Classification.ContentDomain.IMAGE == contentdom) {
                 hit.put("url", link); // the url before we extract the link
                 link = YaCyQuery.pickBestImage(map, (String) link);
                 hit.put("icon", link);
                 hit.put("image", link);
             }
-            List<?> description = (List<?>) map.get(WebMapping.description_txt.getSolrFieldName());
+            List<?> description = (List<?>) map.get(WebMapping.description_txt.getMapping().name());
             String descriptionString = description == null || description.isEmpty() ? "" : description.iterator().next().toString();
-            String last_modified = (String) map.get(WebMapping.last_modified.getSolrFieldName());
+            String last_modified = (String) map.get(WebMapping.last_modified.getMapping().name());
             Date last_modified_date = DateParser.iso8601MillisParser(last_modified);
-            Integer size = (Integer) map.get(WebMapping.size_i.getSolrFieldName());
+            Integer size = (Integer) map.get(WebMapping.size_i.getMapping().name());
             int sizekb = size / 1024;
             int sizemb = sizekb / 1024;
             String size_string = sizemb > 0 ? (Integer.toString(sizemb) + " mbyte") : sizekb > 0 ? (Integer.toString(sizekb) + " kbyte") : (Integer.toString(size) + " byte");
-            String host = (String) map.get(WebMapping.host_s.getSolrFieldName());
+            String host = (String) map.get(WebMapping.host_s.getMapping().name());
 	        hit.put("title", titleString);
             hit.put("link", link.toString());
             hit.put("description", descriptionString);
@@ -146,9 +146,9 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
             String facetname = fe.getKey();
             WebMapping mapping = WebMapping.valueOf(facetname);
             JSONObject facetobject = new JSONObject(true);
-            facetobject.put("facetname", mapping.getFacetname());
-            facetobject.put("displayname", mapping.getDisplayname());
-            facetobject.put("type", mapping.getFacettype());
+            facetobject.put("facetname", mapping.getMapping().getFacetname());
+            facetobject.put("displayname", mapping.getMapping().getDisplayname());
+            facetobject.put("type", mapping.getMapping().getFacettype());
             facetobject.put("min", "0");
             facetobject.put("max", "0");
             facetobject.put("mean", "0");
@@ -159,7 +159,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
                 JSONObject elementEntry = new JSONObject(true);
                 elementEntry.put("name", element.getKey());
                 elementEntry.put("count", element.getValue().toString());
-                elementEntry.put("modifier", mapping.getFacetmodifier() + ":" + element.getKey());
+                elementEntry.put("modifier", mapping.getMapping().getFacetmodifier() + ":" + element.getKey());
                 elements.put(elementEntry);
             }
             navigation.put(facetobject);

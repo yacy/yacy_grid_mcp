@@ -736,7 +736,7 @@ public class ElasticsearchClient {
             if (postFilter != null) request.setPostFilter(postFilter);
             request.clearRescorers();
             for (WebMapping field: aggregationFields) {
-                request.addAggregation(AggregationBuilders.terms(field.getSolrFieldName()).field(field.getSolrFieldName()).minDocCount(1).size(aggregationLimit));
+                request.addAggregation(AggregationBuilders.terms(field.getMapping().name()).field(field.getMapping().name()).minDocCount(1).size(aggregationLimit));
             }
             // apply sort
             request = sort.sort(request);
@@ -769,7 +769,7 @@ public class ElasticsearchClient {
             // collect results: fields
             this.aggregations = new HashMap<>();
             for (WebMapping field: aggregationFields) {
-                Terms fieldCounts = response.getAggregations().get(field.getSolrFieldName());
+                Terms fieldCounts = response.getAggregations().get(field.getMapping().name());
                 List<? extends Bucket> buckets = fieldCounts.getBuckets();
                 // aggregate double-tokens (matching lowercase)
                 Map<String, Long> checkMap = new HashMap<>();
@@ -790,7 +790,7 @@ public class ElasticsearchClient {
                         list.add(new AbstractMap.SimpleEntry<String, Long>(key, v));
                     }
                 }
-                aggregations.put(field.getSolrFieldName(), list);
+                aggregations.put(field.getMapping().name(), list);
                 //if (field.equals("place_country")) {
                     // special handling of country aggregation: add the country center as well
                 //}

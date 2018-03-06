@@ -58,17 +58,38 @@ public enum MappingType {
         int p = field.indexOf('_');
         if (p < 0 || field.length() - p > 4) return true; // special names may have no type extension
         String ext = field.substring(p + 1);
-        boolean ok = collectionSchema.isMultiValued() ? this.multivalExt.equals(ext) : this.singlevalExt.equals(ext);
-        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(collectionSchema.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
+        Mapping mapping = collectionSchema.getMapping();
+        boolean ok = mapping.isMultiValued() ? this.multivalExt.equals(ext) : this.singlevalExt.equals(ext);
+        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(mapping.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
         if (!ok) return ok;
-        ok = !"s".equals(this.singlevalExt) || collectionSchema.isMultiValued() || field.endsWith("s");
-        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(collectionSchema.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
+        ok = !"s".equals(this.singlevalExt) || mapping.isMultiValued() || field.endsWith("s");
+        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(mapping.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
         if (!ok) return ok;
-        ok = !"sxt".equals(this.singlevalExt) || !collectionSchema.isMultiValued()  || field.endsWith("sxt");
-        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(collectionSchema.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
+        ok = !"sxt".equals(this.singlevalExt) || !mapping.isMultiValued()  || field.endsWith("sxt");
+        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(mapping.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
         if (!ok) return ok;
-        ok = !"t".equals(this.singlevalExt) || collectionSchema.isMultiValued() || field.endsWith("t");
-        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(collectionSchema.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
+        ok = !"t".equals(this.singlevalExt) || mapping.isMultiValued() || field.endsWith("t");
+        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(mapping.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
+        if (!ok) return ok;
+        return ok;
+    }
+
+    public boolean appropriateName(final Mapping maping) {
+        String field = maping.name();
+        int p = field.indexOf('_');
+        if (p < 0 || field.length() - p > 4) return true; // special names may have no type extension
+        String ext = field.substring(p + 1);
+        boolean ok = maping.isMultiValued() ? this.multivalExt.equals(ext) : this.singlevalExt.equals(ext);
+        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(maping.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
+        if (!ok) return ok;
+        ok = !"s".equals(this.singlevalExt) || maping.isMultiValued() || field.endsWith("s");
+        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(maping.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
+        if (!ok) return ok;
+        ok = !"sxt".equals(this.singlevalExt) || !maping.isMultiValued()  || field.endsWith("sxt");
+        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(maping.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
+        if (!ok) return ok;
+        ok = !"t".equals(this.singlevalExt) || maping.isMultiValued() || field.endsWith("t");
+        assert ok : "SolrType = " + this.name() + ", field = " + field + ", ext = " + ext + ", multivalue = " + new Boolean(maping.isMultiValued()).toString() + ", singlevalExt = " + this.singlevalExt + ", multivalExt = " + this.multivalExt;
         if (!ok) return ok;
         return ok;
     }

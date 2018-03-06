@@ -134,10 +134,10 @@ public class MCP {
                    if (json.has("index")) continue indexloop; // this is an elasticsearch index directive, we just skip that
 
                    String date = null;
-                   if (date == null && json.has(WebMapping.last_modified.getSolrFieldName())) date = WebMapping.last_modified.getSolrFieldName();
-                   if (date == null && json.has(WebMapping.load_date_dt.getSolrFieldName())) date = WebMapping.load_date_dt.getSolrFieldName();
-                   if (date == null && json.has(WebMapping.fresh_date_dt.getSolrFieldName())) date = WebMapping.fresh_date_dt.getSolrFieldName();
-                   String url = json.getString(WebMapping.url_s.getSolrFieldName());
+                   if (date == null && json.has(WebMapping.last_modified.getMapping().name())) date = WebMapping.last_modified.getMapping().name();
+                   if (date == null && json.has(WebMapping.load_date_dt.getMapping().name())) date = WebMapping.load_date_dt.getMapping().name();
+                   if (date == null && json.has(WebMapping.fresh_date_dt.getMapping().name())) date = WebMapping.fresh_date_dt.getMapping().name();
+                   String url = json.getString(WebMapping.url_s.getMapping().name());
                    String id = MultiProtocolURL.getDigest(url);
                    boolean created = Data.gridIndex.getElasticClient().writeMap("web", "crawler", id, json.toMap());
                    Data.logger.info("MCP.processAction indexed " + ((line + 1)/2)  + "/" + jsonlist.length()/2 + "(" + (created ? "created" : "updated")+ "): " + url);

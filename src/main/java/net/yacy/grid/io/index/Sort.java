@@ -75,7 +75,7 @@ public class Sort {
     
     public SearchRequestBuilder sort(SearchRequestBuilder request) {
         if (this.option == Option.DATE) {
-            return request.addSort(WebMapping.last_modified.getSolrFieldName(), this.direction);
+            return request.addSort(WebMapping.last_modified.getMapping().name(), this.direction);
         }
         if (this.option == Option.METADATA) {
             return request.addSort(this.metafield, this.direction);
