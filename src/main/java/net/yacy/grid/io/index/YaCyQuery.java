@@ -28,7 +28,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -378,34 +377,26 @@ public class YaCyQuery {
         return qb;
     }
     
-    public static String pickBestImage(Map<String, Object> hit, String dflt) {
-        Object images_height = hit.get(WebMapping.images_height_val.getMapping().name());
-        Object images_width = hit.get(WebMapping.images_width_val.getMapping().name());
-        Object images = hit.get(WebMapping.images_sxt.getMapping().name());
-        if (images instanceof List && images_height instanceof List && images_width instanceof List) {
-            @SuppressWarnings("unchecked")
-            List<String> links = (List<String>) images;
-            @SuppressWarnings("unchecked")
-            List<Integer> heights = (List<Integer>) images_height;
-            @SuppressWarnings("unchecked")
-            List<Integer> widths = (List<Integer>) images_width;
-            if (links.size() == heights.size() && heights.size() == widths.size()) {
-                int maxsize = 0;
-                int maxi = 0;
-                for (int i = 0; i < heights.size(); i++) {
-                    int pixel = heights.get(i) * widths.get(i);
-                    if (pixel > maxsize) {
-                        maxsize = pixel;
-                        maxi = i;
-                    }
+    public static String pickBestImage(Document doc, String dflt) {
+        List<String> links = doc.getStrings(WebMapping.images_sxt);
+        List<Integer> heights = doc.getInts(WebMapping.images_height_val);
+        List<Integer> widths = doc.getInts(WebMapping.images_width_val);
+        if (links.size() == 0) return dflt;
+        if (links.size() == heights.size() && heights.size() == widths.size()) {
+            int maxsize = 0;
+            int maxi = 0;
+            for (int i = 0; i < heights.size(); i++) {
+                int pixel = heights.get(i) * widths.get(i);
+                if (pixel > maxsize) {
+                    maxsize = pixel;
+                    maxi = i;
                 }
-                String link = links.get(maxi);
-                return link;
-            } else {
-                String link = links.get(0);
-                return link;
             }
+            String link = links.get(maxi);
+            return link;
+        } else {
+            String link = links.get(0);
+            return link;
         }
-        return dflt;
     }
 }

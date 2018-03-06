@@ -34,6 +34,7 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.io.index.Document;
 import net.yacy.grid.io.index.ElasticsearchClient;
 import net.yacy.grid.io.index.Sort;
 import net.yacy.grid.io.index.WebMapping;
@@ -106,31 +107,30 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         List<Map<String, Object>> result = eq.results;
         List<String> explanations = eq.explanations;
         for (int hitc = 0; hitc < result.size(); hitc++) {
-            Map<String, Object> map = result.get(hitc);
+            Document doc = new Document(result.get(hitc));
             JSONObject hit = new JSONObject(true);
-            List<?> title = (List<?>) map.get(WebMapping.title.getMapping().name());
+            List<String> title = doc.getStrings(WebMapping.title);
             String titleString = title == null || title.isEmpty() ? "" : title.iterator().next().toString();
-            Object link = map.get(WebMapping.url_s.getMapping().name());
+            String link = doc.getString(WebMapping.url_s, "");
             if (Classification.ContentDomain.IMAGE == contentdom) {
                 hit.put("url", link); // the url before we extract the link
-                link = YaCyQuery.pickBestImage(map, (String) link);
+                link = YaCyQuery.pickBestImage(doc, (String) link);
                 hit.put("icon", link);
                 hit.put("image", link);
             }
-            List<?> description = (List<?>) map.get(WebMapping.description_txt.getMapping().name());
+            List<String> description = doc.getStrings(WebMapping.description_txt);
             String descriptionString = description == null || description.isEmpty() ? "" : description.iterator().next().toString();
-            String last_modified = (String) map.get(WebMapping.last_modified.getMapping().name());
-            Date last_modified_date = DateParser.iso8601MillisParser(last_modified);
-            Integer size = (Integer) map.get(WebMapping.size_i.getMapping().name());
+            Date last_modified_date = doc.getDate(WebMapping.last_modified);
+            int size = doc.getInt(WebMapping.size_i);
             int sizekb = size / 1024;
             int sizemb = sizekb / 1024;
             String size_string = sizemb > 0 ? (Integer.toString(sizemb) + " mbyte") : sizekb > 0 ? (Integer.toString(sizekb) + " kbyte") : (Integer.toString(size) + " byte");
-            String host = (String) map.get(WebMapping.host_s.getMapping().name());
+            String host = doc.getString(WebMapping.host_s, "");
 	        hit.put("title", titleString);
             hit.put("link", link.toString());
             hit.put("description", descriptionString);
             hit.put("pubDate", DateParser.formatRFC1123(last_modified_date));
-            hit.put("size", size.toString());
+            hit.put("size", Integer.toString(size));
             hit.put("sizename", size_string);
             hit.put("host", host);
             if (explain) {

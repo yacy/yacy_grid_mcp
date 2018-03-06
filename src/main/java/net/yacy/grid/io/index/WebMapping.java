@@ -20,8 +20,6 @@
 
 package net.yacy.grid.io.index;
 
-import org.json.JSONObject;
-
 public enum WebMapping implements MappingDeclaration {
  
     // mandatory
@@ -253,17 +251,6 @@ public enum WebMapping implements MappingDeclaration {
         return this.mapping;
     }
 
-	public static JSONObject elasticsearchMapping(String indexName) {
-		JSONObject properties = new JSONObject(true);
-		for (WebMapping mapping: WebMapping.values()) {
-			properties.put(mapping.name(), mapping.getMapping().toJSON());
-		}
-		JSONObject index = new JSONObject().put("properties", properties);
-		JSONObject mappings = new JSONObject().put(indexName, index);
-		JSONObject json = new JSONObject().put("mappings", mappings);
-		return json;
-	}
-
 	/**
 	 * Graph attributes are used by the parser to create a copy of a document which contains only links and references
 	 * to the indexed document identification. That graph document is used by the crawler to move on with crawling.
@@ -309,7 +296,7 @@ public enum WebMapping implements MappingDeclaration {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		System.out.println(elasticsearchMapping("web").toString(2));
+		System.out.println(Mapping.elasticsearchMapping("web").toString(2));
 	}
 }
 

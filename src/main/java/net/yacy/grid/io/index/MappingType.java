@@ -36,13 +36,13 @@ public enum MappingType {
 	
     private String printName, singlevalExt, multivalExt, elasticName;
     private MappingType(final String elasticName, final String singlevalExt, final String multivalExt) {
-    	this.elasticName = elasticName;
+        	this.elasticName = elasticName;
         this.printName = this.name();
         this.singlevalExt = singlevalExt;
         this.multivalExt = multivalExt;
     }
     private MappingType(final String elasticName, final String singlevalExt, final String multivalExt, final String printName) {
-    	this.elasticName = elasticName;
+        	this.elasticName = elasticName;
         this.printName = printName;
         this.singlevalExt = singlevalExt;
         this.multivalExt = multivalExt;

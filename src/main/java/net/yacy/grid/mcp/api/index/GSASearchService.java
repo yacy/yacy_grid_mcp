@@ -35,6 +35,7 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.io.index.Document;
 import net.yacy.grid.io.index.ElasticsearchClient;
 import net.yacy.grid.io.index.Sort;
 import net.yacy.grid.io.index.WebMapping;
@@ -55,6 +56,7 @@ import net.yacy.grid.tools.Digest;
  * 
  * test: call
  * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=*
+ * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=*&contentdom=image
  * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=*%20daterange:2017-01-01..2018-01-01
  * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=site:heise.de
  * http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=*&as_sitesearch=heise.de
@@ -135,26 +137,25 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         // List
         final AtomicInteger hit = new AtomicInteger(1);
         for (int hitc = 0; hitc < result.size(); hitc++) {
-            Map<String, Object> map = result.get(hitc);
+            Document doc = new Document(result.get(hitc));
             Map<String, HighlightField> highlights = query.highlights.get(hitc);
-            List<?> title = (List<?>) map.get(WebMapping.title.getMapping().name());
+            List<String> title = doc.getStrings(WebMapping.title);
             String titleXML = title == null || title.isEmpty() ? "" : XML.escape(title.iterator().next().toString());
-            Object link = map.get(WebMapping.url_s.getMapping().name());
-            if (Classification.ContentDomain.IMAGE == contentdom) link = YaCyQuery.pickBestImage(map, (String) link);
+            String link = doc.getString(WebMapping.url_s, "");
+            if (Classification.ContentDomain.IMAGE == contentdom) link = YaCyQuery.pickBestImage(doc, (String) link);
             String linkXML = XML.escape(link.toString());
             String urlhash = Digest.encodeMD5Hex(link.toString());
             
-            List<?> description = (List<?>) map.get(WebMapping.description_txt.getMapping().name());
+            List<?> description = doc.getStrings(WebMapping.description_txt);
             String snippetDescription = description == null || description.isEmpty() ? "" : description.iterator().next().toString();
             String snippetHighlight = highlights == null || highlights.isEmpty() ? "" : highlights.values().iterator().next().fragments()[0].toString();
             String snippetXML = snippetDescription.length() > snippetHighlight.length() ? XML.escape(snippetDescription) : XML.escape(snippetHighlight);
-            String last_modified = (String) map.get(WebMapping.last_modified.getMapping().name());
-            Date last_modified_date = DateParser.iso8601MillisParser(last_modified);
-            Integer size = (Integer) map.get(WebMapping.size_i.getMapping().name());
+            Date last_modified_date = doc.getDate(WebMapping.last_modified);
+            int size = doc.getInt(WebMapping.size_i);
             int sizekb = size / 1024;
             int sizemb = sizekb / 1024;
             String size_string = sizemb > 0 ? (Integer.toString(sizemb) + " mbyte") : sizekb > 0 ? (Integer.toString(sizekb) + " kbyte") : (Integer.toString(size) + " byte");
-            //String host = (String) map.get(WebMapping.host_s.getMapping().name());
+            //String host = doc.getString(WebMapping.host_s, "");
 	        sb.append("<R N=\"").append(Integer.toString(hit.getAndIncrement())).append("\" MIME=\"text/html\">\n");
 	        sb.append("<T>").append(titleXML).append("</T>\n");
 	        sb.append("<FS NAME=\"date\" VALUE=\"").append(DateParser.formatGSAFS(last_modified_date)).append("\"/>\n");
