@@ -20,6 +20,7 @@
 package net.yacy.grid.io.index;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,10 @@ public class CrawlerDocument extends Document {
         loaded, load_failed,
         parsed, parse_failed,
         indexed
+    }
+    
+    public CrawlerDocument() {
+        super();
     }
     
     public CrawlerDocument(Map<String, Object> map) {
@@ -48,7 +53,8 @@ public class CrawlerDocument extends Document {
         return new CrawlerDocument(json);
     }
     
-    public CrawlerDocument store(Index index, final String id, JSONObject object) throws IOException {
+    public CrawlerDocument store(Index index, final String id) throws IOException {
+        index.add("crawler", "", id, this);
         return this;
     }
 
@@ -98,7 +104,7 @@ public class CrawlerDocument extends Document {
         return this.getDate(CrawlerMapping.status_date_dt);
     }
     
-    public CrawlerDocument setCollections(List<String> collections) {
+    public CrawlerDocument setCollections(Collection<String> collections) {
         this.putStrings(CrawlerMapping.collection_sxt, collections);
         return this;
     }

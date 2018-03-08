@@ -19,6 +19,7 @@
 
 package net.yacy.grid.io.index;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,10 @@ import net.yacy.grid.tools.DateParser;
 
 public class Document extends JSONObject {
 
+    public Document() {
+        super();
+    }
+    
     public Document(Map<String, Object> map) {
         super(map);
     }
@@ -59,7 +64,7 @@ public class Document extends JSONObject {
         return valid;
     }
 
-    public Document putStrings(MappingDeclaration declaration, List<String> list) {
+    public Document putStrings(MappingDeclaration declaration, Collection<String> list) {
         if (!isStrings(declaration)) return this;
         this.put(CrawlerMapping.collection_sxt.getMapping().name(), list);
         return this;
@@ -99,7 +104,7 @@ public class Document extends JSONObject {
         return valid;
     }
     
-    public Document putInts(MappingDeclaration declaration, List<Integer> ints) {
+    public Document putInts(MappingDeclaration declaration, Collection<Integer> ints) {
         if (!isInts(declaration)) return this;
         this.put(declaration.getMapping().name(), ints);
         return this;
@@ -138,7 +143,7 @@ public class Document extends JSONObject {
         return valid;
     }
     
-    public Document putlongs(MappingDeclaration declaration, List<Long> longs) {
+    public Document putlongs(MappingDeclaration declaration, Collection<Long> longs) {
         if (!isInts(declaration)) return this;
         this.put(declaration.getMapping().name(), longs);
         return this;
