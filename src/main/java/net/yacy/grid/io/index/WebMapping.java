@@ -20,6 +20,11 @@
 
 package net.yacy.grid.io.index;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+
 public enum WebMapping implements MappingDeclaration {
  
     // mandatory
@@ -251,6 +256,19 @@ public enum WebMapping implements MappingDeclaration {
         return this.mapping;
     }
 
+    public static final Pattern catchall_pattern = Pattern.compile(".*");
+    
+    public static Map<String, Pattern> collectionParser(String collectionString) {
+        if (collectionString == null || collectionString.length() == 0) return new HashMap<String, Pattern>();
+        String[] cs = collectionString.split(",");
+        final Map<String, Pattern> cm = new LinkedHashMap<String, Pattern>();
+        for (String c: cs) {
+            int p = c.indexOf(':');
+            if (p < 0) cm.put(c, catchall_pattern); else cm.put(c.substring(0, p), Pattern.compile(c.substring(p + 1)));
+        }
+        return cm;
+    }
+    
 	/**
 	 * Graph attributes are used by the parser to create a copy of a document which contains only links and references
 	 * to the indexed document identification. That graph document is used by the crawler to move on with crawling.
