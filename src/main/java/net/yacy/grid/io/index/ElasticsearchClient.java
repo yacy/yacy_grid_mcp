@@ -88,6 +88,12 @@ import org.joda.time.format.ISODateTimeFormat;
 
 import net.yacy.grid.mcp.Data;
 
+/**
+ * To get data out of the elasticsearch index which is written with this client, try:
+ * http://localhost:9200/web/_search?q=*:*
+ * http://localhost:9200/crawler/_search?q=*:*
+ *
+ */
 public class ElasticsearchClient {
 
     private static long throttling_time_threshold = 2000L; // update time high limit
