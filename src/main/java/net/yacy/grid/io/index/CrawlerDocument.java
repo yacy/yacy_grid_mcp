@@ -48,7 +48,7 @@ public class CrawlerDocument extends Document {
     }
     
     public static CrawlerDocument load(Index index, String id) throws IOException {
-        JSONObject json = index.query("crawler", "", id);
+        JSONObject json = index.query("crawler", "event", id);
         if (json == null) throw new IOException("no document with id " + id + " in index");
         return new CrawlerDocument(json);
     }
