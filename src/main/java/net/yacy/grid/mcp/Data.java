@@ -100,9 +100,12 @@ public class Data {
         String[] gridMcpAddress = gridMcpAddressl.split(",");
         boolean mcpConnected = false;
         for (String address: gridMcpAddress) {
+            String host = getHost(address);
+            int port = YaCyServices.mcp.getDefaultPort();
             if (    address.length() > 0 &&
-                    Data.gridBroker.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort()) &&
-                    Data.gridStorage.connectMCP(getHost(address), YaCyServices.mcp.getDefaultPort())
+                    Data.gridBroker.connectMCP(host, port) &&
+                    Data.gridStorage.connectMCP(host, port) &&
+                    Data.gridIndex.connectMCP(host, port)
                 ) {
                 Data.logger.info("Connected MCP at " + getHost(address));
                 mcpConnected = true;

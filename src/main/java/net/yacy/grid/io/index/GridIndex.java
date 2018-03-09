@@ -97,10 +97,10 @@ public class GridIndex implements Index {
             this.elastic_address = null;
         } else try {
             this.elasticIndexFactory.getIndex().add(indexName, typeName, id, object);
-            Data.logger.info("Index/Client: add elastic service '" + elastic_address + "', object with id:" + id);
+            Data.logger.info("Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return this.elasticIndexFactory;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: add elastic service '" + elastic_address + "', elastic fail", e);
+            Data.logger.debug("Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             // try to connect again..
@@ -130,10 +130,10 @@ public class GridIndex implements Index {
             this.elastic_address = null;
         } else try {
             boolean exist = this.elasticIndexFactory.getIndex().exist(indexName, typeName, id);
-            Data.logger.info("Index/Client: exist elastic service '" + elastic_address + "', object with id:" + id);
+            Data.logger.info("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: exist elastic service '" + elastic_address + "', elastic fail", e);
+            Data.logger.debug("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             // try to connect again..
@@ -163,10 +163,10 @@ public class GridIndex implements Index {
             this.elastic_address = null;
         } else try {
             long count = this.elasticIndexFactory.getIndex().count(indexName, typeName, language, query);
-            Data.logger.info("Index/Client: count elastic service '" + elastic_address + "', object with query:" + query);
+            Data.logger.info("Index/Client: count elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return count;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: count elastic service '" + elastic_address + "', elastic fail", e);
+            Data.logger.debug("Index/Client: count elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             // try to connect again..
@@ -196,10 +196,10 @@ public class GridIndex implements Index {
             this.elastic_address = null;
         } else try {
             JSONObject json = this.elasticIndexFactory.getIndex().query(indexName, typeName, id);
-            Data.logger.info("Index/Client: query elastic service '" + elastic_address + "', object with id:" + id);
+            Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return json;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: query elastic service '" + elastic_address + "', elastic fail", e);
+            Data.logger.debug("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             // try to connect again..
@@ -229,10 +229,10 @@ public class GridIndex implements Index {
             this.elastic_address = null;
         } else try {
             JSONList list = this.elasticIndexFactory.getIndex().query(indexName, typeName, language, query, start, count);
-            Data.logger.info("Index/Client: query elastic service '" + elastic_address + "', object with query:" + query);
+            Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return list;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: query elastic service '" + elastic_address + "', elastic fail", e);
+            Data.logger.debug("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             // try to connect again..
@@ -262,10 +262,10 @@ public class GridIndex implements Index {
             this.elastic_address = null;
         } else try {
             boolean deleted = this.elasticIndexFactory.getIndex().delete(indexName, typeName, id);
-            Data.logger.info("Index/Client: delete elastic service '" + elastic_address + "', object with id:" + id);
+            Data.logger.info("Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return deleted;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: delete elastic service '" + elastic_address + "', elastic fail", e);
+            Data.logger.debug("Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             // try to connect again..
@@ -295,10 +295,10 @@ public class GridIndex implements Index {
             this.elastic_address = null;
         } else try {
             long deleted = this.elasticIndexFactory.getIndex().delete(indexName, typeName, language, query);
-            Data.logger.info("Index/Client: delete elastic service '" + elastic_address + "', object with query:" + query);
+            Data.logger.info("Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return deleted;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: delete elastic service '" + elastic_address + "', elastic fail", e);
+            Data.logger.debug("Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             // try to connect again..
