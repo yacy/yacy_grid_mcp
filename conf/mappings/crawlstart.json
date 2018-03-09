@@ -1,0 +1,17 @@
+{"mappings":{"_default_":{"properties":{
+  "start_s": {
+    "type": "keyword"
+  },
+  "init_date_dt": {
+    "type": "date"
+  },
+  "collection_sxt": {
+    "type": "keyword"
+  },
+  "crawl_id_s": {
+    "type": "keyword"
+  }, 
+  "data_o": {
+    "type": "object"
+  }
+}}}}

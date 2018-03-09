@@ -1,0 +1,48 @@
+{"mappings":{"_default_":{"properties":{
+  "query_t": {
+    "type": "text"
+  },
+  "origin_s": {
+    "type": "keyword"
+  },
+  "collection_sxt": {
+    "type": "keyword"
+  },
+  "timezoneOffset_i": {
+    "type": "integer"
+  },
+  "startRecord_i": {
+    "type": "integer"
+  },
+  "maximumRecords_i": {
+    "type": "integer"
+  },
+  "date_dt": {
+    "type": "date"
+  },
+  "hits_i": {
+    "type": "integer"
+  },
+  "compiled_s": {
+    "type": "keyword"
+  },
+  "count_i": {
+    "type": "integer"
+  },
+  "title_txt": {
+    "type": "text"
+  },
+  "url_sxt": {
+    "type": "keyword"
+  },
+  "snippet_txt": {
+    "type": "text"
+  },
+  "last_modified_dts": {
+    "type": "date"
+  },
+  "size_val": {
+    "type": "integer"
+  }
+}}}}
+

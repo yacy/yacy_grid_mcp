@@ -22,6 +22,7 @@
 package net.yacy.grid.io.index;
 
 public enum MappingType {
+    object("object", "o", "oxt"),                  // A json object
     string("keyword", "s", "sxt"),                 // The type is not analyzed, but indexed/stored verbatim
     text_general("string", "t", "txt"),            // tokenizes with StandardTokenizer, removes stop words from case-insensitive "stopwords.txt", down cases, applies synonyms.
     text_en_splitting_tight("string", null, null), // can insert dashes in the wrong place and still match
