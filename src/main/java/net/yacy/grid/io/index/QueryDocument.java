@@ -1,5 +1,5 @@
 /**
- *  QueryMapping
+ *  QueryDocument
  *  Copyright 9.3.2018 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
@@ -19,8 +19,33 @@
 
 package net.yacy.grid.io.index;
 
-public enum QueryMapping implements MappingDeclaration {
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import org.json.JSONObject;
+
+public class QueryDocument extends Document {
+
+    public QueryDocument() {
+        super();
+    }
     
+    public QueryDocument(Map<String, Object> map) {
+        super(map);
+    }
+    
+    public QueryDocument(JSONObject obj) {
+        super(obj);
+    }
+    
+    public QueryDocument store(Index index) throws IOException {
+        String id = Long.toString(System.currentTimeMillis());
+        index.add("query", "event", id, this);
+        return this;
+    }
+    /*
+     * fields to add:
     query_t(MappingType.text_general, true, true, false, false, true, "the exact query as the user made in the search text field"),
     origin_s(MappingType.string, true, true, false, true, true, "the origin refers to a place where the query came from. It can i.e. be an IP. IPs must be pseudomized according to requirements by law.", true),
     collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation", false, "collections", "Collections", "String", "collection"),
@@ -36,25 +61,11 @@ public enum QueryMapping implements MappingDeclaration {
     snippet_txt(MappingType.text_general, true, true, true, false, true, "the snippets of the search hits"),
     last_modified_dts(MappingType.date, true, true, true, false, true, "the document dates of the search hits"),
     size_val(MappingType.num_integer, true, true, true, false, false, "size of the documents of the search hits");
-
-    private Mapping mapping;
-    
-    private QueryMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment) {
-        this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, false);
+     */
+    public QueryDocument addDocument(List<Map<String, Object>> searchresult) {
+        for (int hitc = 0; hitc < searchresult.size(); hitc++) {
+            Document doc = new Document(searchresult.get(hitc));
+        }
+        return this;
     }
-
-    private QueryMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment, final boolean mandatory) {
-        this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, mandatory);
-    }
-    
-    private QueryMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment, final boolean mandatory,
-                       final String facetname, final String displayname, final String facettype, final String facetmodifier) {
-        this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, mandatory, facetname, displayname, facettype, facetmodifier);
-    }
-    
-    @Override
-    public final Mapping getMapping() {
-        return this.mapping;
-    }
-  
 }

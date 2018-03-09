@@ -21,8 +21,8 @@ package net.yacy.grid.io.index;
 
 public enum CrawlerMapping implements MappingDeclaration {
 
-    crawl_id_s(MappingType.string, true, true, false, true, true, "id of crawl start", true),
-    url_s(MappingType.string, true, true, false, true, true, "url of document", true),
+    crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
+    url_s(MappingType.string, true, true, false, true, true, "url of the document", true),
     status_s(MappingType.string, true, true, false, true, true, "current crawl status", true),
     init_date_dt(MappingType.date, true, true, false, false, false, "date when the crawl was started"),
     status_date_dt(MappingType.date, true, true, false, false, false, "date of latest status change"),

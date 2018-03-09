@@ -45,6 +45,17 @@ public class Document extends JSONObject {
         super(obj.toMap());
     }
     
+    public Document putObject(MappingDeclaration declaration, JSONObject o) {
+        if (!isString(declaration)) return this;
+        this.put(declaration.getMapping().name(), o);
+        return this;
+    }
+    
+    public JSONObject getObject(MappingDeclaration declaration) {
+        if (!isString(declaration)) return null;
+        return this.optJSONObject(declaration.getMapping().name());
+    }
+    
     public Document putString(MappingDeclaration declaration, String s) {
         if (!isString(declaration)) return this;
         this.put(declaration.getMapping().name(), s);
