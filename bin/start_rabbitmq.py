@@ -35,8 +35,8 @@ if not checkportopen(5672):
         urllib.urlretrieve ('http://dl.bintray.com/rabbitmq/binaries/' + rabbitversion + '.tar.xz', path_apphome + '/data/apps/' + rabbitversion + '.tar.xz')
     rabbitpath = path_apphome + '/data/apps/rabbitmq'
     if not os.path.isdir(rabbitpath):
-        print('decompressing' + rabbitversion)
-        os.system('tar xfz ' + path_apphome + '/data/apps/' + rabbitversion + '.tar.xz -C ' + path_apphome + '/data/apps/')
+        print('decompressing ' + rabbitversion)
+        os.system('tar xJf ' + path_apphome + '/data/apps/' + rabbitversion + '.tar.xz -C ' + path_apphome + '/data/apps/')
         os.rename(path_apphome + '/data/apps/' + rabbitfilename, rabbitpath)
     # run rabbitmq
     print('running rabbitmq')
