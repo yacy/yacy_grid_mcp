@@ -735,6 +735,7 @@ public class ElasticsearchClient {
                     .setExplain(explain)
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
                     .setQuery(queryBuilder)
+                    .setSearchType(SearchType.DFS_QUERY_THEN_FETCH) // DFS_QUERY_THEN_FETCH is slower but provides stability of search results
                     .setFrom(from)
                     .setSize(resultCount);
             if (hb != null) request.highlighter(hb);
