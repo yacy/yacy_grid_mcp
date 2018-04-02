@@ -19,12 +19,12 @@
 
 package net.yacy.grid.io.index;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class BoostsFactory {
 	
-	private final static Map<WebMapping, Float> QUERY_DEFAULT_FIELDS = new HashMap<>();
+	private final static Map<WebMapping, Float> QUERY_DEFAULT_FIELDS = new LinkedHashMap<>();
     static {
         QUERY_DEFAULT_FIELDS.put(WebMapping.url_s, 1000.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.host_organization_s, 1000.0f);
@@ -51,7 +51,7 @@ public class BoostsFactory {
         return new Boosts(QUERY_DEFAULT_FIELDS);
     }
     
-    public class Boosts extends HashMap<WebMapping, Float> {
+    public class Boosts extends LinkedHashMap<WebMapping, Float> {
 
         private static final long serialVersionUID = -8298697781874655425L;
         

@@ -58,7 +58,6 @@ public class YaCyQuery {
     private static char dq = '"';
     //private static String seps = ".:;#*`,!$%()=?^<>/&";
     
-    public String query_original;
     
     public final static String FACET_DEFAULT_PARAMETER = "host_s,url_file_ext_s,author_sxt,dates_in_content_dts,language_s,url_protocol_s,collection_sxt";
     
@@ -77,12 +76,14 @@ public class YaCyQuery {
 
     private final static Pattern term4ORPattern = Pattern.compile("(?:^| )(\\S*(?: OR \\S*)+)(?: |$)"); // Pattern.compile("(^\\s*(?: OR ^\\s*+)+)");
     private final static Pattern tokenizerPattern = Pattern.compile("([^\"]\\S*|\".+?\")\\s*"); // tokenizes Strings into terms respecting quoted parts
-    
+
     public QueryBuilder queryBuilder;
     public Date since;
     public Date until;
     public String[] collections;
     public Boosts boosts;
+    public HashSet<String> yacyModifiers;
+    public HashSet<String> positiveBag, negativeBag;
 
     public YaCyQuery(String q, String[] collections, Classification.ContentDomain contentdom, int timezoneOffset) {
         // default values for since and util
@@ -90,6 +91,9 @@ public class YaCyQuery {
         this.until = new Date(Long.MAX_VALUE);
         this.collections = collections;
         this.boosts = Data.boostsFactory.getBoosts(); // creates a clone of a standard boost mapping
+        this.yacyModifiers = new HashSet<>();
+        this.positiveBag = new HashSet<>();
+        this.negativeBag = new HashSet<>();
         
         // parse the query string
         this.queryBuilder = preparse(q, timezoneOffset);
@@ -184,7 +188,8 @@ public class YaCyQuery {
         new String[] {"inurlinurl", WebMapping.url_file_name_tokens_t.getMapping().name()},
         new String[] {"filetype", WebMapping.url_file_ext_s.getMapping().name()},
         new String[] {"site", WebMapping.host_s.getMapping().name()},
-        new String[] {"author", WebMapping.author_sxt.getMapping().name()}
+        new String[] {"author", WebMapping.author_sxt.getMapping().name()},
+        new String[] {"yacy", "_id"}
     };
     
     private QueryBuilder parse(String q, int timezoneOffset) {
@@ -245,13 +250,31 @@ public class YaCyQuery {
                 if (t.length() == 0) continue;
                 if ((t.charAt(0) == dq && t.charAt(t.length() - 1) == dq) || (t.charAt(0) == sq && t.charAt(t.length() - 1) == sq)) {
                     t = t.substring(1, t.length() - 1);
-                    if (negative) text_negative_filter.add(t); else text_positive_filter.add(t);
+                    if (negative) {
+                        text_negative_filter.add(t);
+                        this.negativeBag.add(t);
+                    } else {
+                        text_positive_filter.add(t);
+                        this.positiveBag.add(t);
+                    }
                 } else if (t.indexOf('-') > 0) {
                     // this must be handled like a quoted string without the minus
                     t = t.replace('-', space);
-                    if (negative) text_negative_filter.add(t); else text_positive_filter.add(t);
+                    if (negative) {
+                        text_negative_filter.add(t);
+                        this.negativeBag.add(t);
+                    } else {
+                        text_positive_filter.add(t);
+                        this.positiveBag.add(t);
+                    }
                 } else {
-                    if (negative) text_negative_match.add(t); else text_positive_match.add(t);
+                    if (negative) {
+                        text_negative_match.add(t);
+                        this.negativeBag.add(t);
+                    } else {
+                        text_positive_match.add(t);
+                        this.positiveBag.add(t);
+                    }
                 }
                 continue;
             }
@@ -282,6 +305,10 @@ public class YaCyQuery {
             String index_name = modifierType[1];
 
             if ((values = modifier.get(modifier_name)).size() > 0) {
+                if (modifier_name.equals("yacy")) {
+                    values.forEach(y -> this.yacyModifiers.add(y));
+                    continue modifier_handling;
+                }
                 if (modifier_name.equals("site") && values.size() == 1) {
                     String host = values.iterator().next();
                     if (host.startsWith("www.")) values.add(host.substring(4)); else values.add("www." + host);
@@ -379,26 +406,4 @@ public class YaCyQuery {
         return qb;
     }
     
-    public static String pickBestImage(Document doc, String dflt) {
-        List<String> links = doc.getStrings(WebMapping.images_sxt);
-        List<Integer> heights = doc.getInts(WebMapping.images_height_val);
-        List<Integer> widths = doc.getInts(WebMapping.images_width_val);
-        if (links.size() == 0) return dflt;
-        if (links.size() == heights.size() && heights.size() == widths.size()) {
-            int maxsize = 0;
-            int maxi = 0;
-            for (int i = 0; i < heights.size(); i++) {
-                int pixel = heights.get(i) * widths.get(i);
-                if (pixel > maxsize) {
-                    maxsize = pixel;
-                    maxi = i;
-                }
-            }
-            String link = links.get(maxi);
-            return link;
-        } else {
-            String link = links.get(0);
-            return link;
-        }
-    }
 }

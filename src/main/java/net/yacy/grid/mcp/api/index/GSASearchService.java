@@ -26,18 +26,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.json.XML;
 
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
-import net.yacy.grid.io.index.Document;
 import net.yacy.grid.io.index.ElasticsearchClient;
 import net.yacy.grid.io.index.Sort;
+import net.yacy.grid.io.index.WebDocument;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.io.index.YaCyQuery;
 import net.yacy.grid.mcp.Data;
@@ -103,11 +101,11 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         String queryXML = XML.escape(q);
         
         // prepare a query
-        QueryBuilder termQuery = new YaCyQuery(translatedQ, sites, contentdom, timezoneOffset).queryBuilder;
+        YaCyQuery yq = new YaCyQuery(translatedQ, sites, contentdom, timezoneOffset);
 
-        HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getMapping().name()).preTags("").postTags("").fragmentSize(140);
         ElasticsearchClient ec = Data.gridIndex.getElasticClient();
-        ElasticsearchClient.Query query = ec.query("web", null, termQuery, null, sort, hb, timezoneOffset, start, num, 0, explain);
+        HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getMapping().name()).preTags("").postTags("").fragmentSize(140);
+        ElasticsearchClient.Query query = ec.query("web", null, yq.queryBuilder, null, sort, hb, timezoneOffset, start, num, 0, explain);
         List<Map<String, Object>> result = query.results;
         List<String> explanations = query.explanations;
  
@@ -137,21 +135,16 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         // List
         final AtomicInteger hit = new AtomicInteger(1);
         for (int hitc = 0; hitc < result.size(); hitc++) {
-            Document doc = new Document(result.get(hitc));
-            Map<String, HighlightField> highlights = query.highlights.get(hitc);
-            List<String> title = doc.getStrings(WebMapping.title);
-            String titleXML = title == null || title.isEmpty() ? "" : XML.escape(title.iterator().next().toString());
-            String link = doc.getString(WebMapping.url_s, "");
-            if (Classification.ContentDomain.IMAGE == contentdom) link = YaCyQuery.pickBestImage(doc, (String) link);
+            WebDocument doc = new WebDocument(result.get(hitc));
+            String titleXML = XML.escape(doc.getTitle());
+            String link = doc.getLink();
+            if (Classification.ContentDomain.IMAGE == contentdom) link = doc.pickImage((String) link);
             String linkXML = XML.escape(link.toString());
-            String urlhash = Digest.encodeMD5Hex(link.toString());
-            
-            List<?> description = doc.getStrings(WebMapping.description_txt);
-            String snippetDescription = description == null || description.isEmpty() ? "" : description.iterator().next().toString();
-            String snippetHighlight = highlights == null || highlights.isEmpty() ? "" : highlights.values().iterator().next().fragments()[0].toString();
-            String snippetXML = snippetDescription.length() > snippetHighlight.length() ? XML.escape(snippetDescription) : XML.escape(snippetHighlight);
-            Date last_modified_date = doc.getDate(WebMapping.last_modified);
-            int size = doc.getInt(WebMapping.size_i);
+            String urlhash = Digest.encodeMD5Hex(link);
+            String snippet = doc.getSnippet(query.highlights.get(hitc), yq);
+            String snippetXML = XML.escape(snippet);
+            Date last_modified_date = doc.getDate();
+            int size = doc.getSize();
             int sizekb = size / 1024;
             int sizemb = sizekb / 1024;
             String size_string = sizemb > 0 ? (Integer.toString(sizemb) + " mbyte") : sizekb > 0 ? (Integer.toString(sizekb) + " kbyte") : (Integer.toString(size) + " byte");

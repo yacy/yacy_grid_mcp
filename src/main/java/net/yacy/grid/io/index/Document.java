@@ -19,6 +19,7 @@
 
 package net.yacy.grid.io.index;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -67,11 +68,10 @@ public class Document extends JSONObject {
         return this.optString(declaration.getMapping().name(), dflt);
     }
     
-    private boolean isString(MappingDeclaration declaration) {
+    public boolean isString(MappingDeclaration declaration) {
         MappingType type = declaration.getMapping().getType();
         boolean valid = type == MappingType.string || type == MappingType.text_en_splitting_tight || type == MappingType.text_general;
         valid = valid && !declaration.getMapping().isMultiValued();
-        assert valid;
         return valid;
     }
 
@@ -84,16 +84,16 @@ public class Document extends JSONObject {
     public List<String> getStrings(MappingDeclaration declaration) {
         if (!isStrings(declaration)) return null;
         Object obj = this.opt(declaration.getMapping().name());
+        if (obj == null) return new ArrayList<>(0);
         boolean valid = obj instanceof JSONArray;
-        assert valid; if (!valid) return null;
+        if (!valid) return null;
         return ((JSONArray) obj).toList().stream().map(o -> Objects.toString(o, null)).collect(Collectors.toList());
     }
 
-    private boolean isStrings(MappingDeclaration declaration) {
+    public boolean isStrings(MappingDeclaration declaration) {
         MappingType type = declaration.getMapping().getType();
         boolean valid = type == MappingType.string || type == MappingType.text_en_splitting_tight || type == MappingType.text_general;
         valid = valid && declaration.getMapping().isMultiValued();
-        assert valid;
         return valid;
     }
     
