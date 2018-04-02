@@ -22,6 +22,7 @@ package net.yacy.grid.mcp;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,8 @@ public enum Service {
     
     public static YaCyServices type = null;
     private final Set<String> fields;
+    public static File conf_dir;
+    public static File data_dir;
     
     Service(final String[] fields) {
         this.fields = new LinkedHashSet<String>();
@@ -74,33 +77,42 @@ public enum Service {
         BasicConfigurator.configure();
         
         // load the config file(s);
-        File conf_dir = FileSystems.getDefault().getPath("conf").toFile();
-        File dataFile = new File(new File(FileSystems.getDefault().getPath(data_path).toFile(), type.name() + "-" + type.getDefaultPort()), "conf");
-        String confFileName = "config.properties";
-        Map<String, String> config = null;
-        try {
-            config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
-        } catch (IOException e1) {
-            Data.logger.warn("", e1);
-            System.exit(-1);
-        }
+        // what we are doing here is a bootstraping of configuration file(s): first we load the system configuration
+        // then we know the port for the service. As every server for a specific port may have its own configuration
+        // file we need to load the configuration again.
+        conf_dir = FileSystems.getDefault().getPath("conf").toFile();
+        data_dir = FileSystems.getDefault().getPath(data_path).toFile();
+        Map<String, String> config = readDoubleConfig("config.properties");
         
-        // read the port again and then read also the configuration again because the path of the custom settings may have moved
-        int port = Integer.parseInt(config.get("port"));
-        dataFile = new File(new File(FileSystems.getDefault().getPath(data_path).toFile(), type.name() + "-" + port), "conf");
-        try {
-            config = MapUtil.readConfig(conf_dir, dataFile, confFileName);
-        } catch (IOException e1) {
-            Data.logger.warn("", e1);
-            System.exit(-1);
-        }
-
         // define services
         services.forEach(service -> APIServer.addService(service));
         
         // find data path
-        File data = FileSystems.getDefault().getPath("data").toFile();
-        Data.init(new File(data, type.name() + "-" + port), config);
+        int port = Integer.parseInt(config.get("port"));
+        Data.init(dataInstancePath(data_dir, port), config);
+    }
+
+    /**
+     * read the configuration two times: first to determine the port
+     * and the second time to get the configuration from that specific port-related configuration
+     * @param confFileName
+     * @return
+     */
+    public static Map<String, String> readDoubleConfig(String confFileName) {
+        File user_dir = new File(dataInstancePath(data_dir, type.getDefaultPort()) , "conf");
+        Map<String, String> config = MapUtil.readConfig(conf_dir, user_dir, confFileName);
+        
+        // read the port again and then read also the configuration again because the path of the custom settings may have moved
+        if (config.containsKey("port")) {
+            int port = Integer.parseInt(config.get("port"));
+            user_dir = new File(dataInstancePath(data_dir, port) , "conf");
+            config = MapUtil.readConfig(conf_dir, user_dir, confFileName);
+        }
+        return config;
+    }
+    
+    private static File dataInstancePath(File data_dir, int port) {
+        return new File(data_dir, type.name() + "-" + port);
     }
     
     public static void runService(final String html_path) {
@@ -109,11 +121,7 @@ public enum Service {
         int port = Integer.parseInt(Data.config.get("port"));
 
         // start server
-        try {
-            
-            // find data path
-            File data = FileSystems.getDefault().getPath("data").toFile();
-            
+        try {            
             // open the server on available port
             boolean portForce = Boolean.getBoolean(Data.config.get("port.force"));
             port = APIServer.open(port, html_path, portForce);
@@ -122,7 +130,7 @@ public enum Service {
             Data.logger.info("Service started at port " + port);
 
             // prepare shutdown signal
-            File pid = new File(data, type.name() + "-" + port + ".pid");
+            File pid = new File(data_dir, type.name() + "-" + port + ".pid");
             if (pid.exists()) pid.delete(); // clean up rubbish
             pid.createNewFile();
             pid.deleteOnExit();

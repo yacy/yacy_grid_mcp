@@ -74,20 +74,30 @@ public class MapUtil {
      * @return a map from the properties in the configuration
      * @throws IOException
      */
-    public static Map<String, String> readConfig(File conf_dir, File user_dir, String confFileName) throws IOException {
+    public static Map<String, String> readConfig(File conf_dir, File user_dir, String confFileName) {
         Properties prop = new Properties();
-        prop.load(new FileInputStream(new File(conf_dir, confFileName)));
+        try {
+            prop.load(new FileInputStream(new File(conf_dir, confFileName)));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         Map<String, String> config = new HashMap<>();
         for (Map.Entry<Object, Object> entry: prop.entrySet()) config.put((String) entry.getKey(), (String) entry.getValue());
         user_dir.mkdirs();
         File customized_config = new File(user_dir, confFileName);
-        if (!customized_config.exists()) {
+        if (!customized_config.exists()) try {
             BufferedWriter w = new BufferedWriter(new FileWriter(customized_config));
             w.write("# This file can be used to customize the configuration\n");
             w.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         Properties customized_config_props = new Properties();
-        customized_config_props.load(new FileInputStream(customized_config));
+        try {
+            customized_config_props.load(new FileInputStream(customized_config));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         for (Map.Entry<Object, Object> entry: customized_config_props.entrySet()) config.put((String) entry.getKey(), (String) entry.getValue());
         return config;
     }

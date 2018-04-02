@@ -46,6 +46,7 @@ import org.elasticsearch.index.search.MatchQuery.ZeroTermsQuery;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import net.yacy.grid.io.index.BoostsFactory.Boosts;
 import net.yacy.grid.mcp.Data;
 import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.DateParser;
@@ -81,12 +82,14 @@ public class YaCyQuery {
     public Date since;
     public Date until;
     public String[] collections;
+    public Boosts boosts;
 
     public YaCyQuery(String q, String[] collections, Classification.ContentDomain contentdom, int timezoneOffset) {
         // default values for since and util
         this.since = new Date(0);
         this.until = new Date(Long.MAX_VALUE);
         this.collections = collections;
+        this.boosts = Data.boostsFactory.getBoosts(); // creates a clone of a standard boost mapping
         
         // parse the query string
         this.queryBuilder = preparse(q, timezoneOffset);
@@ -255,9 +258,8 @@ public class YaCyQuery {
         }
         
         // construct a ranking
-        Boosts boosts = new Boosts(); // creates a clone of a standard boost mapping
         if (modifier.containsKey("boost")) {
-            boosts.patchWithModifier(modifier.get("boost").iterator().next());
+            this.boosts.patchWithModifier(modifier.get("boost").iterator().next());
         }
         
         // compose query for text
@@ -267,10 +269,10 @@ public class YaCyQuery {
         if (!text_negative_match.isEmpty()) queries.add(QueryBuilders.boolQuery().mustNot(simpleQueryBuilder(String.join(" ", text_negative_match), ORconnective, boosts)));
         // exact matching
         for (String text: text_positive_filter) {
-            queries.add(exactMatchQueryBuilder(text, boosts));
+            queries.add(exactMatchQueryBuilder(text, this.boosts));
         }
         for (String text: text_negative_filter) {
-            queries.add(QueryBuilders.boolQuery().mustNot(exactMatchQueryBuilder(text, boosts)));
+            queries.add(QueryBuilders.boolQuery().mustNot(exactMatchQueryBuilder(text, this.boosts)));
         }
         
         // apply modifiers

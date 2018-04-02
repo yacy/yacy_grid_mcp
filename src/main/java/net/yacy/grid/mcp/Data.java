@@ -20,6 +20,7 @@
 package net.yacy.grid.mcp;
 
 import java.io.File;
+import java.nio.file.FileSystems;
 import java.util.Map;
 
 import org.apache.log4j.ConsoleAppender;
@@ -30,10 +31,12 @@ import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.assets.GridStorage;
 import net.yacy.grid.io.db.JSONDatabase;
 import net.yacy.grid.io.db.PeerDatabase;
+import net.yacy.grid.io.index.BoostsFactory;
 import net.yacy.grid.io.index.ElasticIndexFactory;
 import net.yacy.grid.io.index.GridIndex;
 import net.yacy.grid.io.messages.GridBroker;
 import net.yacy.grid.io.messages.PeerBroker;
+import net.yacy.grid.tools.MapUtil;
 
 public class Data {
     
@@ -47,6 +50,7 @@ public class Data {
     public static Logger logger;
     public static Map<String, String> config;
     public static LogAppender logAppender;
+    public static BoostsFactory boostsFactory;
     
     //public static Swagger swagger;
     
@@ -137,6 +141,9 @@ public class Data {
             }
         }
         
+        // init boosts from configuration
+        Map<String, String> defaultBoosts = Service.readDoubleConfig("boost.properties");
+        boostsFactory = new BoostsFactory(defaultBoosts);
     }
     
     public static String getHost(String address) {

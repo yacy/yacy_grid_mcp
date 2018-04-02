@@ -1,5 +1,5 @@
 /**
- *  Boosts
+ *  BoostsFactory
  *  Copyright 05.02.2018 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
@@ -22,9 +22,7 @@ package net.yacy.grid.io.index;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Boosts extends HashMap<WebMapping, Float> {
-
-	private static final long serialVersionUID = -8298699681874655425L;
+public class BoostsFactory {
 	
 	private final static Map<WebMapping, Float> QUERY_DEFAULT_FIELDS = new HashMap<>();
     static {
@@ -41,21 +39,36 @@ public class Boosts extends HashMap<WebMapping, Float> {
         QUERY_DEFAULT_FIELDS.put(WebMapping.text_t, 1.0f);
     }
 	
-    public Boosts() {
-    	super();
-    	QUERY_DEFAULT_FIELDS.forEach((key, boost) -> this.put(key, boost));
+    public BoostsFactory(final Map<String, String> defaultBoosts) {
+        super();
+        for (Map.Entry<String, String> entry: defaultBoosts.entrySet()) {
+            WebMapping webMapping = WebMapping.valueOf(entry.getKey());
+            QUERY_DEFAULT_FIELDS.put(webMapping, Float.parseFloat(entry.getValue()));
+        }
     }
     
-    public void patchWithModifier(String modifier) {
-    	String[] customBoosts = modifier.split(",");
-    	for (String customBoost: customBoosts) {
-    		String[] fieldBoost = customBoost.split("\\^");
-    		if (fieldBoost.length == 2) try {
-    			this.put(WebMapping.valueOf(fieldBoost[0]), Float.parseFloat(fieldBoost[1]));
-    		} catch (Throwable /*many things can go wrong here*/ e) {
-    			
-    		}
-    	}
+    public Boosts getBoosts() {
+        return new Boosts(QUERY_DEFAULT_FIELDS);
     }
     
+    public class Boosts extends HashMap<WebMapping, Float> {
+
+        private static final long serialVersionUID = -8298697781874655425L;
+        
+        private Boosts(Map<WebMapping, Float> defaultMapping) {
+            super();
+            defaultMapping.forEach((key, boost) -> this.put(key, boost));
+        }
+        
+        public void patchWithModifier(String modifier) {
+            String[] customBoosts = modifier.split(",");
+            for (String customBoost: customBoosts) {
+                String[] fieldBoost = customBoost.split("\\^");
+                if (fieldBoost.length == 2) try {
+                    this.put(WebMapping.valueOf(fieldBoost[0]), Float.parseFloat(fieldBoost[1]));
+                } catch (Throwable /*many things can go wrong here*/ e) {}
+            }
+        }
+        
+    }
 }
