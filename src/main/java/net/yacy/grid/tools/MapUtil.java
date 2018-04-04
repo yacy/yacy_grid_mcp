@@ -76,8 +76,9 @@ public class MapUtil {
      */
     public static Map<String, String> readConfig(File conf_dir, File user_dir, String confFileName) {
         Properties prop = new Properties();
-        try {
-            prop.load(new FileInputStream(new File(conf_dir, confFileName)));
+        File firstTry = new File(conf_dir, confFileName);
+        if (firstTry.exists()) try {
+            prop.load(new FileInputStream(firstTry));
         } catch (IOException e) {
             e.printStackTrace();
         }
