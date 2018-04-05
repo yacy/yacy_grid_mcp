@@ -54,7 +54,6 @@ public class CrawlerDocument extends Document {
     }
     
     public CrawlerDocument store(Index index, final String id) throws IOException {
-        index.delete("crawler", "event", id);
         index.add("crawler", "event", id, this);
         return this;
     }

@@ -60,6 +60,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
@@ -550,8 +551,18 @@ public class ElasticsearchClient {
         // get the version number out of the json, if any is given
         Long version = (Long) jsonMap.remove("_version");
         // put this to the index
-        IndexResponse r = null;
+        UpdateResponse r = null;
+        //IndexResponse r = null;
         try {
+            r = elasticsearchClient
+                .prepareUpdate(indexName, typeName, id)
+                .setDoc(jsonMap)
+                .setUpsert(jsonMap)
+                //.setVersion(version == null ? 1 : version.longValue())
+                //.setVersionType(VersionType.EXTERNAL_GTE)
+                .execute()
+                .actionGet();
+            /*
             r = elasticsearchClient
                 .prepareIndex(indexName, typeName, id)
                 .setCreate(false) // enforces OpType.INDEX
@@ -560,6 +571,7 @@ public class ElasticsearchClient {
                 .setVersionType(VersionType.EXTERNAL_GTE)
                 .execute()
                 .actionGet();
+             */
         } catch (ClusterBlockException e) {
             /*
             elasticsearchClient.admin().indices().prepareUpdateSettings(indexName)   
