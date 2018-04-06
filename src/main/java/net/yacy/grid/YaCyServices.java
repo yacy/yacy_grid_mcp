@@ -38,7 +38,11 @@ import net.yacy.grid.io.messages.GridQueue;
 public enum YaCyServices implements Services {
 
     mcp(8100),                      // the master connect program which orchestrates all other services
-    loader(8200, new GridQueue[]{
+    crawler(8200, new GridQueue[]{  // a crawler which loads a lot of documents from web or other network resources
+            new GridQueue("webcrawler_00"), new GridQueue("webcrawler_01"), new GridQueue("webcrawler_02"), new GridQueue("webcrawler_03"),
+            new GridQueue("webcrawler_04"), new GridQueue("webcrawler_05"), new GridQueue("webcrawler_06"), new GridQueue("webcrawler_07")
+    }),
+    loader(8300, new GridQueue[]{
             new GridQueue("webloader_00"), new GridQueue("webloader_01"), new GridQueue("webloader_02"), new GridQueue("webloader_03"),
             new GridQueue("webloader_04"), new GridQueue("webloader_05"), new GridQueue("webloader_06"), new GridQueue("webloader_07"),
             new GridQueue("webloader_08"), new GridQueue("webloader_09"), new GridQueue("webloader_10"), new GridQueue("webloader_11"),
@@ -48,14 +52,10 @@ public enum YaCyServices implements Services {
             new GridQueue("webloader_24"), new GridQueue("webloader_25"), new GridQueue("webloader_26"), new GridQueue("webloader_27"),
             new GridQueue("webloader_28"), new GridQueue("webloader_29"), new GridQueue("webloader_30"), new GridQueue("webloader_31")
     }),      // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
-    crawler(8300, new GridQueue[]{  // a crawler which loads a lot of documents from web or other network resources
-            new GridQueue("webcrawler_00"), new GridQueue("webcrawler_01"), new GridQueue("webcrawler_02"), new GridQueue("webcrawler_03"),
-            new GridQueue("webcrawler_04"), new GridQueue("webcrawler_05"), new GridQueue("webcrawler_06"), new GridQueue("webcrawler_07")
-    }),
-    warcmanager(8400),              // a process which combines single WARC files to bigger ones to create archives
-    parser(8500, new GridQueue[]{   // a parser service which turns WARC into YaCy JSON
+    parser(8400, new GridQueue[]{   // a parser service which turns WARC into YaCy JSON
             new GridQueue("yacyparser_00") // parsing is fast, we do not need more queues here
     }),
+    warcmanager(8500),              // a process which combines single WARC files to bigger ones to create archives
     enricher(8600),                 // a semantic enricher for YaCy JSON objects
     indexer(8700, new GridQueue[]{  // an uploader which pushes parsed/enriched YaCy JSON content to a search index
             new GridQueue("elasticsearch_00") // indexing is fast, we do no need more queues here
