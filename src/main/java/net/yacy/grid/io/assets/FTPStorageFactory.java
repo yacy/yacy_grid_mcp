@@ -197,7 +197,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
 
     public static void main(String[] args) {
         try {
-            Data.init(new File("data"), new HashMap<String, String>());
+            Data.init(new File("data"), new HashMap<String, String>(), true);
             FTPStorageFactory ftpc = new FTPStorageFactory("127.0.0.1", 2121, "anonymous", "yacy", true);
             Storage<byte[]> storage = ftpc.getStorage();
             String path = "test/file";

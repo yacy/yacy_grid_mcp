@@ -44,7 +44,6 @@ public class Data {
     public static PeerDatabase peerDB;
     public static JSONDatabase peerJsonDB;
     public static GridBroker gridBroker;
-    public static PeerBroker peerBroker;
     public static GridStorage gridStorage;
     public static GridIndex gridIndex;
     public static Logger logger;
@@ -54,7 +53,7 @@ public class Data {
     
     //public static Swagger swagger;
     
-    public static void init(File serviceData, Map<String, String> cc) {
+    public static void init(File serviceData, Map<String, String> cc, boolean localStorage) {
         PatternLayout layout = new PatternLayout("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %p %c %x - %m%n");
         logger = Logger.getRootLogger();
         logger.removeAllAppenders();
@@ -83,13 +82,13 @@ public class Data {
         // create broker
         File messagesPath = new File(gridServicePath, "messages");
         if (!messagesPath.exists()) messagesPath.mkdirs();
-        peerBroker = new PeerBroker(messagesPath);
-        gridBroker = new GridBroker(messagesPath, config.containsKey("grid.broker.lazy") && config.get("grid.broker.lazy").equals("true"));
+        boolean lazy = config.containsKey("grid.broker.lazy") && config.get("grid.broker.lazy").equals("true");
+        gridBroker = new GridBroker(lazy, localStorage ? messagesPath : null);
         
         // create storage
         File assetsPath = new File(gridServicePath, "assets");
         boolean deleteafterread = cc.containsKey("grid.assets.delete") && cc.get("grid.assets.delete").equals("true");
-        gridStorage = new GridStorage(deleteafterread, assetsPath);
+        gridStorage = new GridStorage(deleteafterread, localStorage ? assetsPath : null);
         
         // create index
         String elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "");
@@ -179,10 +178,7 @@ public class Data {
     public static void close() {
         peerJsonDB.close();
         peerDB.close();
-        
-        peerBroker.close();
         gridBroker.close();
-        
         gridStorage.close();
     }
     

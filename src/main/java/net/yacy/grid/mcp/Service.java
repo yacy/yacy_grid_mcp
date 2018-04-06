@@ -89,7 +89,7 @@ public enum Service {
         
         // find data path
         int port = Integer.parseInt(config.get("port"));
-        Data.init(dataInstancePath(data_dir, port), config);
+        Data.init(dataInstancePath(data_dir, port), config, true);
     }
 
     /**

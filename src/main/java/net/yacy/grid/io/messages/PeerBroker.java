@@ -46,7 +46,8 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
      * @param service
      * @return a queue factory for the mapdb instance of the queue
      */
-    private QueueFactory<byte[]> getConnector(Services service) {
+    private QueueFactory<byte[]> getConnector(Services service) throws IOException {
+        if (this.basePath == null) throw new IOException("no local queue supported");
         QueueFactory<byte[]> c = this.clientConnector.get(service);
         if (c != null)  return c;
         synchronized (this) {
