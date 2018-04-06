@@ -67,7 +67,8 @@ public enum Service {
     public static void initEnvironment(
             final YaCyServices serviceType,
             final List<Class<? extends Servlet>> services,
-            final String data_path) {
+            final String data_path,
+            final boolean localStorage) {
         type = serviceType;
         
         // run in headless mode
@@ -89,7 +90,7 @@ public enum Service {
         
         // find data path
         int port = Integer.parseInt(config.get("port"));
-        Data.init(dataInstancePath(data_dir, port), config, true);
+        Data.init(dataInstancePath(data_dir, port), config, localStorage);
     }
 
     /**
