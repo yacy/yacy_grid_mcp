@@ -173,11 +173,11 @@ public class YaCyQuery {
         // special handling: we don't need a boolean query builder on top; just return one parse object
         if (terms.size() == 1) return parse(terms.get(0), timezoneOffset);
 
-        // generic handling: all of those OR groups MUST match. That is done with the filter query
+        // generic handling: all of those OR groups MUST match. That is done with the must query
         BoolQueryBuilder aquery = QueryBuilders.boolQuery();
         for (String t: terms) {
             QueryBuilder partial = parse(t, timezoneOffset);
-            aquery.filter(partial);
+            aquery.must(partial);
         }
         return aquery;
     }
@@ -382,7 +382,7 @@ public class YaCyQuery {
         
         BoolQueryBuilder b = QueryBuilders.boolQuery();
         for (QueryBuilder filter : queries){
-            if (ORconnective) b.should(filter); else b.filter(filter);
+            if (ORconnective) b.should(filter); else b.must(filter);
         }
         if (ORconnective) b.minimumShouldMatch(1);
         
