@@ -45,7 +45,12 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     private int mcp_port;
     private boolean lazy;
     
-    public GridBroker(File basePath, boolean lazy) {
+    /**
+     * Make a grid-based broker
+     * @param lazy if true, support lazy queues in rabbitmq, see http://www.rabbitmq.com/lazy-queues.html
+     * @param basePath the local storage path of an db-based queue. This can also be NULL if no local queue is wanted
+     */
+    public GridBroker(boolean lazy, File basePath) {
         super(basePath);
         this.rabbitQueueFactory = null;
         this.mcpQueueFactory = null;

@@ -1,0 +1,8 @@
+curl 'http://127.0.0.1:8100/yacy/grid/mcp/messages/clear.json?serviceName=crawler&queueName=webcrawler_00'
+curl 'http://127.0.0.1:8100/yacy/grid/mcp/messages/clear.json?serviceName=crawler&queueName=webcrawler_01'
+curl 'http://127.0.0.1:8100/yacy/grid/mcp/messages/clear.json?serviceName=crawler&queueName=webcrawler_02'
+curl 'http://127.0.0.1:8100/yacy/grid/mcp/messages/clear.json?serviceName=crawler&queueName=webcrawler_03'
+curl 'http://127.0.0.1:8100/yacy/grid/mcp/messages/clear.json?serviceName=crawler&queueName=webcrawler_04'
+curl 'http://127.0.0.1:8100/yacy/grid/mcp/messages/clear.json?serviceName=crawler&queueName=webcrawler_05'
+curl 'http://127.0.0.1:8100/yacy/grid/mcp/messages/clear.json?serviceName=crawler&queueName=webcrawler_06'
+curl 'http://127.0.0.1:8100/yacy/grid/mcp/messages/clear.json?serviceName=crawler&queueName=webcrawler_07'

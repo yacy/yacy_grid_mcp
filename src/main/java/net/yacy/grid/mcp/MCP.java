@@ -179,7 +179,7 @@ public class MCP {
         // start server
         List<Class<? extends Servlet>> services = new ArrayList<>();
         services.addAll(Arrays.asList(MCP_SERVICES));
-        Service.initEnvironment(MCP_SERVICE, services, DATA_PATH);
+        Service.initEnvironment(MCP_SERVICE, services, DATA_PATH, true);
         
         // start listener
         BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);

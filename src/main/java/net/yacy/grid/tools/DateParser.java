@@ -29,6 +29,9 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+
 import net.yacy.grid.mcp.Data;
 
 public class DateParser {
@@ -41,6 +44,7 @@ public class DateParser {
     public final static String PATTERN_ISO8601MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"; // same with milliseconds
     public final static String PATTERN_MONTHDAY = "yyyy-MM-dd"; // the twitter search modifier format
     public final static String PATTERN_MONTHDAYHOURMINUTE = "yyyy-MM-dd HH:mm"; // this is the format which morris.js understands for date-histogram graphs
+    public final static String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss Z"; // with numeric time zone indicator as defined in RFC5322
     
     /** Date formatter/non-sloppy parser for W3C datetime (ISO8601) in GMT/UTC */
     public final static SimpleDateFormat iso8601Format = new SimpleDateFormat(PATTERN_ISO8601, Locale.US);
@@ -48,14 +52,21 @@ public class DateParser {
     public final static DateFormat dayDateFormat = new SimpleDateFormat(PATTERN_MONTHDAY, Locale.US);
     public final static DateFormat minuteDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US);
     public final static DateFormat secondDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+    public final static SimpleDateFormat FORMAT_RFC1123 = new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
+    
+    public final static DateTimeFormatter utcFormatter = ISODateTimeFormat.dateTime().withZoneUTC();
+    
     
     public final static Calendar UTCCalendar = Calendar.getInstance();
     public final static TimeZone UTCtimeZone = TimeZone.getTimeZone("UTC");
     static {
         UTCCalendar.setTimeZone(UTCtimeZone);
+        iso8601Format.setCalendar(UTCCalendar);
+        iso8601MillisFormat.setCalendar(UTCCalendar);
         dayDateFormat.setCalendar(UTCCalendar);
         minuteDateFormat.setCalendar(UTCCalendar);
         secondDateFormat.setCalendar(UTCCalendar);
+        FORMAT_RFC1123.setCalendar(UTCCalendar);
     }
 
     /**
@@ -117,8 +128,6 @@ public class DateParser {
         return new Date(System.currentTimeMillis() - WEEK_MILLIS);
     }
     
-    private static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss Z"; // with numeric time zone indicator as defined in RFC5322
-    public  static final SimpleDateFormat FORMAT_RFC1123 = new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
     private static long lastRFC1123long = 0;
     private static String lastRFC1123string = "";
 

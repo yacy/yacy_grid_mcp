@@ -31,14 +31,13 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
     private StorageFactory<byte[]> mcp = null;
     private boolean deleteafterread;
 
+    /**
+     * create a grid storage. 
+     * @param deleteafterread if true, an asset is deleted from the asset store after it has beed read
+     * @param basePath a local path; can be NULL which means that no local storage is wanted
+     */
     public GridStorage(boolean deleteafterread, File basePath) {
         super(deleteafterread, basePath);
-        this.deleteafterread = deleteafterread;
-        this.ftp = null;
-    }
-    
-    public GridStorage(boolean deleteafterread) {
-        super(deleteafterread, null);
         this.deleteafterread = deleteafterread;
         this.ftp = null;
     }

@@ -158,7 +158,7 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
         // burn-in test
         List<Class<? extends Servlet>> services = new ArrayList<>();
         services.addAll(Arrays.asList(MCP.MCP_SERVICES));
-        Service.initEnvironment(MCP.MCP_SERVICE, services, MCP.DATA_PATH);
+        Service.initEnvironment(MCP.MCP_SERVICE, services, MCP.DATA_PATH, true);
         int threads = 16;
         final MCPStorageFactory storage = new MCPStorageFactory(null, "127.0.0.1", 8100);
         final Random random = new Random(System.currentTimeMillis());

@@ -690,7 +690,7 @@ public class ElasticsearchClient {
         if (field_value == null || field_value.length() == 0) return null;
         // prepare request
         BoolQueryBuilder query = QueryBuilders.boolQuery();
-        query.filter(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(field_name, field_value)));
+        query.must(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(field_name, field_value)));
         return query(indexName, typeName, query);
     }
 
@@ -823,11 +823,11 @@ public class ElasticsearchClient {
                 .setFrom(0);
 
         BoolQueryBuilder bFilter = QueryBuilders.boolQuery();
-        bFilter.filter(QueryBuilders.constantScoreQuery(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(fieldName, fieldValue))));
+        bFilter.must(QueryBuilders.constantScoreQuery(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(fieldName, fieldValue))));
         for (Object o : constraints.entrySet()) {
             @SuppressWarnings("rawtypes")
             Map.Entry entry = (Map.Entry) o;
-            bFilter.filter(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery((String) entry.getKey(), ((String) entry.getValue()).toLowerCase())));
+            bFilter.must(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery((String) entry.getKey(), ((String) entry.getValue()).toLowerCase())));
         }
         request.setQuery(bFilter);
         
