@@ -29,6 +29,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -176,7 +177,7 @@ public class JSONObject {
         // Therefore, an implementation mustn't rely on the order of the item.
         this.map = new HashMap<String, Object>();
     }
-
+    
     /**
      * Construct an empty JSONObject.
      * 
@@ -186,7 +187,7 @@ public class JSONObject {
     public JSONObject(boolean ordered) {
         this.map = ordered ? new LinkedHashMap<String, Object>() : new HashMap<String, Object>();
     }
-
+    
     /**
      * Construct a JSONObject from a subset of another JSONObject. An array of
      * strings is used to identify the keys that should be copied. Missing keys
@@ -217,7 +218,7 @@ public class JSONObject {
      *             duplicated key.
      */
     public JSONObject(JSONTokener x) throws JSONException {
-        this(true);
+        this();
         char c;
         String key;
 
@@ -282,13 +283,20 @@ public class JSONObject {
      * @param m
      *            A map object that can be used to initialize the contents of
      *            the JSONObject.
+     * @throws JSONException
+     *            If a value in the map is non-finite number.
+     * @throws NullPointerException
+     *            If a key in the map is <code>null</code>
      */
     public JSONObject(Map<?, ?> m) {
         if (m == null) {
             this.map = new HashMap<String, Object>();
         } else {
             this.map = new HashMap<String, Object>(m.size());
-            for (final Entry<?, ?> e : m.entrySet()) {
+        	for (final Entry<?, ?> e : m.entrySet()) {
+        	    if(e.getKey() == null) {
+        	        throw new NullPointerException("Null key.");
+        	    }
                 final Object value = e.getValue();
                 if (value != null) {
                     this.map.put(String.valueOf(e.getKey()), wrap(value));
@@ -309,13 +317,47 @@ public class JSONObject {
      * prefix. If the second remaining character is not upper case, then the
      * first character is converted to lower case.
      * <p>
+     * Methods that are <code>static</code>, return <code>void</code>,
+     * have parameters, or are "bridge" methods, are ignored.
+     * <p>
      * For example, if an object has a method named <code>"getName"</code>, and
      * if the result of calling <code>object.getName()</code> is
      * <code>"Larry Fine"</code>, then the JSONObject will contain
      * <code>"name": "Larry Fine"</code>.
      * <p>
-     * Methods that return <code>void</code> as well as <code>static</code>
-     * methods are ignored.
+     * The {@link JSONPropertyName} annotation can be used on a bean getter to
+     * override key name used in the JSONObject. For example, using the object
+     * above with the <code>getName</code> method, if we annotated it with:
+     * <pre>
+     * &#64;JSONPropertyName("FullName")
+     * public String getName() { return this.name; }
+     * </pre>
+     * The resulting JSON object would contain <code>"FullName": "Larry Fine"</code>
+     * <p>
+     * Similarly, the {@link JSONPropertyName} annotation can be used on non-
+     * <code>get</code> and <code>is</code> methods. We can also override key
+     * name used in the JSONObject as seen below even though the field would normally
+     * be ignored:
+     * <pre>
+     * &#64;JSONPropertyName("FullName")
+     * public String fullName() { return this.name; }
+     * </pre>
+     * The resulting JSON object would contain <code>"FullName": "Larry Fine"</code>
+     * <p>
+     * The {@link JSONPropertyIgnore} annotation can be used to force the bean property
+     * to not be serialized into JSON. If both {@link JSONPropertyIgnore} and
+     * {@link JSONPropertyName} are defined on the same method, a depth comparison is
+     * performed and the one closest to the concrete class being serialized is used.
+     * If both annotations are at the same level, then the {@link JSONPropertyIgnore}
+     * annotation takes precedent and the field is not serialized.
+     * For example, the following declaration would prevent the <code>getName</code>
+     * method from being serialized:
+     * <pre>
+     * &#64;JSONPropertyName("FullName")
+     * &#64;JSONPropertyIgnore 
+     * public String getName() { return this.name; }
+     * </pre>
+     * <p>
      * 
      * @param bean
      *            An object that has getter methods that should be used to make
@@ -443,7 +485,9 @@ public class JSONObject {
      *            An object to be accumulated under the key.
      * @return this.
      * @throws JSONException
-     *             If the value is an invalid number or if the key is null.
+     *            If the value is non-finite number.
+     * @throws NullPointerException
+     *            If the key is <code>null</code>.
      */
     public JSONObject accumulate(String key, Object value) throws JSONException {
         testValidity(value);
@@ -472,8 +516,10 @@ public class JSONObject {
      *            An object to be accumulated under the key.
      * @return this.
      * @throws JSONException
-     *             If the key is null or if the current value associated with
+     *            If the value is non-finite number or if the current value associated with
      *             the key is not a JSONArray.
+     * @throws NullPointerException
+     *            If the key is <code>null</code>.
      */
     public JSONObject append(String key, Object value) throws JSONException {
         testValidity(value);
@@ -779,11 +825,10 @@ public class JSONObject {
      * @return An array of field names, or null if there are no names.
      */
     public static String[] getNames(JSONObject jo) {
-        int length = jo.length();
-        if (length == 0) {
+        if (jo.isEmpty()) {
             return null;
         }
-        return jo.keySet().toArray(new String[length]);
+        return jo.keySet().toArray(new String[jo.length()]);
     }
 
     /**
@@ -871,13 +916,13 @@ public class JSONObject {
     }
 
     /**
-     * Determine if the value associated with the key is null or if there is no
+     * Determine if the value associated with the key is <code>null</code> or if there is no
      * value.
      *
      * @param key
      *            A key string.
      * @return true if there is no value associated with the key or if the value
-     *         is the JSONObject.NULL object.
+     *        is the JSONObject.NULL object.
      */
     public boolean isNull(String key) {
         return JSONObject.NULL.equals(this.opt(key));
@@ -933,16 +978,25 @@ public class JSONObject {
     }
 
     /**
+     * Check if JSONObject is empty.
+     *
+     * @return true if JSONObject is empty, otherwise false.
+     */
+    public boolean isEmpty() {
+        return map.isEmpty();
+    }
+
+    /**
      * Produce a JSONArray containing the names of the elements of this
      * JSONObject.
      *
      * @return A JSONArray containing the key strings, or null if the JSONObject
-     *         is empty.
+     *        is empty.
      */
     public JSONArray names() {
-        if(this.map.isEmpty()) {
-            return null;
-        }
+    	if(this.map.isEmpty()) {
+    		return null;
+    	}
         return new JSONArray(this.map.keySet());
     }
 
@@ -1424,8 +1478,8 @@ public class JSONObject {
     }
 
     /**
-     * Populates the internal map of the JSONObject with the bean properties.
-     * The bean can not be recursive.
+     * Populates the internal map of the JSONObject with the bean properties. The
+     * bean can not be recursive.
      *
      * @see JSONObject#JSONObject(Object)
      *
@@ -1435,49 +1489,31 @@ public class JSONObject {
     private void populateMap(Object bean) {
         Class<?> klass = bean.getClass();
 
-// If klass is a System class then set includeSuperClass to false.
+        // If klass is a System class then set includeSuperClass to false.
 
         boolean includeSuperClass = klass.getClassLoader() != null;
 
-        Method[] methods = includeSuperClass ? klass.getMethods() : klass
-                .getDeclaredMethods();
+        Method[] methods = includeSuperClass ? klass.getMethods() : klass.getDeclaredMethods();
         for (final Method method : methods) {
             final int modifiers = method.getModifiers();
             if (Modifier.isPublic(modifiers)
                     && !Modifier.isStatic(modifiers)
                     && method.getParameterTypes().length == 0
                     && !method.isBridge()
-                    && method.getReturnType() != Void.TYPE ) {
-                final String name = method.getName();
-                String key;
-                if (name.startsWith("get")) {
-                    if ("getClass".equals(name) || "getDeclaringClass".equals(name)) {
-                        continue;
-                    }
-                    key = name.substring(3);
-                } else if (name.startsWith("is")) {
-                    key = name.substring(2);
-                } else {
-                    continue;
-                }
-                if (key.length() > 0
-                        && Character.isUpperCase(key.charAt(0))) {
-                    if (key.length() == 1) {
-                        key = key.toLowerCase(Locale.ROOT);
-                    } else if (!Character.isUpperCase(key.charAt(1))) {
-                        key = key.substring(0, 1).toLowerCase(Locale.ROOT)
-                                + key.substring(1);
-                    }
-
+                    && method.getReturnType() != Void.TYPE
+                    && isValidMethodName(method.getName())) {
+                final String key = getKeyNameFromMethod(method);
+                if (key != null && !key.isEmpty()) {
                     try {
                         final Object result = method.invoke(bean);
                         if (result != null) {
                             this.map.put(key, wrap(result));
                             // we don't use the result anywhere outside of wrap
-                            // if it's a resource we should be sure to close it after calling toString
-                            if(result instanceof Closeable) {
+                            // if it's a resource we should be sure to close it
+                            // after calling toString
+                            if (result instanceof Closeable) {
                                 try {
-                                    ((Closeable)result).close();
+                                    ((Closeable) result).close();
                                 } catch (IOException ignore) {
                                 }
                             }
@@ -1491,6 +1527,162 @@ public class JSONObject {
         }
     }
 
+    private boolean isValidMethodName(String name) {
+        return !"getClass".equals(name) && !"getDeclaringClass".equals(name);
+    }
+
+    private String getKeyNameFromMethod(Method method) {
+        final int ignoreDepth = getAnnotationDepth(method, JSONPropertyIgnore.class);
+        if (ignoreDepth > 0) {
+            final int forcedNameDepth = getAnnotationDepth(method, JSONPropertyName.class);
+            if (forcedNameDepth < 0 || ignoreDepth <= forcedNameDepth) {
+                // the hierarchy asked to ignore, and the nearest name override
+                // was higher or non-existent
+                return null;
+            }
+        }
+        JSONPropertyName annotation = getAnnotation(method, JSONPropertyName.class);
+        if (annotation != null && annotation.value() != null && !annotation.value().isEmpty()) {
+            return annotation.value();
+        }
+        String key;
+        final String name = method.getName();
+        if (name.startsWith("get") && name.length() > 3) {
+            key = name.substring(3);
+        } else if (name.startsWith("is") && name.length() > 2) {
+            key = name.substring(2);
+        } else {
+            return null;
+        }
+        // if the first letter in the key is not uppercase, then skip.
+        // This is to maintain backwards compatibility before PR406
+        // (https://github.com/stleary/JSON-java/pull/406/)
+        if (Character.isLowerCase(key.charAt(0))) {
+            return null;
+        }
+        if (key.length() == 1) {
+            key = key.toLowerCase(Locale.ROOT);
+        } else if (!Character.isUpperCase(key.charAt(1))) {
+            key = key.substring(0, 1).toLowerCase(Locale.ROOT) + key.substring(1);
+        }
+        return key;
+    }
+
+    /**
+     * Searches the class hierarchy to see if the method or it's super
+     * implementations and interfaces has the annotation.
+     *
+     * @param <A>
+     *            type of the annotation
+     *
+     * @param m
+     *            method to check
+     * @param annotationClass
+     *            annotation to look for
+     * @return the {@link Annotation} if the annotation exists on the current method
+     *         or one of it's super class definitions
+     */
+    private static <A extends Annotation> A getAnnotation(final Method m, final Class<A> annotationClass) {
+        // if we have invalid data the result is null
+        if (m == null || annotationClass == null) {
+            return null;
+        }
+
+        if (m.isAnnotationPresent(annotationClass)) {
+            return m.getAnnotation(annotationClass);
+        }
+
+        // if we've already reached the Object class, return null;
+        Class<?> c = m.getDeclaringClass();
+        if (c.getSuperclass() == null) {
+            return null;
+        }
+
+        // check directly implemented interfaces for the method being checked
+        for (Class<?> i : c.getInterfaces()) {
+            try {
+                Method im = i.getMethod(m.getName(), m.getParameterTypes());
+                return getAnnotation(im, annotationClass);
+            } catch (final SecurityException ex) {
+                continue;
+            } catch (final NoSuchMethodException ex) {
+                continue;
+            }
+        }
+
+        try {
+            return getAnnotation(
+                    c.getSuperclass().getMethod(m.getName(), m.getParameterTypes()),
+                    annotationClass);
+        } catch (final SecurityException ex) {
+            return null;
+        } catch (final NoSuchMethodException ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Searches the class hierarchy to see if the method or it's super
+     * implementations and interfaces has the annotation. Returns the depth of the
+     * annotation in the hierarchy.
+     *
+     * @param <A>
+     *            type of the annotation
+     *
+     * @param m
+     *            method to check
+     * @param annotationClass
+     *            annotation to look for
+     * @return Depth of the annotation or -1 if the annotation is not on the method.
+     */
+    private static int getAnnotationDepth(final Method m, final Class<? extends Annotation> annotationClass) {
+        // if we have invalid data the result is -1
+        if (m == null || annotationClass == null) {
+            return -1;
+        }
+
+        if (m.isAnnotationPresent(annotationClass)) {
+            return 1;
+        }
+
+        // if we've already reached the Object class, return -1;
+        Class<?> c = m.getDeclaringClass();
+        if (c.getSuperclass() == null) {
+            return -1;
+        }
+
+        // check directly implemented interfaces for the method being checked
+        for (Class<?> i : c.getInterfaces()) {
+            try {
+                Method im = i.getMethod(m.getName(), m.getParameterTypes());
+                int d = getAnnotationDepth(im, annotationClass);
+                if (d > 0) {
+                    // since the annotation was on the interface, add 1
+                    return d + 1;
+                }
+            } catch (final SecurityException ex) {
+                continue;
+            } catch (final NoSuchMethodException ex) {
+                continue;
+            }
+        }
+
+        try {
+            int d = getAnnotationDepth(
+                    c.getSuperclass().getMethod(m.getName(), m.getParameterTypes()),
+                    annotationClass);
+            if (d > 0) {
+                // since the annotation was on the superclass, add 1
+                return d + 1;
+            }
+            return -1;
+        } catch (final SecurityException ex) {
+            return -1;
+        } catch (final NoSuchMethodException ex) {
+            return -1;
+        }
+    }
+
     /**
      * Put a key/boolean pair in the JSONObject.
      *
@@ -1500,11 +1692,12 @@ public class JSONObject {
      *            A boolean which is the value.
      * @return this.
      * @throws JSONException
-     *             If the key is null.
+     *            If the value is non-finite number.
+     * @throws NullPointerException
+     *            If the key is <code>null</code>.
      */
     public JSONObject put(String key, boolean value) throws JSONException {
-        this.put(key, value ? Boolean.TRUE : Boolean.FALSE);
-        return this;
+        return this.put(key, value ? Boolean.TRUE : Boolean.FALSE);
     }
 
     /**
@@ -1517,10 +1710,12 @@ public class JSONObject {
      *            A Collection value.
      * @return this.
      * @throws JSONException
+     *            If the value is non-finite number.
+     * @throws NullPointerException
+     *            If the key is <code>null</code>.
      */
     public JSONObject put(String key, Collection<?> value) throws JSONException {
-        this.put(key, new JSONArray(value));
-        return this;
+        return this.put(key, new JSONArray(value));
     }
 
     /**
@@ -1532,11 +1727,12 @@ public class JSONObject {
      *            A double which is the value.
      * @return this.
      * @throws JSONException
-     *             If the key is null or if the number is invalid.
+     *            If the value is non-finite number.
+     * @throws NullPointerException
+     *            If the key is <code>null</code>.
      */
     public JSONObject put(String key, double value) throws JSONException {
-        this.put(key, Double.valueOf(value));
-        return this;
+        return this.put(key, Double.valueOf(value));
     }
     
     /**
@@ -1548,11 +1744,12 @@ public class JSONObject {
      *            A float which is the value.
      * @return this.
      * @throws JSONException
-     *             If the key is null or if the number is invalid.
+     *            If the value is non-finite number.
+     * @throws NullPointerException
+     *            If the key is <code>null</code>.
      */
     public JSONObject put(String key, float value) throws JSONException {
-        this.put(key, Float.valueOf(value));
-        return this;
+        return this.put(key, Float.valueOf(value));
     }
 
     /**
@@ -1564,11 +1761,12 @@ public class JSONObject {
      *            An int which is the value.
      * @return this.
      * @throws JSONException
-     *             If the key is null.
+     *            If the value is non-finite number.
+     * @throws NullPointerException
+     *            If the key is <code>null</code>.
      */
     public JSONObject put(String key, int value) throws JSONException {
-        this.put(key, Integer.valueOf(value));
-        return this;
+        return this.put(key, Integer.valueOf(value));
     }
 
     /**
@@ -1580,11 +1778,12 @@ public class JSONObject {
      *            A long which is the value.
      * @return this.
      * @throws JSONException
-     *             If the key is null.
+     *            If the value is non-finite number.
+     * @throws NullPointerException
+     *            If the key is <code>null</code>.
      */
     public JSONObject put(String key, long value) throws JSONException {
-        this.put(key, Long.valueOf(value));
-        return this;
+        return this.put(key, Long.valueOf(value));
     }
 
     /**
@@ -1597,14 +1796,16 @@ public class JSONObject {
      *            A Map value.
      * @return this.
      * @throws JSONException
+     *            If the value is non-finite number.
+     * @throws NullPointerException
+     *            If the key is <code>null</code>.
      */
     public JSONObject put(String key, Map<?, ?> value) throws JSONException {
-        this.put(key, new JSONObject(value));
-        return this;
+        return this.put(key, new JSONObject(value));
     }
 
     /**
-     * Put a key/value pair in the JSONObject. If the value is null, then the
+     * Put a key/value pair in the JSONObject. If the value is <code>null</code>, then the
      * key will be removed from the JSONObject if it is present.
      *
      * @param key
@@ -1615,7 +1816,9 @@ public class JSONObject {
      *            String, or the JSONObject.NULL object.
      * @return this.
      * @throws JSONException
-     *             If the value is non-finite number or if the key is null.
+     *            If the value is non-finite number.
+     * @throws NullPointerException
+     *            If the key is <code>null</code>.
      */
     public JSONObject put(String key, Object value) throws JSONException {
         if (key == null) {
@@ -1646,7 +1849,7 @@ public class JSONObject {
             if (this.opt(key) != null) {
                 throw new JSONException("Duplicate key \"" + key + "\"");
             }
-            this.put(key, value);
+            return this.put(key, value);
         }
         return this;
     }
@@ -1667,7 +1870,7 @@ public class JSONObject {
      */
     public JSONObject putOpt(String key, Object value) throws JSONException {
         if (key != null && value != null) {
-            this.put(key, value);
+            return this.put(key, value);
         }
         return this;
     }
@@ -1726,7 +1929,7 @@ public class JSONObject {
      * @throws IllegalArgumentException if {@code jsonPointer} has invalid syntax
      */
     public Object optQuery(String jsonPointer) {
-        return optQuery(new JSONPointer(jsonPointer));
+    	return optQuery(new JSONPointer(jsonPointer));
     }
     
     /**
@@ -1768,7 +1971,7 @@ public class JSONObject {
     }
 
     public static Writer quote(String string, Writer w) throws IOException {
-        if (string == null || string.length() == 0) {
+        if (string == null || string.isEmpty()) {
             w.write("\"\"");
             return w;
         }
@@ -1859,10 +2062,10 @@ public class JSONObject {
                 Object valueThis = entry.getValue();
                 Object valueOther = ((JSONObject)other).get(name);
                 if(valueThis == valueOther) {
-                    return true;
+                	continue;
                 }
                 if(valueThis == null) {
-                    return false;
+                	return false;
                 }
                 if (valueThis instanceof JSONObject) {
                     if (!((JSONObject)valueThis).similar(valueOther)) {
@@ -1965,6 +2168,8 @@ public class JSONObject {
      *            A String.
      * @return A simple JSON value.
      */
+    // Changes to this method must be copied to the corresponding method in
+    // the XML class to keep full support for Android
     public static Object stringToValue(String string) {
         if (string.equals("")) {
             return string;
@@ -2045,7 +2250,7 @@ public class JSONObject {
      *             If any of the values are non-finite numbers.
      */
     public JSONArray toJSONArray(JSONArray names) throws JSONException {
-        if (names == null || names.length() == 0) {
+        if (names == null || names.isEmpty()) {
             return null;
         }
         JSONArray ja = new JSONArray();
@@ -2135,59 +2340,15 @@ public class JSONObject {
      *             If the value is or contains an invalid number.
      */
     public static String valueToString(Object value) throws JSONException {
-        if (value == null || value.equals(null)) {
-            return "null";
-        }
-        if (value instanceof JSONString) {
-            Object object;
-            try {
-                object = ((JSONString) value).toJSONString();
-            } catch (Exception e) {
-                throw new JSONException(e);
-            }
-            if (object instanceof String) {
-                return (String) object;
-            }
-            throw new JSONException("Bad value from toJSONString: " + object);
-        }
-        if (value instanceof Number) {
-            // not all Numbers may match actual JSON Numbers. i.e. Fractions or Complex
-            final String numberAsString = numberToString((Number) value);
-            try {
-                // Use the BigDecimal constructor for it's parser to validate the format.
-                @SuppressWarnings("unused")
-                BigDecimal unused = new BigDecimal(numberAsString);
-                // Close enough to a JSON number that we will return it unquoted
-                return numberAsString;
-            } catch (NumberFormatException ex){
-                // The Number value is not a valid JSON number.
-                // Instead we will quote it as a string
-                return quote(numberAsString);
-            }
-        }
-        if (value instanceof Boolean || value instanceof JSONObject
-                || value instanceof JSONArray) {
-            return value.toString();
-        }
-        if (value instanceof Map) {
-            Map<?, ?> map = (Map<?, ?>) value;
-            return new JSONObject(map).toString();
-        }
-        if (value instanceof Collection) {
-            Collection<?> coll = (Collection<?>) value;
-            return new JSONArray(coll).toString();
-        }
-        if (value.getClass().isArray()) {
-            return new JSONArray(value).toString();
-        }
-        if(value instanceof Enum<?>){
-            return quote(((Enum<?>)value).name());
-        }
-        return quote(value.toString());
+    	// moves the implementation to JSONWriter as:
+    	// 1. It makes more sense to be part of the writer class
+    	// 2. For Android support this method is not available. By implementing it in the Writer
+    	//    Android users can use the writer with the built in Android JSONObject implementation.
+        return JSONWriter.valueToString(value);
     }
 
     /**
-     * Wrap an object, if necessary. If the object is null, return the NULL
+     * Wrap an object, if necessary. If the object is <code>null</code>, return the NULL
      * object. If it is an array or collection, wrap it in a JSONArray. If it is
      * a map, wrap it in a JSONObject. If it is a standard property (Double,
      * String, et al) then it is already wrapped. Otherwise, if it comes from
@@ -2269,7 +2430,7 @@ public class JSONObject {
             // not all Numbers may match actual JSON Numbers. i.e. fractions or Imaginary
             final String numberAsString = numberToString((Number) value);
             try {
-                // Use the BigDecimal constructor for it's parser to validate the format.
+                // Use the BigDecimal constructor for its parser to validate the format.
                 @SuppressWarnings("unused")
                 BigDecimal testNum = new BigDecimal(numberAsString);
                 // Close enough to a JSON number that we will use it unquoted
@@ -2341,7 +2502,7 @@ public class JSONObject {
             writer.write('{');
 
             if (length == 1) {
-                final Entry<String,?> entry = this.entrySet().iterator().next();
+            	final Entry<String,?> entry = this.entrySet().iterator().next();
                 final String key = entry.getKey();
                 writer.write(quote(key));
                 writer.write(':');

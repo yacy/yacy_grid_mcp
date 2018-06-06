@@ -5,7 +5,9 @@ import static java.lang.String.format;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /*
 Copyright (c) 2002 JSON.org
@@ -156,9 +158,28 @@ public class JSONPointer {
             throw new IllegalArgumentException("a JSON pointer should start with '/' or '#/'");
         }
         this.refTokens = new ArrayList<String>();
-        for (String token : refs.split("/")) {
-            this.refTokens.add(unescape(token));
-        }
+        int slashIdx = -1;
+        int prevSlashIdx = 0;
+        do {
+            prevSlashIdx = slashIdx + 1;
+            slashIdx = refs.indexOf('/', prevSlashIdx);
+            if(prevSlashIdx == slashIdx || prevSlashIdx == refs.length()) {
+                // found 2 slashes in a row ( obj//next )
+                // or single slash at the end of a string ( obj/test/ )
+                this.refTokens.add("");
+            } else if (slashIdx >= 0) {
+                final String token = refs.substring(prevSlashIdx, slashIdx);
+                this.refTokens.add(unescape(token));
+            } else {
+                // last item after separator, or no separator at all.
+                final String token = refs.substring(prevSlashIdx);
+                this.refTokens.add(unescape(token));
+            }
+        } while (slashIdx >= 0);
+        // using split does not take into account consecutive separators or "ending nulls"
+        //for (String token : refs.split("/")) {
+        //    this.refTokens.add(unescape(token));
+        //}
     }
 
     public JSONPointer(List<String> refTokens) {
@@ -181,7 +202,7 @@ public class JSONPointer {
      * @return the result of the evaluation
      * @throws JSONPointerException if an error occurs during evaluation
      */
-    public Object queryFrom(Object document) {
+    public Object queryFrom(Object document) throws JSONPointerException {
         if (this.refTokens.isEmpty()) {
             return document;
         }
@@ -205,10 +226,9 @@ public class JSONPointer {
      * @param current the JSONArray to be evaluated
      * @param indexToken the array index in string form
      * @return the matched object. If no matching item is found a
-     * JSONPointerException is thrown
+     * @throws JSONPointerException is thrown if the index is out of bounds
      */
-    @SuppressWarnings("boxing")
-    private Object readByIndexToken(Object current, String indexToken) {
+    private Object readByIndexToken(Object current, String indexToken) throws JSONPointerException {
         try {
             int index = Integer.parseInt(indexToken);
             JSONArray currentArr = (JSONArray) current;
@@ -216,7 +236,11 @@ public class JSONPointer {
                 throw new JSONPointerException(format("index %d is out of bounds - the array has %d elements", index,
                         currentArr.length()));
             }
-            return currentArr.get(index);
+            try {
+				return currentArr.get(index);
+			} catch (JSONException e) {
+				throw new JSONPointerException("Error reading value at index position " + index, e);
+			}
         } catch (NumberFormatException e) {
             throw new JSONPointerException(format("%s is not an array index", indexToken), e);
         }
