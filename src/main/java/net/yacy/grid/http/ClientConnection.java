@@ -25,8 +25,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
@@ -354,4 +356,12 @@ public class ClientConnection {
         return new JSONObject(new JSONTokener(new String(b, StandardCharsets.UTF_8)));
     }
 
+    public static String loadFromEtherpad(String etherpadUrlstub, String etherpadApikey, String padID) throws IOException {
+        String padurl = etherpadUrlstub + "/api/1/getText?apikey=" + etherpadApikey + "&padID=" + padID;
+        InputStream is = new URL(padurl).openStream();
+        JSONTokener serviceResponse = new JSONTokener(is);
+        JSONObject json = new JSONObject(serviceResponse);
+        String text = json.getJSONObject("data").getString("text");
+        return text;
+    }
 }
