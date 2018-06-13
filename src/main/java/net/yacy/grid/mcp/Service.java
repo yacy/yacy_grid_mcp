@@ -130,21 +130,33 @@ public enum Service {
             Data.logger.info("Service started at port " + port);
 
             // prepare shutdown signal
-            boolean pidfileCreated = false;
+            boolean pidkillfileCreated = false;
+            // we use two files: one kill file which can be used to stop the process and one pid file which exists until the process runs
+            // in case that the deletion of the kill file does not cause a termination, still a "fuser -k" on the pid file can be used to
+            // terminate the process.
             File pidfile = new File(data_dir, type.name() + "-" + port + ".pid");
-            if (pidfile.exists()) pidfile.delete(); // clean up rubbish
+            File killfile = new File(data_dir, type.name() + "-" + port + ".kill");
+            if (pidfile.exists()) pidfile.delete();
+            if (killfile.exists()) killfile.delete();
             if (!pidfile.exists()) try {
                 pidfile.createNewFile();
-                if (pidfile.exists()) {pidfile.deleteOnExit(); pidfileCreated = true;}
+                if (pidfile.exists()) {pidfile.deleteOnExit(); pidkillfileCreated = true;}
             } catch (IOException e) {
                 Data.logger.info("pid file " + pidfile.getAbsolutePath() + " creation failed: " + e.getMessage());
             }
+            if (!killfile.exists()) try {
+                killfile.createNewFile();
+                if (killfile.exists()) killfile.deleteOnExit(); else pidkillfileCreated = false;
+            } catch (IOException e) {
+                Data.logger.info("kill file " + killfile.getAbsolutePath() + " creation failed: " + e.getMessage());
+                pidkillfileCreated = false;
+            }
             
             // wait for shutdown signal (kill on process)
-            if (pidfileCreated) {
-                // we can control this by deletion of the pid file
-                Data.logger.info("to stop this process, delete pid file " + pidfile.getAbsolutePath());
-                while (APIServer.isAlive() && pidfile.exists()) {
+            if (pidkillfileCreated) {
+                // we can control this by deletion of the kill file
+                Data.logger.info("to stop this process, delete kill file " + killfile.getAbsolutePath());
+                while (APIServer.isAlive() && killfile.exists()) {
                     try {Thread.sleep(1000);} catch (InterruptedException e) {}
                 }
                 APIServer.stop();
@@ -159,7 +171,7 @@ public enum Service {
 
         Data.logger.info("closing data.");
         Data.close();
-        Data.logger.info("server terminated. this is the last line.");
+        Data.logger.info("server terminated.");
     }
     
 }
