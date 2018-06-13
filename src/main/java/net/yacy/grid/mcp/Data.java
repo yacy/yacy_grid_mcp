@@ -20,7 +20,6 @@
 package net.yacy.grid.mcp;
 
 import java.io.File;
-import java.nio.file.FileSystems;
 import java.util.Map;
 
 import org.apache.log4j.ConsoleAppender;
@@ -35,8 +34,6 @@ import net.yacy.grid.io.index.BoostsFactory;
 import net.yacy.grid.io.index.ElasticIndexFactory;
 import net.yacy.grid.io.index.GridIndex;
 import net.yacy.grid.io.messages.GridBroker;
-import net.yacy.grid.io.messages.PeerBroker;
-import net.yacy.grid.tools.MapUtil;
 
 public class Data {
     
@@ -180,6 +177,7 @@ public class Data {
         peerDB.close();
         gridBroker.close();
         gridStorage.close();
+        gridIndex.close();
     }
     
 }

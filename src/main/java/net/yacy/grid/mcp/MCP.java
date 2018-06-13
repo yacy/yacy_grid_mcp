@@ -191,6 +191,9 @@ public class MCP {
         Data.logger.info("you can now search using the query api, i.e.:");
         Data.logger.info("curl http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=test");
         Service.runService(null);
+        
+        // this line is reached if the server was shut down
+        brokerListener.terminate();
     }
 
 }

@@ -134,10 +134,23 @@ public class APIServer {
             throw new IOException(e.getMessage());
         }
     }
+
+    public static boolean isAlive() {
+        return server.isRunning() || server.isStarted() || server.isStarting();
+    }
+    
+    public static void stop() {
+        try {
+            server.stop();
+            server.destroy();
+        } catch (Exception e) {
+            Data.logger.warn("", e);
+        }
+    }
     
     public static void join() {
         try {
-            server.join();
+            server.getThreadPool().join();
         } catch (Exception e) {
             Data.logger.warn("", e);
         }

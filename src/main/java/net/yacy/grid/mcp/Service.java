@@ -22,7 +22,6 @@ package net.yacy.grid.mcp;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -131,18 +130,36 @@ public enum Service {
             Data.logger.info("Service started at port " + port);
 
             // prepare shutdown signal
-            File pid = new File(data_dir, type.name() + "-" + port + ".pid");
-            if (pid.exists()) pid.delete(); // clean up rubbish
-            pid.createNewFile();
-            pid.deleteOnExit();
+            boolean pidfileCreated = false;
+            File pidfile = new File(data_dir, type.name() + "-" + port + ".pid");
+            if (pidfile.exists()) pidfile.delete(); // clean up rubbish
+            if (!pidfile.exists()) try {
+                pidfile.createNewFile();
+                if (pidfile.exists()) {pidfile.deleteOnExit(); pidfileCreated = true;}
+            } catch (IOException e) {
+                Data.logger.info("pid file " + pidfile.getAbsolutePath() + " creation failed: " + e.getMessage());
+            }
             
             // wait for shutdown signal (kill on process)
-            APIServer.join();
+            if (pidfileCreated) {
+                // we can control this by deletion of the pid file
+                Data.logger.info("to stop this process, delete pid file " + pidfile.getAbsolutePath());
+                while (APIServer.isAlive() && pidfile.exists()) {
+                    try {Thread.sleep(1000);} catch (InterruptedException e) {}
+                }
+                APIServer.stop();
+            } else {
+                // something with the pid file creation did not work; fail-over to normal operation waiting for a kill command
+                APIServer.join();
+            }
+            Data.logger.info("server nominal termination requested");
         } catch (IOException e) {
             Data.logger.error("Main fail", e);
         }
-        
+
+        Data.logger.info("closing data.");
         Data.close();
+        Data.logger.info("server terminated. this is the last line.");
     }
     
 }
