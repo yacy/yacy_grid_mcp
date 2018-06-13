@@ -59,8 +59,9 @@ import org.json.JSONObject;
 public class JsonLDNode extends JSONObject {
 
     public static final String CONTEXT = "@context";
-    public static final String TYPE = "@type";
-    public static final String ID = "@id";
+    public static final String TYPE    = "@type";    // distinguish node type and value type
+    public static final String ID      = "@id";      // the id at top node level denotes the subject of the graph
+    public static final String GRAPH   = "@graph";   // if a json-ld contains several nodes on the same level, they are bundled in a graph array
     
     private final static Random random = new Random(System.currentTimeMillis()); // for temporary name generation
     
@@ -234,6 +235,18 @@ public class JsonLDNode extends JSONObject {
     
     public String getVocabulary(String name) {
         return getContext() + "/" + getType();
+    }
+    
+    public JsonLDNode addNodeAtGraph(JsonLDNode node) {
+        if (this.has(GRAPH)) {
+            JSONArray a = this.getJSONArray(GRAPH);
+            a.put(node);
+        } else {
+            JSONArray a = new JSONArray();
+            a.put(node);
+            this.put(GRAPH, a);
+        }
+        return this;
     }
     
     public JsonLDNode setPredicate(String key, Object value) {
