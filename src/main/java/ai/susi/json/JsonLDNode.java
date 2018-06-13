@@ -20,8 +20,12 @@
 package ai.susi.json;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -58,16 +62,37 @@ public class JsonLDNode extends JSONObject {
     public static final String TYPE = "@type";
     public static final String ID = "@id";
     
-    public JsonLDNode(String type, String context) {
-        super(true);
-        this.put(CONTEXT, context);
-        this.put(TYPE, type);
+    private final static Random random = new Random(System.currentTimeMillis()); // for temporary name generation
+    
+    private String tmpName = "";
+
+    public JsonLDNode setTemporaryName() {
+        tmpName = generateTemporaryName();
+        return this;
     }
     
-
-    public JsonLDNode(String type) {
+    private static String generateTemporaryName() {
+        String r = Integer.toHexString(random.nextInt());
+        while (r.length() < 4) r = "0" + r;
+        if (r.length() > 0) r = r.substring(0, 4);
+        return r.toUpperCase();
+    }
+    
+    public String getTmpName() {
+        if (this.tmpName == null) generateTemporaryName();
+        return this.tmpName;
+    }
+    
+    public JsonLDNode() {
         super(true);
-        this.put(TYPE, type);
+    }
+    
+    public boolean hasSubject() {
+        return this.has(ID);
+    }
+    
+    public String getSubject() {
+        return this.optString(ID);
     }
     
     public JsonLDNode setSubject(String subject) {
@@ -75,30 +100,157 @@ public class JsonLDNode extends JSONObject {
         return this;
     }
     
-    public String getSubject() {
-        return this.optString(ID);
+    public boolean hasContext() {
+        return this.has(CONTEXT);
     }
     
     public String getContext() {
         return this.optString(CONTEXT);
+    }
+
+    private String renameDefaultContextProperties() {
+        String tmpn = generateTemporaryName();
+        Set<String> keys = new HashSet<String>(this.keySet()); // we use a clone to remove dependency on original map
+        for (String key: keys) {
+            if (key.charAt(0) == '@') continue;
+            if (key.contains(":")) continue;
+            Object o = this.remove(key);
+            this.put(tmpn + ":" + key, o);
+        }
+        return tmpn;
+    }
+    
+    /**
+     * add a context
+     * for several contexts, see example 28 and 29 in https://www.w3.org/TR/2014/REC-json-ld-20140116/#advanced-context-usage
+     * @param name the name of the context or NULL if 
+     * @param context
+     * @return this
+     */
+    public JsonLDNode addContext(String name, String context) {
+        if (name == null) {
+            // set a default vocabulary
+            if (this.has(CONTEXT)) {
+                Object c = this.get(CONTEXT);
+                if (c instanceof String) {
+                    // !his already has a default context.
+                    // We can set a new default context by making the previously a named context.
+                    // This transformation is made here.
+                    // THIS WORKS ONLY IF THE CONTEXT IS DEFINED AFTER THE PROPERTIES ARE SET!
+                    String tmpn = renameDefaultContextProperties();
+                    // rewrite old default content into new one
+                    JSONArray a = new JSONArray();
+                    a.put(context);
+                    a.put(new JSONObject(true).put(tmpn, (String) c));
+                    this.put(CONTEXT, a);
+                } else
+                if (c instanceof JSONArray) {
+                    JSONArray a = (JSONArray) c;
+                    assert a.length() == 2;
+                    assert a.get(0) instanceof String;
+                    assert a.get(1) instanceof JSONObject;
+                    // here again we make the old default context into a new one
+                    String tmpn = renameDefaultContextProperties();
+                    JSONObject o = (JSONObject) a.get(1);
+                    o.put(tmpn, a.get(0));
+                    a.put(0, context);
+                } else
+                if (c instanceof JSONObject) {
+                    JSONArray a = new JSONArray();
+                    a.put(context);
+                    a.put(c);
+                }
+            } else {
+                this.put(CONTEXT, context);
+            }
+        } else {
+            if (this.has(CONTEXT)) {
+                Object c = this.get(CONTEXT);
+                if (c instanceof String) {
+                    JSONArray a = new JSONArray();
+                    a.put(c);
+                    a.put(new JSONObject(true).put(name, context));
+                    this.put(CONTEXT, a);
+                } else
+                if (c instanceof JSONArray) {
+                    JSONArray a = (JSONArray) c;
+                    for (Object obj: a) {
+                        if (obj instanceof JSONObject) {
+                            ((JSONObject) obj).put(name, context);
+                            break;
+                        }
+                    }
+                } else
+                if (c instanceof JSONObject) {
+                    ((JSONObject) c).put(name, context);
+                }
+            } else {
+                this.put(CONTEXT, new JSONObject(true).put(name, context));
+            }
+        }
+        return this;
+    }
+    
+    public boolean hasContextName(String name) {
+        if (this.has(CONTEXT)) {
+            Object c = this.get(CONTEXT);
+            if (c instanceof JSONArray) {
+                JSONArray a = (JSONArray) c;
+                JSONObject o = (JSONObject) a.get(1);
+                return o.has(name);
+            }
+            if (c instanceof JSONObject) {
+                return ((JSONObject) c).has(name);
+            }
+        }
+        return false;
+    }
+
+    public boolean hasType() {
+        return this.has(TYPE);
     }
     
     public String getType() {
         return this.optString(TYPE);
     }
     
-    public String getVocabulary() {
+    public JsonLDNode addType(String type) {
+        if (this.has(TYPE)) {
+            Object t = this.get(TYPE);
+            if (t instanceof String) {
+                JSONArray a = new JSONArray();
+                a.put(t);
+                a.put(type);
+                this.put(TYPE, a);
+            } else
+            if (t instanceof JSONArray) {
+                ((JSONArray) t).put(type);
+            } else throw new RuntimeException("bad type for @type object");
+        } else {
+            this.put(TYPE, type);
+        }
+        return this;
+    }
+    
+    public String getVocabulary(String name) {
         return getContext() + "/" + getType();
     }
     
     public JsonLDNode setPredicate(String key, Object value) {
         assert value instanceof String || value instanceof JsonLDNode;
         this.put(key, value);
+        int p = key.indexOf(':');
+        if (p >= 0) {
+            String voc = key.substring(0, p);
+            if ("og".equals(voc) && !this.hasContextName("og")) this.addContext("og", "http://ogp.me/ns#");
+            if ("og".equals(voc) && !this.hasContextName("fb")) this.addContext("fb", "http://ogp.me/ns/fb#");
+            
+        }
         return this;
     }
 
     public String getPredicateName(String key) {
-        return this.getVocabulary() + "#" + key;
+        return this.getContext() + "#" + key;
     }
     
     public Object getPredicateValue(String key) {
@@ -112,7 +264,7 @@ public class JsonLDNode extends JSONObject {
     }
     
     public String toRDFTriple() {
-        return toRDFTriple(this.getSubject(), this.getVocabulary());
+        return toRDFTriple(this.getSubject(), this.getContext());
     }
     private String toRDFTriple(String subject, String vocabulary) {
         StringBuilder sb = new StringBuilder();
@@ -122,6 +274,35 @@ public class JsonLDNode extends JSONObject {
             if (value instanceof JsonLDNode) sb.append(((JsonLDNode) value).toRDFTriple(subject, vocabulary));
         }
         return sb.toString();
+    }
+    
+    /**
+     * create a clone of this object with a different annotation which makes
+     * the JSONObject more beautiful
+     * @return the semantically same json-ld with a better presentation
+     */
+    public JSONObject simplify() {
+        // first care about the CONTEXT object
+        Object c = this.opt(CONTEXT);
+        if (c != null && c instanceof JSONArray) {
+            JSONArray a = (JSONArray) c;
+            if (a.length() == 2 && a.get(0) instanceof String && a.get(1) instanceof JSONObject) {
+                String tmpn = renameDefaultContextProperties();
+                JSONObject o = (JSONObject) a.get(1);
+                o.put(tmpn, a.get(0));
+                this.put(CONTEXT, o);
+            }
+        }
+        JSONObject simple = new JSONObject(true);
+        if ((c = this.opt(CONTEXT)) != null) simple.put(CONTEXT, c);
+        
+        // then copy all objects with leading '@'
+        this.keySet().forEach(key -> {if (key.charAt(0) == '@' && !CONTEXT.equals(key)) simple.put(key, this.get(key));});
+        
+        // finally copy all remaining properties
+        this.keySet().forEach(key -> {if (key.charAt(0) != '@' && !CONTEXT.equals(key)) simple.put(key, this.get(key));});
+        
+        return simple;
     }
     
     /*
@@ -151,15 +332,21 @@ public class JsonLDNode extends JSONObject {
      */
     
     public static void main(String[] args) {
-        JsonLDNode event = new JsonLDNode("Event", "http://schema.org")
+        // user the JSON-LD playground https://json-ld.org/playground/
+        // to verify the objects
+        JsonLDNode event = new JsonLDNode()
+                .addContext(null, "http://schema.org")
+                .addType("Event")
                 .setSubject("http://an.event.home.page.ninja/tomorrow.html")
                 .setPredicate("name", "Typhoon with Radiation City")
                 .setPredicate("startDate", "2013-09-14T21:30")
                 .setPredicate("location",
-                        new JsonLDNode("Place")
+                        new JsonLDNode()
+                            .addType("Place")
                             .setPredicate("name", "The Hi-Dive")
                             .setPredicate("address",
-                                    new JsonLDNode("PostalAddress")
+                                    new JsonLDNode()
+                                        .addType("PostalAddress")
                                         .setPredicate("addressLocality", "Denver")
                                         .setPredicate("addressRegion", "CO")
                                         .setPredicate("postalCode", "80209")
@@ -167,7 +354,8 @@ public class JsonLDNode extends JSONObject {
                             )
                 )
                 .setPredicate("offers", 
-                        new JsonLDNode("Offer")
+                        new JsonLDNode()
+                            .addType("Offer")
                             .setPredicate("price", "13.00")
                             .setPredicate("priceCurrency", "USD")
                             .setPredicate("postalCode", "80209")
