@@ -479,5 +479,8 @@
   },
   "vocabularies_sxt": {
     "type": "keyword"
+  },
+  "ld_o": {
+    "type": "object"
   }
 }}}}
