@@ -66,6 +66,7 @@ public class JsonLDNode extends JSONObject {
     private final static Random random = new Random(System.currentTimeMillis()); // for temporary name generation
     
     private String tmpName = "";
+    private int currentDepth = 0;
 
     public JsonLDNode setTemporaryName() {
         tmpName = generateTemporaryName();
@@ -86,6 +87,16 @@ public class JsonLDNode extends JSONObject {
     
     public JsonLDNode() {
         super(true);
+        this.currentDepth = 0;
+    }
+    
+    public JsonLDNode setDepth(int level) {
+        this.currentDepth = level;
+        return this;
+    }
+    
+    public int getDepth() {
+        return this.currentDepth;
     }
     
     public boolean hasSubject() {
@@ -316,6 +327,10 @@ public class JsonLDNode extends JSONObject {
         this.keySet().forEach(key -> {if (key.charAt(0) != '@' && !CONTEXT.equals(key)) simple.put(key, this.get(key));});
         
         return simple;
+    }
+    
+    public String toString() {
+        return super.toString(2);
     }
     
     /*
