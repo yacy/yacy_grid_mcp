@@ -99,12 +99,20 @@ public class SusiAction {
     public SusiAction setBinaryAsset(String name, byte[] b) {
         JSONObject assets;
         if (this.json.has("assets")) assets = this.json.getJSONObject("assets"); else {
-           assets = new JSONObject();
+            assets = new JSONObject();
             this.json.put("assets", assets);
-         }
+        } 
         final String bAsBase64 = Base64.getEncoder().encodeToString(b);
         assets.put(name, bAsBase64);
         return this;
+    }
+    
+    // read a binary asset from the action
+    public byte[] getBinaryAsset(String name) {
+        if (!this.json.has("assets")) return null;
+        JSONObject assets = this.json.getJSONObject("assets");
+        String bAsBase64 = assets.getString(name);
+        return Base64.getDecoder().decode(bAsBase64);
     }
     
     public JSONList getJSONListAsset(String name) {
@@ -117,6 +125,16 @@ public class SusiAction {
             Data.logger.warn("error in getJSONListAsset with name " + name, e);
 			return null;
 		}
+    }
+    
+    public SusiAction setJSONListAsset(String name, JSONList list) {
+        JSONObject assets;
+        if (this.json.has("assets")) assets = this.json.getJSONObject("assets"); else {
+            assets = new JSONObject();
+            this.json.put("assets", assets);
+        }
+        assets.put(name, list.toArray());
+        return this;
     }
     
     /**
