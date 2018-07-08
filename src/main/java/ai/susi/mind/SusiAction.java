@@ -66,6 +66,21 @@ public class SusiAction {
     public String getStringAttr(String attr) {
         return this.json.has(attr) ? this.json.getString(attr) : "";
     }
+    public boolean getBooleanAttr(String attr) {
+        return this.json.has(attr) ? this.json.getBoolean(attr) : false;
+    }
+    public long getLongAttr(String attr) {
+        return this.json.has(attr) ? this.json.getLong(attr) : -1;
+    }
+    public double getDoubleAttr(String attr) {
+        return this.json.has(attr) ? this.json.getDouble(attr) : Double.NaN;
+    }
+    public JSONArray getArrayAttr(String attr) {
+        return this.json.has(attr) ? this.json.getJSONArray(attr) : new JSONArray();
+    }
+    public int getIntAttr(String attr) {
+        return this.json.has(attr) ? this.json.getInt(attr) : 0;
+    }
 
     /**
      * An action is backed with a JSON data structure. That can be retrieved here.
@@ -79,10 +94,6 @@ public class SusiAction {
             j.remove("select");
         }
         return j;
-    }
-
-    public JSONArray getArrayAttr(String attr) {
-        return this.json.has(attr) ? this.json.getJSONArray(attr) : new JSONArray();
     }
     
     public JSONArray getEmbeddedActions() {
