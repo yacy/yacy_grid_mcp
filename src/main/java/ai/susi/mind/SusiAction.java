@@ -20,6 +20,7 @@
 package ai.susi.mind;
 
 import java.io.IOException;
+import java.util.Base64;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -33,9 +34,10 @@ import net.yacy.grid.tools.JSONList;
  * we want to visualize deduces data as a graph or in a picture, thats an action.
  */
 public class SusiAction {
+
+    public static enum RenderType {loader, parser, indexer;}
     
     private JSONObject json;
-
     /**
      * initialize an action using a json description.
      * @param json
@@ -43,7 +45,19 @@ public class SusiAction {
     public SusiAction(JSONObject json) {
         this.json = json;
     }
-
+    
+    /**
+    * Get the render type. That can be used to filter specific information from the action JSON object
+    * to create specific activities like 'saying' a sentence, painting a graph and so on.
+    * @return the action type
+    */
+    public RenderType getRenderType() {
+        if (renderTypeCache == null) 
+            renderTypeCache = this.json.has("type") ? RenderType.valueOf(this.json.getString("type")) : null;
+        return renderTypeCache;
+    }
+    private RenderType renderTypeCache = null;
+    
     /**
      * if the action contains more String attributes where these strings are named, they can be retrieved here
      * @param attr the name of the string attribute
@@ -66,11 +80,31 @@ public class SusiAction {
         }
         return j;
     }
+
+    public JSONArray getArrayAttr(String attr) {
+        return this.json.has(attr) ? this.json.getJSONArray(attr) : new JSONArray();
+    }
+    
+    public JSONArray getEmbeddedActions() {
+        return this.json.getJSONArray("actions");
+    }
     
     public boolean hasAsset(String name) {
         if (!this.json.has("assets")) return false;
         JSONObject assets = this.json.getJSONObject("assets");
         return assets.has(name);
+    }
+    
+    // attach a binary asset to the action
+    public SusiAction setBinaryAsset(String name, byte[] b) {
+        JSONObject assets;
+        if (this.json.has("assets")) assets = this.json.getJSONObject("assets"); else {
+           assets = new JSONObject();
+            this.json.put("assets", assets);
+         }
+        final String bAsBase64 = Base64.getEncoder().encodeToString(b);
+        assets.put(name, bAsBase64);
+        return this;
     }
     
     public JSONList getJSONListAsset(String name) {
