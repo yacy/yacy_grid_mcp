@@ -31,8 +31,8 @@ script:
   - gcloud --quiet version
   - gcloud --quiet components update
   - gcloud --quiet components update kubectl
-  - bash ./deploy_staging.sh
 
 branches:
    only:
    - master
+   - development
