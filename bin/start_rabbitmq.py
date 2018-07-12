@@ -12,8 +12,8 @@ import subprocess
 
 #https://dl.bintray.com/rabbitmq/binaries/rabbitmq-server-generic-unix-3.6.12.tar.xz
 
-rabbitversion = 'rabbitmq-server-generic-unix-3.6.12'
-rabbitfilename = 'rabbitmq_server-3.6.12'
+rabbitversion = 'rabbitmq-server-generic-unix-3.7.7'
+rabbitfilename = 'rabbitmq_server-3.7.7'
 
 path_apphome = os.path.dirname(os.path.abspath(__file__)) + '/..'
 os.chdir(path_apphome)
