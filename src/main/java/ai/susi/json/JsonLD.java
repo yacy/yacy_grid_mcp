@@ -45,6 +45,10 @@ public class JsonLD {
         this.context = null;
     }
     
+    public int graphSize() {
+        return this.graph.size();
+    }
+    
     public JsonLDNode getCurrentNode() {
         if (this.graph.size() > 0) {
             JsonLDNode element = (JsonLDNode) (this.graph.get(graph.size() - 1));
@@ -56,13 +60,16 @@ public class JsonLD {
         }
     }
 
-    public JsonLDNode addNode(String type) {
+    public JsonLDNode setType(String type) {
         JsonLDNode element = getCurrentNode();
-        if (element.hasType()) {
-            element = new JsonLDNode(this);
-            this.graph.add(element);
-        }
+        assert !element.hasType();
         element.setType(type);
+        return element;
+    }
+
+    public JsonLDNode addNode() {
+        JsonLDNode element = new JsonLDNode(this);
+        this.graph.add(element);
         return element;
     }
     
@@ -140,7 +147,8 @@ public class JsonLD {
         // to verify the objects
         JsonLD ld = new JsonLD().addContext(null, "http://schema.org");
         ld
-                .addNode("Event")
+                .addNode()
+                .setType("Event")
                 .setSubject("http://an.event.home.page.ninja/tomorrow.html")
                 .setPredicate("name", "Typhoon with Radiation City")
                 .setPredicate("startDate", "2013-09-14T21:30")

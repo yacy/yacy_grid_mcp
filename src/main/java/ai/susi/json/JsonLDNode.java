@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -117,7 +118,7 @@ public class JsonLDNode {
     }
     
     public JsonLDNode setPredicate(String key, Object value) {
-        assert value instanceof String || value instanceof JSONObject || value instanceof JsonLDNode;
+        assert value instanceof String || value instanceof JSONObject || value instanceof JSONArray || value instanceof JsonLDNode: "bad value type: " + value.getClass();
         if (value instanceof JsonLDNode) {
             this.object.put(key, ((JsonLDNode) value).getJSON());
         } else {
