@@ -62,7 +62,7 @@ public class JsonLD {
 
     public JsonLDNode setType(String type) {
         JsonLDNode element = getCurrentNode();
-        assert !element.hasType();
+        assert !element.hasType(): "element has type " + element.getType() + "; try to set to " + type;
         element.setType(type);
         return element;
     }
