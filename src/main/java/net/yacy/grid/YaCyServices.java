@@ -37,7 +37,11 @@ import net.yacy.grid.io.messages.GridQueue;
  */
 public enum YaCyServices implements Services {
 
-    mcp(8100),                      // the master connect program which orchestrates all other services
+    mcp(8100, new GridQueue[]{       // the master connect program which orchestrates all other services
+            new GridQueue("inquiry_open"),
+            new GridQueue("inquiry_working"),
+            new GridQueue("inquiry_close")
+    }),
     loader(8200, new GridQueue[]{
             new GridQueue("webloader_00"), new GridQueue("webloader_01"), new GridQueue("webloader_02"), new GridQueue("webloader_03"),
             new GridQueue("webloader_04"), new GridQueue("webloader_05"), new GridQueue("webloader_06"), new GridQueue("webloader_07"),

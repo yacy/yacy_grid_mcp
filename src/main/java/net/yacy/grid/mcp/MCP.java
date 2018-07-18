@@ -38,6 +38,7 @@ import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.io.index.CrawlerDocument;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.io.index.CrawlerDocument.Status;
+import net.yacy.grid.mcp.api.admin.InquirySubmitService;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
 import net.yacy.grid.mcp.api.index.AddService;
@@ -92,6 +93,9 @@ public class MCP {
             //RetrieveService.class,
             StoreService.class,
             LoadService.class,
+            
+            // admin services
+            InquirySubmitService.class,
             
             // search services
             YaCySearchService.class,
