@@ -1,5 +1,6 @@
 # YaCy Grid Component: Master Connect Program (MCP)
-[![Build Status](https://travis-ci.org/yacy/yacy_grid_mcp.svg?branch=master)](https://travis-ci.org/yacy/yacy_grid_mcp)
+Master [![Build Status](https://travis-ci.org/yacy/yacy_grid_mcp.svg?branch=master)](https://travis-ci.org/yacy/yacy_grid_mcp)
+Development [![Build Status](https://travis-ci.org/yacy/yacy_grid_mcp.svg?branch=development)](https://travis-ci.org/yacy/yacy_grid_mcp)
 
 The YaCy Grid is the second-generation implementation of YaCy, a peer-to-peer search engine.
 A YaCy Grid installation consists of a set of micro-services which communicate with each other
