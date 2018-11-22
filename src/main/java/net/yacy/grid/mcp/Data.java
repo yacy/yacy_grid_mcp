@@ -34,6 +34,7 @@ import net.yacy.grid.io.index.BoostsFactory;
 import net.yacy.grid.io.index.ElasticIndexFactory;
 import net.yacy.grid.io.index.GridIndex;
 import net.yacy.grid.io.messages.GridBroker;
+import net.yacy.grid.tools.OS;
 
 public class Data {
     
@@ -88,10 +89,18 @@ public class Data {
         gridStorage = new GridStorage(deleteafterread, localStorage ? assetsPath : null);
         
         // create index
-        String elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "");
+        String[] elasticsearchAddress = config.get("grid.elasticsearch.address").split(",");
         String elasticsearchClusterName = config.getOrDefault("grid.elasticsearch.clusterName", "");
-        gridIndex = new GridIndex();
-        gridIndex.connectElasticsearch(ElasticIndexFactory.PROTOCOL_PREFIX + elasticsearchAddress + "/" + elasticsearchClusterName);
+        for (String address: elasticsearchAddress) {
+            if (!OS.portIsOpen(address)) continue;
+            try {
+                gridIndex = new GridIndex();
+                gridIndex.connectElasticsearch(ElasticIndexFactory.PROTOCOL_PREFIX + address + "/" + elasticsearchClusterName);
+                break;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         
         // connect outside services
         // first try to connect to the configured MCPs.
@@ -117,6 +126,7 @@ public class Data {
             // try to connect to local services directly
             String[] gridBrokerAddress = (config.containsKey("grid.broker.address") ? config.get("grid.broker.address") : "").split(",");
             for (String address: gridBrokerAddress) {
+                if (!OS.portIsOpen(address)) continue;
                 if (Data.gridBroker.connectRabbitMQ(getHost(address), getPort(address, "-1"), getUser(address, "anonymous"), getPassword(address, "yacy"))) {
                     Data.logger.info("Connected Broker at " + getHost(address));
                     break;

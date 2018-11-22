@@ -30,6 +30,10 @@ import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -281,4 +285,35 @@ public final class OS {
       } catch (Throwable e) {}
       return 0.0d;
   }
+
+  /**
+   * Check if port is in use. This is checked by opening a connection at the given address
+   * @param addr the inet address of the server. To test a localhost address, pass null here
+   * @param port the port to be tested
+   * @return true if the port is in use, false if no service is running at that port.
+   */
+  public static boolean portIsOpen(InetAddress addr, int port) {
+      try (Socket socket = new Socket(addr, port)) {
+          return true;
+      } catch (IOException e) {
+          return false;
+      }
+  }
+
+  public static boolean portIsOpen(String host, int port) {
+      try (Socket socket = new Socket(host, port)) {
+          return true;
+      } catch (IOException e) {
+          return false;
+      }
+  }
+
+  public static boolean portIsOpen(String address) {
+      int p = address.indexOf('@');
+      if (p >= 0) address = address.substring(p + 1);
+      p = address.indexOf(':');
+      if (p < 0) return false;
+      return portIsOpen(address.substring(0, p), Integer.parseInt(address.substring(p + 1)));
+  }
+  
 }
