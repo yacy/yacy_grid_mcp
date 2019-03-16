@@ -120,6 +120,7 @@ ftpserver.user.yacygrid.downloadrate=0
 - run the server, doing:
 
     > cd apache-ftpserver-1.1.0
+    
     > bin/ftpd.sh res/conf/ftpd-typical.xml
     
 This will run the ftp server at port 2121. To test the connection use a standard ftp client and start it with
