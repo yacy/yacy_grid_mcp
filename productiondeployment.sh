@@ -84,7 +84,7 @@ then
 	sleep 5s;
 	~/yacy/rabbitmq_server-3.6.6/sbin/rabbitmq-plugins enable rabbitmq_management
 	~/yacy/rabbitmq_server-3.6.6/sbin/rabbitmqctl add_user yacygrid password4account
-	echo [{rabbit, [{loopback_users, []}]}]. >> /rabbitmq_server-3.6.6/etc/rabbitmq/rabbitmq.config
+	echo [{rabbit, [{loopback_users, []}]}]. >>  ~/yacy/rabbitmq_server-3.6.6/etc/rabbitmq/rabbitmq.config
 	~/yacy/rabbitmq_server-3.6.6/sbin/rabbitmqctl set_permissions -p / yacygrid ".*" ".*" ".*"
 	cd ~/yacy/yacy_grid_mcp
 	sleep 5s;
