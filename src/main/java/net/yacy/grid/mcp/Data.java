@@ -89,7 +89,7 @@ public class Data {
         gridStorage = new GridStorage(deleteafterread, localStorage ? assetsPath : null);
         
         // create index
-        String[] elasticsearchAddress = config.get("grid.elasticsearch.address").split(",");
+        String[] elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "").split(",");
         String elasticsearchClusterName = config.getOrDefault("grid.elasticsearch.clusterName", "");
         for (String address: elasticsearchAddress) {
             if (!OS.portIsOpen(address)) continue;
