@@ -781,6 +781,30 @@ public class JSONObject {
     }
 
     /**
+     * Get the JSONArray value associated with a key.
+     *
+     * @param key A key string.
+     * @param force Whether to wrap the value into an array (true) or throw an exception, when it is not an array.
+     * @return A JSONArray which is the value.
+     * @throws JSONException If the key is not found or if the value is not a JSONArray.
+     */
+    public JSONArray getJSONArray(String key, boolean force) throws JSONException {
+        Object object = this.get(key);
+        if (object instanceof JSONArray) {
+            return (JSONArray) object;
+        }
+
+        if (force) {
+            JSONArray wrapper = new JSONArray();
+            wrapper.put(object);
+            return wrapper;
+        }
+
+        throw new JSONException("JSONObject[" + quote(key)
+                + "] is not a JSONArray.");
+    }
+
+    /**
      * Get the JSONObject value associated with a key.
      *
      * @param key
