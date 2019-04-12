@@ -188,7 +188,11 @@ public class JsonLDNode {
 
     public List<String> getPredicates() {
         ArrayList<String> predicates = new ArrayList<>();
-        this.object.keySet().forEach(key -> {if (key.charAt(0) != '@') predicates.add(key);});
+        this.object.keySet().forEach(key -> {
+            if (key.isEmpty() || key.charAt(0) != '@') {
+                predicates.add(key);
+            }
+        });
         return predicates;
     }
 
