@@ -67,7 +67,7 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -126,7 +126,7 @@ public class ElasticsearchClient {
             if (p >= 0) try {
                 InetAddress i = InetAddress.getByName(a.substring(0, p));
                 int port = Integer.parseInt(a.substring(p + 1));
-                tc.addTransportAddress(new InetSocketTransportAddress(i, port));
+                tc.addTransportAddress(new TransportAddress(i, port));
             } catch (UnknownHostException e) {
                 Data.logger.warn("", e);
             }
@@ -179,7 +179,6 @@ public class ElasticsearchClient {
                     .put("number_of_replicas", replicas);
             this.elasticsearchClient.admin().indices().prepareCreate(indexName)
                 .setSettings(settings)
-                .setUpdateAllTypes(true)
                 .execute().actionGet();
         } else {
             //LOGGER.debug("Index with name {} already exists", indexName);
@@ -190,7 +189,6 @@ public class ElasticsearchClient {
         try {
             this.elasticsearchClient.admin().indices().preparePutMapping(indexName)
                 .setSource(mapping)
-                .setUpdateAllTypes(true)
                 .setType("_default_").execute().actionGet();
         } catch (Throwable e) {
             Data.logger.warn("", e);
@@ -201,7 +199,6 @@ public class ElasticsearchClient {
         try {
             this.elasticsearchClient.admin().indices().preparePutMapping(indexName)
                 .setSource(mapping)
-                .setUpdateAllTypes(true)
                 .setType("_default_").execute().actionGet();
         } catch (Throwable e) {
             Data.logger.warn("", e);
@@ -212,7 +209,6 @@ public class ElasticsearchClient {
         try {
             this.elasticsearchClient.admin().indices().preparePutMapping(indexName)
                 .setSource(mapping, XContentType.JSON)
-                .setUpdateAllTypes(true)
                 .setType("_default_").execute().actionGet();
         } catch (Throwable e) {
             Data.logger.warn("", e);
@@ -223,7 +219,6 @@ public class ElasticsearchClient {
         try {
             this.elasticsearchClient.admin().indices().preparePutMapping(indexName)
                 .setSource(new String(Files.readAllBytes(json.toPath()), StandardCharsets.UTF_8), XContentType.JSON)
-                .setUpdateAllTypes(true)
                 .setType("_default_")
                 .execute()
                 .actionGet();
@@ -301,12 +296,12 @@ public class ElasticsearchClient {
      */
     public long count(final QueryBuilder q, final String indexName) {
         SearchResponse response = elasticsearchClient.prepareSearch(indexName).setQuery(q).setSize(0).execute().actionGet();
-        return response.getHits().getTotalHits();
+        return response.getHits().getTotalHits().value;
     }
     
     public long count(final QueryBuilder q, final String indexName, final String typeName) {
         SearchResponse response = elasticsearchClient.prepareSearch(indexName).setTypes(typeName).setQuery(q).setSize(0).execute().actionGet();
-        return response.getHits().getTotalHits();
+        return response.getHits().getTotalHits().value;
     }
 
     public long count(final String index, final String histogram_timefield, final long millis) {
@@ -316,7 +311,7 @@ public class ElasticsearchClient {
                 .setQuery(millis <= 0 ? QueryBuilders.constantScoreQuery(QueryBuilders.matchAllQuery()) : QueryBuilders.rangeQuery(histogram_timefield).from(new Date(System.currentTimeMillis() - millis)))
                 .execute()
                 .actionGet();
-            return response.getHits().getTotalHits();
+            return response.getHits().getTotalHits().value;
         } catch (Throwable e) {
             Data.logger.warn("", e);
             return 0;
@@ -330,7 +325,7 @@ public class ElasticsearchClient {
                 .setQuery(QueryBuilders.matchQuery("provider_hash", provider_hash))
                 .execute()
                 .actionGet();
-            return response.getHits().getTotalHits();
+            return response.getHits().getTotalHits().value;
         } catch (Throwable e) {
             Data.logger.warn("", e);
             return 0;
@@ -364,7 +359,7 @@ public class ElasticsearchClient {
     public boolean exist(String indexName, String typeName, final String id) {
         GetResponse getResponse = elasticsearchClient
                 .prepareGet(indexName, typeName, id)
-                .setOperationThreaded(false)
+                //.setOperationThreaded(false)
                 .execute()
                 .actionGet();
         return getResponse.isExists();
@@ -762,7 +757,7 @@ public class ElasticsearchClient {
             // get response
             SearchResponse response = request.execute().actionGet();
             SearchHits searchHits = response.getHits();
-            hitCount = (int) searchHits.getTotalHits();
+            hitCount = (int) searchHits.getTotalHits().value;
             
             // evaluate search result
             //long totalHitCount = response.getHits().getTotalHits();
