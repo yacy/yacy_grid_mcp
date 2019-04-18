@@ -28,6 +28,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -128,7 +129,7 @@ public class RemoteAccess {
     }
 
     public static Map<String, String> getQueryMap(String query) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new LinkedHashMap<String, String>();
         if (query == null) return map;
         String[] params = query.replaceAll("\\.\\*&amp;", ".*%26").replaceAll("&amp;", "&").split("&");
         for (String param : params) {

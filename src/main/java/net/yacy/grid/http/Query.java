@@ -168,13 +168,16 @@ public class Query {
         return this.request;
     }
     public String toString() {
+        return toString(Long.MAX_VALUE);
+    }
+    public String toString(long maxlength) {
         if (this.qm == null) return "";
-        Map<String, String> outcopy = new LinkedHashMap<>();
+        StringBuilder sb = new StringBuilder();
         this.qm.entrySet().stream()
             .filter(e -> !e.getKey().equals("password"))
             .filter(e -> !e.getKey().equals("asset"))
-            .forEach(e -> outcopy.put(e.getKey(), new String(e.getValue(), StandardCharsets.UTF_8)));
-        return outcopy.toString().replaceAll(", ", "&").replaceFirst("\\{", "").replaceAll("\\}", "").replaceAll(" ", "%20");
+            .forEach(e -> {if (sb.length() < maxlength) sb.append(e.getKey()).append('=').append(new String(e.getValue(), StandardCharsets.UTF_8)).append('&');});
+        if (sb.length() > 0) sb.setLength(sb.length() - 1); // cut off last '&'
+        return sb.toString().replaceAll(" ", "%20");
      }
-    
 }

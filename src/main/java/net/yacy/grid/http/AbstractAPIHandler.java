@@ -163,7 +163,7 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
             int httpResponseCode,
             String message) {
         String host = query.getClientHost();
-        String q = query.toString();
+        String q = query.toString(512);
         if (q.length() > 512) q = q.substring(0, 512) + "...";
         long t = System.currentTimeMillis() - startTime;
         String path = getAPIPath();
