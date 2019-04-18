@@ -296,12 +296,12 @@ public class ElasticsearchClient {
      */
     public long count(final QueryBuilder q, final String indexName) {
         SearchResponse response = elasticsearchClient.prepareSearch(indexName).setQuery(q).setSize(0).execute().actionGet();
-        return response.getHits().getTotalHits().value;
+        return response.getHits().getTotalHits();
     }
     
     public long count(final QueryBuilder q, final String indexName, final String typeName) {
         SearchResponse response = elasticsearchClient.prepareSearch(indexName).setTypes(typeName).setQuery(q).setSize(0).execute().actionGet();
-        return response.getHits().getTotalHits().value;
+        return response.getHits().getTotalHits();
     }
 
     public long count(final String index, final String histogram_timefield, final long millis) {
@@ -311,7 +311,7 @@ public class ElasticsearchClient {
                 .setQuery(millis <= 0 ? QueryBuilders.constantScoreQuery(QueryBuilders.matchAllQuery()) : QueryBuilders.rangeQuery(histogram_timefield).from(new Date(System.currentTimeMillis() - millis)))
                 .execute()
                 .actionGet();
-            return response.getHits().getTotalHits().value;
+            return response.getHits().getTotalHits();
         } catch (Throwable e) {
             Data.logger.warn("", e);
             return 0;
@@ -325,7 +325,7 @@ public class ElasticsearchClient {
                 .setQuery(QueryBuilders.matchQuery("provider_hash", provider_hash))
                 .execute()
                 .actionGet();
-            return response.getHits().getTotalHits().value;
+            return response.getHits().getTotalHits();
         } catch (Throwable e) {
             Data.logger.warn("", e);
             return 0;
@@ -757,7 +757,7 @@ public class ElasticsearchClient {
             // get response
             SearchResponse response = request.execute().actionGet();
             SearchHits searchHits = response.getHits();
-            hitCount = (int) searchHits.getTotalHits().value;
+            hitCount = (int) searchHits.getTotalHits();
             
             // evaluate search result
             //long totalHitCount = response.getHits().getTotalHits();
