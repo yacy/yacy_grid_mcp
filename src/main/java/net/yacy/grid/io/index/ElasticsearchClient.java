@@ -67,7 +67,7 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -126,7 +126,8 @@ public class ElasticsearchClient {
             if (p >= 0) try {
                 InetAddress i = InetAddress.getByName(a.substring(0, p));
                 int port = Integer.parseInt(a.substring(p + 1));
-                tc.addTransportAddress(new TransportAddress(i, port));
+                tc.addTransportAddress(new InetSocketTransportAddress(i, port));
+                //tc.addTransportAddress(new TransportAddress(i, port));
             } catch (UnknownHostException e) {
                 Data.logger.warn("", e);
             }
