@@ -60,6 +60,7 @@ public class CrawlerDocument extends Document {
     }
 
     public CrawlerDocument store(Index index) throws IOException {
+        if (index == null) return this;
         String id = Digest.encodeMD5Hex(this.getURL());
         index.add(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
         return this;
