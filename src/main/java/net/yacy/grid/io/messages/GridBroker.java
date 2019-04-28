@@ -106,7 +106,8 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         }
         try {
             QueueFactory<byte[]> mcpqf = new MCPQueueFactory(this, host, port);
-            mcpqf.getQueue(YaCyServices.indexer.name() + "_" + YaCyServices.indexer.getQueues()[0].name()).checkConnection();
+            String queueName = YaCyServices.indexer.name() + "_" + YaCyServices.indexer.getQueues()[0].name();
+            mcpqf.getQueue(queueName).checkConnection();
             this.mcpQueueFactory = mcpqf;
             Data.logger.info("Broker/Client: connected to a Queue over MCP at " + host + ":" + port);
             return true;
