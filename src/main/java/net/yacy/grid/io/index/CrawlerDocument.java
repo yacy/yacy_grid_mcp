@@ -31,10 +31,14 @@ import net.yacy.grid.tools.Digest;
 public class CrawlerDocument extends Document {
 
     public static enum Status {
-        created, rejected,
-        loaded, load_failed,
-        parsed, parse_failed,
-        indexed
+        rejected,     // the crawler has rejected the urls based on a filter setting
+        created,      // the crawler has created the url and it was handed over to the loader
+        load_failed,  // the loader failed to load the document
+        loaded,       // the loader has loaded the document and passed it to the parser
+        noncanonical, // in case that the parser rejected further processing
+        parse_failed, // the parser failed to translate the document
+        parsed,       // the parser processed the document and passed it to the indexer
+        indexed       // the document was pushed to the indexer
     }
     
     public CrawlerDocument() {
