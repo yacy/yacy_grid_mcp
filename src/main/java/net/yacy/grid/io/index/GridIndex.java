@@ -90,8 +90,25 @@ public class GridIndex implements Index {
     
     @Override
     public IndexFactory checkConnection() throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        if (this.elasticIndexFactory == null && this.elastic_address != null) {
+            // try to connect again..
+            connectElasticsearch(this.elastic_address);
+        }
+        if (this.elasticIndexFactory == null) {
+            // learn that the address did not work to prevent that this method is used again
+            this.elastic_address = null;
+        } else {
+            return this.elasticIndexFactory;
+        }
+        if (this.mcpIndexFactory == null && this.mcp_host != null) {
+            // try to connect again..
+            connectMCP(this.mcp_host, this.mcp_port);
+            if (this.mcpIndexFactory == null) {
+                throw new IOException("Index/Client: FATAL: connection to MCP lost!");
+            }
+        }
+        if (this.mcpIndexFactory != null) return this.mcpIndexFactory;
+        throw new IOException("Index/Client: add mcp service: no factory found!");
     }
 
     @Override
@@ -101,6 +118,7 @@ public class GridIndex implements Index {
             connectElasticsearch(this.elastic_address);
         }
         if (this.elasticIndexFactory == null) {
+            // learn that the address did not work to prevent that this method is used again
             this.elastic_address = null;
         } else try {
             this.elasticIndexFactory.getIndex().add(indexName, typeName, id, object);
@@ -134,6 +152,7 @@ public class GridIndex implements Index {
             connectElasticsearch(this.elastic_address);
         }
         if (this.elasticIndexFactory == null) {
+            // learn that the address did not work to prevent that this method is used again
             this.elastic_address = null;
         } else try {
             boolean exist = this.elasticIndexFactory.getIndex().exist(indexName, typeName, id);
