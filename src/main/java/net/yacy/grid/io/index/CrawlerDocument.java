@@ -48,13 +48,13 @@ public class CrawlerDocument extends Document {
     }
     
     public static CrawlerDocument load(Index index, String id) throws IOException {
-        JSONObject json = index.query("crawler", "event", id);
+        JSONObject json = index.query(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id);
         if (json == null) throw new IOException("no document with id " + id + " in index");
         return new CrawlerDocument(json);
     }
     
     public CrawlerDocument store(Index index, final String id) throws IOException {
-        index.add("crawler", "event", id, this);
+        index.add(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
         return this;
     }
 

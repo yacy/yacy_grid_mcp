@@ -41,7 +41,7 @@ public class QueryDocument extends Document {
     
     public QueryDocument store(Index index) throws IOException {
         String id = Long.toString(System.currentTimeMillis());
-        index.add("query", "event", id, this);
+        index.add(GridIndex.QUERY_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
         return this;
     }
     /*

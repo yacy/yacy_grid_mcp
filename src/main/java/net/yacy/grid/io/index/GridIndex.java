@@ -33,6 +33,8 @@ public class GridIndex implements Index {
     public final static String QUERY_INDEX_NAME      = "query";
     public final static String WEB_INDEX_NAME        = "web";
 
+    public final static String EVENT_TYPE_NAME       = "event";
+
     private ElasticIndexFactory elasticIndexFactory;
     private MCPIndexFactory mcpIndexFactory;
 

@@ -42,13 +42,13 @@ public class CrawlstartDocument extends Document {
     }
     
     public static CrawlstartDocument load(Index index, String crawlid) throws IOException {
-        JSONObject json = index.query("crawlstart", "event", crawlid);
+        JSONObject json = index.query(GridIndex.CRAWLSTART_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, crawlid);
         if (json == null) throw new IOException("no crawl start with id " + crawlid + " in index");
         return new CrawlstartDocument(json);
     }
     
     public CrawlstartDocument store(Index index, final String id) throws IOException {
-        index.add("crawlstart", "event", id, this);
+        index.add(GridIndex.CRAWLSTART_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
         return this;
     }
 

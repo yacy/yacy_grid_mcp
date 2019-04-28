@@ -34,6 +34,7 @@ import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.index.ElasticsearchClient;
+import net.yacy.grid.io.index.GridIndex;
 import net.yacy.grid.io.index.Sort;
 import net.yacy.grid.io.index.WebDocument;
 import net.yacy.grid.io.index.WebMapping;
@@ -105,7 +106,7 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
 
         ElasticsearchClient ec = Data.gridIndex.getElasticClient();
         HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getMapping().name()).preTags("").postTags("").fragmentSize(140);
-        ElasticsearchClient.Query query = ec.query("web", null, yq.queryBuilder, null, sort, hb, timezoneOffset, start, num, 0, explain);
+        ElasticsearchClient.Query query = ec.query(GridIndex.WEB_INDEX_NAME, null, yq.queryBuilder, null, sort, hb, timezoneOffset, start, num, 0, explain);
         List<Map<String, Object>> result = query.results;
         List<String> explanations = query.explanations;
  
