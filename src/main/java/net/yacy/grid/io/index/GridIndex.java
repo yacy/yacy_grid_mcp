@@ -28,13 +28,18 @@ import net.yacy.grid.tools.JSONList;
 
 public class GridIndex implements Index {
 
+    public final static String CRAWLSTART_INDEX_NAME = "crawlstart";
+    public final static String CRAWLER_INDEX_NAME    = "crawler";
+    public final static String QUERY_INDEX_NAME      = "query";
+    public final static String WEB_INDEX_NAME        = "web";
+
     private ElasticIndexFactory elasticIndexFactory;
     private MCPIndexFactory mcpIndexFactory;
 
     private String elastic_address;
     private String mcp_host;
     private int mcp_port;
-    
+
     public GridIndex() {
         this.elastic_address = null;
         this.elasticIndexFactory = null;
@@ -42,7 +47,7 @@ public class GridIndex implements Index {
         this.mcp_host = null;
         this.mcp_port = -1;
     }
-    
+
     public boolean connectElasticsearch(String address) {
         if (!address.startsWith(ElasticIndexFactory.PROTOCOL_PREFIX)) return false;
         address = address.substring(ElasticIndexFactory.PROTOCOL_PREFIX.length());
@@ -66,7 +71,7 @@ public class GridIndex implements Index {
     public ElasticsearchClient getElasticClient() {
         return this.elasticIndexFactory.getClient();
     }
-    
+
     public Index getElasticIndex() throws IOException {
         return this.elasticIndexFactory.getIndex();
     }
