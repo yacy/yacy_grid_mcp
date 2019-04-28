@@ -157,7 +157,7 @@ public class MCP {
         		       try {
                        CrawlerDocument crawlerDocument = CrawlerDocument.load(Data.gridIndex, urlid);
                        crawlerDocument.setStatus(Status.indexed).setStatusDate(new Date());
-                       crawlerDocument.store(Data.gridIndex, urlid);
+                       crawlerDocument.store(Data.gridIndex);
                        // check with http://localhost:9200/crawler/_search?q=status_s:indexed
                    } catch (IOException e) {
                        // well that should not happen

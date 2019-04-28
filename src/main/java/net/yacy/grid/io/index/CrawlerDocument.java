@@ -26,10 +26,12 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
 
+import net.yacy.grid.tools.Digest;
+
 public class CrawlerDocument extends Document {
 
     public static enum Status {
-        created,
+        created, rejected,
         loaded, load_failed,
         parsed, parse_failed,
         indexed
@@ -46,14 +48,15 @@ public class CrawlerDocument extends Document {
     public CrawlerDocument(JSONObject obj) {
         super(obj);
     }
-    
+
     public static CrawlerDocument load(Index index, String id) throws IOException {
         JSONObject json = index.query(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id);
         if (json == null) throw new IOException("no document with id " + id + " in index");
         return new CrawlerDocument(json);
     }
-    
-    public CrawlerDocument store(Index index, final String id) throws IOException {
+
+    public CrawlerDocument store(Index index) throws IOException {
+        String id = Digest.encodeMD5Hex(this.getURL());
         index.add(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
         return this;
     }
