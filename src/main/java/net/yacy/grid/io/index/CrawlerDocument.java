@@ -40,15 +40,15 @@ public class CrawlerDocument extends Document {
         parsed,       // the parser processed the document and passed it to the indexer
         indexed       // the document was pushed to the indexer
     }
-    
+
     public CrawlerDocument() {
         super();
     }
-    
+
     public CrawlerDocument(Map<String, Object> map) {
         super(map);
     }
-    
+
     public CrawlerDocument(JSONObject obj) {
         super(obj);
     }
@@ -61,7 +61,7 @@ public class CrawlerDocument extends Document {
 
     public CrawlerDocument store(Index index) throws IOException {
         if (index == null) return this;
-        String id = Digest.encodeMD5Hex(this.getURL());
+        String id = Digest.encodeMD5Hex(this.getUrl());
         index.add(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
         return this;
     }
@@ -70,64 +70,73 @@ public class CrawlerDocument extends Document {
         this.putString(CrawlerMapping.crawl_id_s, crawlId);
         return this;
     }
-    
+
     public String getCrawlId() {
         return this.getString(CrawlerMapping.crawl_id_s, "");
     }
-    
-    public CrawlerDocument setURL(String url) {
-        this.putString(CrawlerMapping.url_s, url);
+
+    public CrawlerDocument setMustmatch(String mustmatch) {
+        this.putString(CrawlerMapping.mustmatch_s, mustmatch);
         return this;
     }
-    
-    public String getURL() {
-        return this.getString(CrawlerMapping.url_s, "");
+
+    public String getMustmatch() {
+        return this.getString(CrawlerMapping.mustmatch_s, "");
     }
-    
-    public CrawlerDocument setStatus(Status status) {
-        this.putString(CrawlerMapping.status_s, status.name());
-        return this;
-    }
-    
-    public Status getStatus() {
-        String status = this.getString(CrawlerMapping.status_s, "");
-        return Status.valueOf(status);
-    }
-    
-    public CrawlerDocument setInitDate(Date date) {
-        this.putDate(CrawlerMapping.init_date_dt, date);
-        return this;
-    }
-    
-    public Date getInitDate() {
-        return this.getDate(CrawlerMapping.init_date_dt);
-    }
-    
-    public CrawlerDocument setStatusDate(Date date) {
-        this.putDate(CrawlerMapping.status_date_dt, date);
-        return this;
-    }
-    
-    public Date getStatusDate() {
-        return this.getDate(CrawlerMapping.status_date_dt);
-    }
-    
+
     public CrawlerDocument setCollections(Collection<String> collections) {
         this.putStrings(CrawlerMapping.collection_sxt, collections);
         return this;
     }
-    
+
     public List<String> getCollections() {
         return this.getStrings(CrawlerMapping.collection_sxt);
     }
-    
+
+    public CrawlerDocument setUrl(String url) {
+        this.putString(CrawlerMapping.url_s, url);
+        return this;
+    }
+
+    public String getUrl() {
+        return this.getString(CrawlerMapping.url_s, "");
+    }
+
+    public CrawlerDocument setInitDate(Date date) {
+        this.putDate(CrawlerMapping.init_date_dt, date);
+        return this;
+    }
+
+    public Date getInitDate() {
+        return this.getDate(CrawlerMapping.init_date_dt);
+    }
+
+    public CrawlerDocument setStatusDate(Date date) {
+        this.putDate(CrawlerMapping.status_date_dt, date);
+        return this;
+    }
+
+    public Date getStatusDate() {
+        return this.getDate(CrawlerMapping.status_date_dt);
+    }
+
+    public CrawlerDocument setStatus(Status status) {
+        this.putString(CrawlerMapping.status_s, status.name());
+        return this;
+    }
+
+    public Status getStatus() {
+        String status = this.getString(CrawlerMapping.status_s, "");
+        return Status.valueOf(status);
+    }
+
     public CrawlerDocument setComment(String comment) {
         this.putString(CrawlerMapping.comment_t, comment);
         return this;
     }
-    
+
     public String getComment() {
         return this.getString(CrawlerMapping.comment_t, "");
     }
-    
+
 }

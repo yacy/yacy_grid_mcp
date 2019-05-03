@@ -20,15 +20,16 @@
 package net.yacy.grid.io.index;
 
 public enum CrawlstartMapping implements MappingDeclaration {
-    
+
+    crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
+    mustmatch_s(MappingType.string, true, true, false, true, true, "must-match pattern string of the crawl start", true),
+    collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation", false, "collections", "Collections", "String", "collection"),
     start_s(MappingType.string, true, true, false, true, true, "The start URL or list of URLs", true),
     init_date_dt(MappingType.date, true, true, false, false, false, "date when the crawl was started"),
-    collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation", false, "collections", "Collections", "String", "collection"),
-    crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
     data_o(MappingType.object, false, true, false, true, true, "data object describing the crawl as defined in the api call", true);
 
     private Mapping mapping;
-    
+
     private CrawlstartMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment) {
         this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, false);
     }
@@ -36,12 +37,12 @@ public enum CrawlstartMapping implements MappingDeclaration {
     private CrawlstartMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment, final boolean mandatory) {
         this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, mandatory);
     }
-    
+
     private CrawlstartMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment, final boolean mandatory,
                        final String facetname, final String displayname, final String facettype, final String facetmodifier) {
         this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, mandatory, facetname, displayname, facettype, facetmodifier);
     }
-    
+
     @Override
     public final Mapping getMapping() {
         return this.mapping;
