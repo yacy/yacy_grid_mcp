@@ -53,6 +53,7 @@ public interface Index {
     public static enum QueryLanguage {
         yacy,   // a YaCy search query, must match all terms and search operators as in https://support.google.com/websearch/answer/2466433?visit_id=1-636509668520326600-1109926908&p=adv_operators&hl=en&rd=1
         gsa,    // a Google query string as in https://www.google.com/support/enterprise/static/gsa/docs/admin/74/gsa_doc_set/xml_reference/request_format.html#1076993
-        elastic // a Query String Query as in https://www.elastic.co/guide/en/elasticsearch/reference/6.1/query-dsl-query-string-query.html
+        elastic,// a Query String Query as in https://www.elastic.co/guide/en/elasticsearch/reference/6.1/query-dsl-query-string-query.html
+        fields  // a flat JSON object with key-value pairs which have to match all
     }
 }
