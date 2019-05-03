@@ -30,7 +30,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
+import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.common.unit.Fuzziness;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -39,24 +43,24 @@ import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.JSONList;
 
 public class ElasticIndexFactory implements IndexFactory {
-    
+
     public final static String PROTOCOL_PREFIX = "elastic://";
-    
+
     private ElasticsearchClient elasticsearchClient = null;
     private String elasticsearchAddress;
     private String elasticsearchClusterName;
     private Index index;
-    
+
     public ElasticIndexFactory(String elasticsearchAddress, String elasticsearchClusterName) throws IOException {
         if (elasticsearchAddress == null || elasticsearchAddress.length() == 0) throw new IOException("the elasticsearch Address must be given");
-        
+
         this.elasticsearchAddress = elasticsearchAddress;
         this.elasticsearchClusterName = elasticsearchClusterName;
-        
+
         // create elasticsearch connection
         this.elasticsearchClient = new ElasticsearchClient(new String[]{this.elasticsearchAddress}, this.elasticsearchClusterName.length() == 0 ? null : this.elasticsearchClusterName);
         Data.logger.info("Connected elasticsearch at " + Data.getHost(this.elasticsearchAddress));
-        
+
         Path mappingsPath = Paths.get("conf","mappings");
         if (mappingsPath.toFile().exists()) {
             for (File f: mappingsPath.toFile().listFiles()) {
@@ -76,7 +80,7 @@ public class ElasticIndexFactory implements IndexFactory {
                 }
             }
         }
-        
+
         // create index
         this.index = new Index() {
 
@@ -98,8 +102,8 @@ public class ElasticIndexFactory implements IndexFactory {
 
             @Override
             public long count(String indexName, String typeName, QueryLanguage language, String query) throws IOException {
-                QueryBuilder termQuery = new YaCyQuery(query, null, Classification.ContentDomain.ALL, 0).queryBuilder;
-                return ElasticIndexFactory.this.elasticsearchClient.count(termQuery, indexName, typeName);
+                QueryBuilder qb = getQuery(language, query);
+                return ElasticIndexFactory.this.elasticsearchClient.count(qb, indexName, typeName);
             }
 
             @Override
@@ -111,8 +115,8 @@ public class ElasticIndexFactory implements IndexFactory {
 
             @Override
             public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException {
-                QueryBuilder termQuery = new YaCyQuery(query, null, null, 0).queryBuilder;
-                ElasticsearchClient.Query q = ElasticIndexFactory.this.elasticsearchClient.query(indexName, null, termQuery, null, Sort.DEFAULT, null, 0, start, count, 0, false);
+                QueryBuilder qb = getQuery(language, query);
+                ElasticsearchClient.Query q = ElasticIndexFactory.this.elasticsearchClient.query(indexName, null, qb, null, Sort.DEFAULT, null, 0, start, count, 0, false);
                 List<Map<String, Object>> result = q.results;
                 JSONList list = new JSONList();
                 for (int hitc = 0; hitc < result.size(); hitc++) {
@@ -129,21 +133,37 @@ public class ElasticIndexFactory implements IndexFactory {
 
             @Override
             public long delete(String indexName, String typeName, QueryLanguage language, String query) throws IOException {
-                QueryBuilder termQuery = new YaCyQuery(query, null, Classification.ContentDomain.ALL, 0).queryBuilder;
-                return ElasticIndexFactory.this.elasticsearchClient.deleteByQuery(indexName, typeName, termQuery);
+                QueryBuilder qb = getQuery(language, query);
+                return ElasticIndexFactory.this.elasticsearchClient.deleteByQuery(indexName, typeName, qb);
             }
 
             @Override
             public void close() {
             }
-            
+
+            private QueryBuilder getQuery(QueryLanguage language, String query) {
+                QueryBuilder qb = QueryBuilders.queryStringQuery("");
+                if (language == QueryLanguage.elastic) {
+                    QueryStringQueryBuilder qsqb = QueryBuilders.queryStringQuery(query);
+                    qsqb.useDisMax(false); // we want a boolean query here
+                    qsqb.defaultField(WebMapping.text_t.name());
+                    qsqb.defaultOperator(Operator.AND);
+                    qsqb.fuzziness(Fuzziness.ZERO);
+                    qb = qsqb;
+                }
+                if (language == QueryLanguage.gsa || language == QueryLanguage.yacy) {
+                    qb = new YaCyQuery(query, null, Classification.ContentDomain.ALL, 0).queryBuilder;
+                }
+                return qb;
+            }
+
         };
     }
-    
+
     public ElasticsearchClient getClient() {
         return this.elasticsearchClient;
     }
-    
+
     @Override
     public String getConnectionURL() {
         return PROTOCOL_PREFIX + this.elasticsearchAddress + "/" + this.elasticsearchClusterName;
