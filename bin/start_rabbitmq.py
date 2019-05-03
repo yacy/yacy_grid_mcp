@@ -10,10 +10,10 @@ import socket
 import urllib
 import subprocess
 
-#https://dl.bintray.com/rabbitmq/binaries/rabbitmq-server-generic-unix-3.6.12.tar.xz
+#https://github.com/rabbitmq/rabbitmq-server/releases/download/v3.7.14/rabbitmq-server-generic-unix-3.7.14.tar.xz
 
-rabbitversion = 'rabbitmq-server-generic-unix-3.7.7'
-rabbitfilename = 'rabbitmq_server-3.7.7'
+rabbitversion = 'rabbitmq-server-generic-unix-3.7.14'
+rabbitfilename = 'rabbitmq_server-3.7.14'
 
 path_apphome = os.path.dirname(os.path.abspath(__file__)) + '/..'
 os.chdir(path_apphome)
@@ -32,7 +32,10 @@ if not checkportopen(5672):
     mkapps()
     if not os.path.isfile(path_apphome + '/data/apps/' + rabbitversion + '.tar.xz'):
         print('downloading ' + rabbitversion)
-        urllib.urlretrieve ('http://dl.bintray.com/rabbitmq/binaries/' + rabbitversion + '.tar.xz', path_apphome + '/data/apps/' + rabbitversion + '.tar.xz')
+        downloadurl = 'https://github.com/rabbitmq/rabbitmq-server/releases/download/v3.7.14/' + rabbitversion + '.tar.xz'
+        downloadpath = path_apphome + '/data/apps/' + rabbitversion + '.tar.xz'
+        print('Download URL is: ' + downloadurl + ', Path is ' + downloadpath)
+        urllib.urlretrieve(downloadurl, downloadpath)
     rabbitpath = path_apphome + '/data/apps/rabbitmq'
     if not os.path.isdir(rabbitpath):
         print('decompressing ' + rabbitversion)
