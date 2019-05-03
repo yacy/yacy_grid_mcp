@@ -22,15 +22,16 @@ package net.yacy.grid.io.index;
 public enum CrawlerMapping implements MappingDeclaration {
 
     crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
+    mustmatch_s(MappingType.string, true, true, false, true, true, "must-match pattern string of the crawl start", true),
+    collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation", false, "collections", "Collections", "String", "collection"),
     url_s(MappingType.string, true, true, false, true, true, "url of the document", true),
-    status_s(MappingType.string, true, true, false, true, true, "current crawl status", true),
     init_date_dt(MappingType.date, true, true, false, false, false, "date when the crawl was started"),
     status_date_dt(MappingType.date, true, true, false, false, false, "date of latest status change"),
-    collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation", false, "collections", "Collections", "String", "collection"),
+    status_s(MappingType.string, true, true, false, true, true, "current crawl status", true),
     comment_t(MappingType.text_general, true, true, false, false, true, "comment to crawl status; error messages etc.");
-    
+
     private Mapping mapping;
-    
+
     private CrawlerMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment) {
         this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, false);
     }
@@ -38,12 +39,12 @@ public enum CrawlerMapping implements MappingDeclaration {
     private CrawlerMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment, final boolean mandatory) {
         this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, mandatory);
     }
-    
+
     private CrawlerMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment, final boolean mandatory,
                        final String facetname, final String displayname, final String facettype, final String facetmodifier) {
         this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, mandatory, facetname, displayname, facettype, facetmodifier);
     }
-    
+
     @Override
     public final Mapping getMapping() {
         return this.mapping;
