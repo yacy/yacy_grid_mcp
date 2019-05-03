@@ -1,11 +1,14 @@
 {"mappings":{"_default_":{"properties":{
   "crawl_id_s": {
     "type": "keyword"
-  },  
-  "url_s": {
+  },
+  "mustmatch_s": {
     "type": "keyword"
   },
-  "status_s": {
+  "collection_sxt": {
+    "type": "keyword"
+  },
+  "url_s": {
     "type": "keyword"
   },
   "init_date_dt": {
@@ -14,7 +17,7 @@
   "status_date_dt": {
     "type": "date"
   },
-  "collection_sxt": {
+  "status_s": {
     "type": "keyword"
   },
   "comment_t": {
