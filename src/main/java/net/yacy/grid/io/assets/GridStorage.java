@@ -21,6 +21,7 @@ package net.yacy.grid.io.assets;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.yacy.grid.mcp.Data;
 import net.yacy.grid.tools.MultiProtocolURL;
@@ -30,6 +31,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
     private StorageFactory<byte[]> ftp = null;
     private StorageFactory<byte[]> mcp = null;
     private boolean deleteafterread;
+    private AtomicInteger ftp_fail = new AtomicInteger(0);
 
     /**
      * create a grid storage. 
@@ -84,49 +86,64 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
     
     @Override
     public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
-        if (this.ftp != null) {
+        if (this.ftp != null && this.ftp_fail.get() < 10) {
             retryloop: for (int retry = 0; retry < 40; retry++) {
                 try {
-                    return this.ftp.getStorage().store(path, asset);
+                    StorageFactory<byte[]> sf = this.ftp.getStorage().store(path, asset);
+                    this.ftp_fail.set(0);
+                    return sf;
                 } catch (IOException e) {
                     String cause = e.getMessage();
                     // possible causes:
                     // 421 too many connections. possible counteractions: in apacheftpd, set i.e. ftpserver.user.anonymous.maxloginnumber=200 and ftpserver.user.anonymous.maxloginperip=200
                     if (cause.indexOf("421") >= 0) {try {Thread.sleep(retry * 500);} catch (InterruptedException e1) {} continue retryloop;}
-                    Data.logger.debug("GridStorage.StorageFactory trying to connect to the ftp server failed: " + cause, e);
+                    Data.logger.debug("GridStorage.store trying to connect to the ftp server failed, attempt " + retry + ": " + cause, e);
                 }
             }
+            this.ftp_fail.incrementAndGet();
         }
         if (this.mcp != null) try {
             return this.mcp.getStorage().store(path, asset);
         } catch (IOException e) {
-            Data.logger.debug("GridStorage.StorageFactory trying to connect to the mcp failed: " + e.getMessage(), e);
+            Data.logger.debug("GridStorage.store trying to connect to the mcp failed: " + e.getMessage(), e);
         }
         return super.store(path, asset);
     }
 
     @Override
     public Asset<byte[]> load(String path) throws IOException {
-        if (this.ftp != null) {
+        try {
+            // we first load from the local assets, if possible.
+            // this is happening first to be able to fast-fail.
+            // failing with a TCP/IP connected service would be much more costly.
+            return super.load(path);
+        } catch (IOException e) {
+            // do nothing, we will try again with alternative methods
+        }
+        if (this.ftp != null && this.ftp_fail.get() < 10) {
             retryloop: for (int retry = 0; retry < 40; retry++) {
                 try {
-                    return this.ftp.getStorage().load(path);
+                    Asset<byte[]> asset = this.ftp.getStorage().load(path);
+                    this.ftp_fail.set(0);
+                    return asset;
                 } catch (IOException e) {
                     String cause = e.getMessage();
                     // possible causes:
                     // 421 too many connections. possible counteractions: in apacheftpd, set i.e. ftpserver.user.anonymous.maxloginnumber=200 and ftpserver.user.anonymous.maxloginperip=200
                     if (cause.indexOf("421") >= 0) {try {Thread.sleep(retry * 500);} catch (InterruptedException e1) {} continue retryloop;}
                     if (cause.indexOf("refused") >= 0) break retryloop; // this will not go anywhere
-                    Data.logger.debug("GridStorage.load trying to connect to the ftp server failed: " + cause, e);
+                    Data.logger.debug("GridStorage.load trying to connect to the ftp server failed, attempt " + retry + ": " + cause, e);
                 }
             }
+            this.ftp_fail.incrementAndGet();
         }
         if (this.mcp != null) try {
             return this.mcp.getStorage().load(path);
         } catch (IOException e) {
             Data.logger.debug("GridStorage.load trying to connect to the mcp failed: " + e.getMessage(), e);
         }
-        return super.load(path);
+        // no options left
+        throw new IOException("no storage factory available to load asset");
     }
 
     @Override
