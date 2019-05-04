@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -142,16 +143,20 @@ public class ElasticIndexFactory implements IndexFactory {
             }
 
             private QueryBuilder getQuery(QueryLanguage language, String query) {
-                QueryBuilder qb = QueryBuilders.queryStringQuery("");
-                if (language == QueryLanguage.elastic) {
+                QueryBuilder qb = QueryBuilders.boolQuery();
+                if (language == QueryLanguage.fields) {
+                    qb = QueryBuilders.boolQuery();
+                    JSONObject json = new JSONObject(query);
+                    for (String key: json.keySet()) {
+                        ((BoolQueryBuilder) qb).filter(QueryBuilders.termQuery(key, json.get(key)));
+                    }
+                } else if (language == QueryLanguage.elastic) {
                     QueryStringQueryBuilder qsqb = QueryBuilders.queryStringQuery(query);
                     qsqb.useDisMax(false); // we want a boolean query here
-                    qsqb.defaultField(WebMapping.text_t.name());
                     qsqb.defaultOperator(Operator.AND);
                     qsqb.fuzziness(Fuzziness.ZERO);
                     qb = qsqb;
-                }
-                if (language == QueryLanguage.gsa || language == QueryLanguage.yacy) {
+                } else if (language == QueryLanguage.gsa || language == QueryLanguage.yacy) {
                     qb = new YaCyQuery(query, null, Classification.ContentDomain.ALL, 0).queryBuilder;
                 }
                 return qb;

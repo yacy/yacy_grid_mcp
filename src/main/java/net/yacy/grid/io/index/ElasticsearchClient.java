@@ -459,11 +459,10 @@ public class ElasticsearchClient {
             for (SearchHit hit : response.getHits().getHits()) {
                 ids.put(hit.getId(), hit.getType());
             }
-            response = elasticsearchClient.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000))
-                .execute().actionGet();
             // termination
-            if (response.getHits().getHits().length == 0)
-                break;
+            if (response.getHits().getHits().length == 0) break;
+            // scroll
+            response = elasticsearchClient.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000)).execute().actionGet();
         }
         return deleteBulk(indexName, ids);
     }
