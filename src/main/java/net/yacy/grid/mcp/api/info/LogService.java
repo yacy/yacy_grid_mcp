@@ -37,19 +37,18 @@ public class LogService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = -7095346222464124199L;
     public static final String NAME = "log";
-    
+
     @Override
     public String getAPIPath() {
         return "/yacy/grid/mcp/info/" + NAME + ".txt";
     }
-    
+
     @Override
     public ServiceResponse serviceImpl(Query post, HttpServletResponse response) {
         int count = post.get("count", 10000);
         final StringBuilder buffer = new StringBuilder(100000);
-        List<String> lines = Data.logAppender.getLines();
-        int start = Math.max(0, lines.size() - count);
-        for (int i = start; i < lines.size(); i++) {
+        List<String> lines = Data.logAppender.getLines(count);
+        for (int i = 0; i < lines.size(); i++) {
             buffer.append(lines.get(i)); // lines are stored with \n at end
         }
         return new ServiceResponse(buffer.toString());
