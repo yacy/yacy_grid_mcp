@@ -20,6 +20,8 @@
 package net.yacy.grid.io.index;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Set;
 
 import org.json.JSONObject;
 
@@ -141,8 +143,7 @@ public class GridIndex implements Index {
         } catch (IOException e) {
             Data.logger.debug("Index/Client: add mcp service '" + mcp_host + "',mcp fail", e);
         }
-        Data.logger.info("Index/Client: add mcp service: no factory found!");
-        return null;
+        throw new IOException("Index/Client: add mcp service: no factory found!");
     }
 
     @Override
@@ -175,8 +176,40 @@ public class GridIndex implements Index {
         } catch (IOException e) {
             Data.logger.debug("Index/Client: exist mcp service '" + mcp_host + "',mcp fail", e);
         }
-        Data.logger.info("Index/Client: exist mcp service: no factory found!");
-        return false;
+        throw new IOException("Index/Client: exist mcp service: no factory found!");
+    }
+
+    @Override
+    public Set<String> existBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
+        if (this.elasticIndexFactory == null && this.elastic_address != null) {
+            // try to connect again..
+            connectElasticsearch(this.elastic_address);
+        }
+        if (this.elasticIndexFactory == null) {
+            // learn that the address did not work to prevent that this method is used again
+            this.elastic_address = null;
+        } else try {
+            Set<String> exist = this.elasticIndexFactory.getIndex().existBulk(indexName, typeName, ids);
+            //Data.logger.info("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
+            return exist;
+        } catch (IOException e) {
+            Data.logger.debug("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+        }
+        if (this.mcpIndexFactory == null && this.mcp_host != null) {
+            // try to connect again..
+            connectMCP(this.mcp_host, this.mcp_port);
+            if (this.mcpIndexFactory == null) {
+                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+            }
+        }
+        if (this.mcpIndexFactory != null) try {
+            Set<String> exist = this.mcpIndexFactory.getIndex().existBulk(indexName, typeName, ids);
+            //Data.logger.info("Index/Client: exist mcp service '" + mcp_host + "', object with id:" + id);
+            return exist;
+        } catch (IOException e) {
+            Data.logger.debug("Index/Client: exist mcp service '" + mcp_host + "',mcp fail", e);
+        }
+        throw new IOException("Index/Client: exist mcp service: no factory found!");
     }
 
     @Override
@@ -208,8 +241,7 @@ public class GridIndex implements Index {
         } catch (IOException e) {
             Data.logger.debug("Index/Client: count mcp service '" + mcp_host + "',mcp fail", e);
         }
-        Data.logger.info("Index/Client: count mcp service: no factory found!");
-        return 0;
+        throw new IOException("Index/Client: count mcp service: no factory found!");
     }
 
     @Override
@@ -241,8 +273,7 @@ public class GridIndex implements Index {
         } catch (IOException e) {
             Data.logger.debug("Index/Client: query mcp service '" + mcp_host + "',mcp fail", e);
         }
-        Data.logger.info("Index/Client: query mcp service: no factory found!");
-        return null;
+        throw new IOException("Index/Client: query mcp service: no factory found!");
     }
 
     @Override
@@ -274,8 +305,7 @@ public class GridIndex implements Index {
         } catch (IOException e) {
             Data.logger.debug("Index/Client: query mcp service '" + mcp_host + "',mcp fail", e);
         }
-        Data.logger.info("Index/Client: query mcp service: no factory found!");
-        return null;
+        throw new IOException("Index/Client: query mcp service: no factory found!");
     }
 
     @Override
@@ -307,8 +337,7 @@ public class GridIndex implements Index {
         } catch (IOException e) {
             Data.logger.debug("Index/Client: delete mcp service '" + mcp_host + "',mcp fail", e);
         }
-        Data.logger.info("Index/Client: delete mcp service: no factory found!");
-        return false;
+        throw new IOException("Index/Client: delete mcp service: no factory found!");
     }
 
     @Override
@@ -340,8 +369,7 @@ public class GridIndex implements Index {
         } catch (IOException e) {
             Data.logger.debug("Index/Client: delete mcp service '" + mcp_host + "',mcp fail", e);
         }
-        Data.logger.info("Index/Client: delete mcp service: no factory found!");
-        return 0;
+        throw new IOException("Index/Client: delete mcp service: no factory found!");
     }
 
     @Override

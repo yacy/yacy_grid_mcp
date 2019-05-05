@@ -20,6 +20,8 @@
 package net.yacy.grid.io.index;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Set;
 
 import org.json.JSONObject;
 
@@ -31,25 +33,27 @@ import net.yacy.grid.tools.JSONList;
  *
  */
 public interface Index {
-    
+
     public IndexFactory checkConnection() throws IOException;
-    
+
     public IndexFactory add(String indexName, String typeName, final String id, JSONObject object) throws IOException;
-    
+
     public boolean exist(String indexName, String typeName, String id) throws IOException;
-    
+
+    public Set<String> existBulk(String indexName, String typeName, Collection<String> ids) throws IOException;
+
     public long count(String indexName, String typeName, QueryLanguage language, String query) throws IOException;
 
     public JSONObject query(String indexName, String typeName, String id) throws IOException;
-    
+
     public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException;
 
     public boolean delete(String indexName, String typeName, String id) throws IOException;
 
     public long delete(String indexName, String typeName, QueryLanguage language, String query) throws IOException;
-    
+
     public void close();
-    
+
     public static enum QueryLanguage {
         yacy,   // a YaCy search query, must match all terms and search operators as in https://support.google.com/websearch/answer/2466433?visit_id=1-636509668520326600-1109926908&p=adv_operators&hl=en&rd=1
         gsa,    // a Google query string as in https://www.google.com/support/enterprise/static/gsa/docs/admin/74/gsa_doc_set/xml_reference/request_format.html#1076993

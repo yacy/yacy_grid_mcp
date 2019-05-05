@@ -26,8 +26,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -99,6 +101,11 @@ public class ElasticIndexFactory implements IndexFactory {
             @Override
             public boolean exist(String indexName, String typeName, String id) throws IOException {
                 return ElasticIndexFactory.this.elasticsearchClient.exist(indexName, typeName, id);
+            }
+
+            @Override
+            public Set<String> existBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
+                return ElasticIndexFactory.this.elasticsearchClient.existBulk(indexName, typeName, ids);
             }
 
             @Override
