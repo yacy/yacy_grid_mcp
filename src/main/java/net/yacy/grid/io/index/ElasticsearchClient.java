@@ -360,11 +360,12 @@ public class ElasticsearchClient {
     public boolean exist(String indexName, String typeName, final String id) {
         GetResponse getResponse = elasticsearchClient
                 .prepareGet(indexName, typeName, id)
+                .setFetchSource(false)
                 //.setOperationThreaded(false)
                 .execute()
                 .actionGet();
         return getResponse.isExists();
-    }    
+    }
 
     public Set<String> existBulk(String indexName, String typeName, final Collection<String> ids) {
         if (ids == null || ids.size() == 0) return new HashSet<>();
@@ -374,13 +375,13 @@ public class ElasticsearchClient {
         Set<String> er = new HashSet<>();
         for (MultiGetItemResponse itemResponse : multiGetItemResponses) { 
             GetResponse response = itemResponse.getResponse();
-            if (response.isExists()) {                      
+            if (response.isExists()) {
                 er.add(response.getId());
             }
         }
         return er;
-    }    
-    
+    }
+
     /**
      * Get the type name of a document or null if the document does not exist.
      * This is a replacement of the exist() method which does exactly the same as exist()
