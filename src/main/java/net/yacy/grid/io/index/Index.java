@@ -48,6 +48,8 @@ public interface Index {
     public long count(String indexName, String typeName, QueryLanguage language, String query) throws IOException;
 
     public JSONObject query(String indexName, String typeName, String id) throws IOException;
+    
+    public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException;
 
     public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException;
 

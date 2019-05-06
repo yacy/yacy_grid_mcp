@@ -21,6 +21,7 @@ package net.yacy.grid.io.index;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -204,6 +205,21 @@ public class MCPIndexFactory implements IndexFactory {
                 } else {
                     throw handleError(response);
                 }
+            }
+            
+            @Override
+            public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
+                // We do not introduce a new protocol here. Instead we use the query method.
+                // This is not a bad design because grid clients will learn how to use
+                // the native elasticsearch interface to do this in a better way.
+                Map<String, JSONObject> result = new HashMap<>();
+                for (String id: ids) {
+                    try {
+                        JSONObject j = query(indexName, typeName, id);
+                        result.put(id, j);
+                    } catch (IOException e) {}
+                }
+                return result;
             }
 
             @Override

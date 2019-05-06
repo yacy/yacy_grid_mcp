@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -131,6 +132,14 @@ public class ElasticIndexFactory implements IndexFactory {
                 Map<String, Object> map = ElasticIndexFactory.this.elasticsearchClient.readMap(indexName, typeName, id);
                 if (map == null) return null;
                 return new JSONObject(map);
+            }
+            
+            @Override
+            public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
+                Map<String, Map<String, Object>> bulkresponse = ElasticIndexFactory.this.elasticsearchClient.readMapBulk(indexName, typeName, ids);
+                Map<String, JSONObject> response = new HashMap<>();
+                bulkresponse.forEach((id, obj) -> response.put(id, new JSONObject(obj)));
+                return response;
             }
 
             @Override

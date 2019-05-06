@@ -55,6 +55,7 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
+import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -496,6 +497,18 @@ public class ElasticsearchClient {
         GetResponse response = elasticsearchClient.prepareGet(indexName, typeName, id).execute().actionGet();
         Map<String, Object> map = getMap(response);
         return map;
+    }
+    
+    public Map<String, Map<String, Object>> readMapBulk(final String indexName, final String typeName, final Collection<String> ids) {
+        MultiGetRequestBuilder mgrb = elasticsearchClient.prepareMultiGet();
+        ids.forEach(id -> mgrb.add(indexName, typeName, id).execute().actionGet());
+        MultiGetResponse response = mgrb.execute().actionGet();
+        Map<String, Map<String, Object>> bulkresponse = new HashMap<>();
+        for (MultiGetItemResponse r: response.getResponses()) {
+            Map<String, Object> map = getMap(r.getResponse());
+            bulkresponse.put(r.getId(), map);
+        }
+        return bulkresponse;
     }
     
     protected static Map<String, Object> getMap(GetResponse response) {

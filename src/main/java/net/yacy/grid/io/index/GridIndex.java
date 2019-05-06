@@ -309,6 +309,38 @@ public class GridIndex implements Index {
         }
         throw new IOException("Index/Client: query mcp service: no factory found!");
     }
+    
+    @Override
+    public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
+        if (this.elasticIndexFactory == null && this.elastic_address != null) {
+            // try to connect again..
+            connectElasticsearch(this.elastic_address);
+        }
+        if (this.elasticIndexFactory == null) {
+            this.elastic_address = null;
+        } else try {
+            Map<String, JSONObject> map = this.elasticIndexFactory.getIndex().queryBulk(indexName, typeName, ids);
+            //Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
+            return map;
+        } catch (IOException e) {
+            Data.logger.debug("Index/Client: queryBulk elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+        }
+        if (this.mcpIndexFactory == null && this.mcp_host != null) {
+            // try to connect again..
+            connectMCP(this.mcp_host, this.mcp_port);
+            if (this.mcpIndexFactory == null) {
+                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+            }
+        }
+        if (this.mcpIndexFactory != null) try {
+            Map<String, JSONObject> map = this.mcpIndexFactory.getIndex().queryBulk(indexName, typeName, ids);
+            //Data.logger.info("Index/Client: query mcp service '" + mcp_host + "', object with id:" + id);
+            return map;
+        } catch (IOException e) {
+            Data.logger.debug("Index/Client: queryBulk mcp service '" + mcp_host + "',mcp fail", e);
+        }
+        throw new IOException("Index/Client: queryBulk mcp service: no factory found!");
+    }
 
     @Override
     public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException {
