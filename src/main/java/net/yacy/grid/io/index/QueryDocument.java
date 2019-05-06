@@ -20,6 +20,8 @@
 package net.yacy.grid.io.index;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +39,16 @@ public class QueryDocument extends Document {
     
     public QueryDocument(JSONObject obj) {
         super(obj);
+    }
+
+    public static void storeBulk(Index index, Collection<QueryDocument> documents) throws IOException {
+        if (index == null) return;
+        Map<String, JSONObject> map = new HashMap<>();
+        documents.forEach(queryDocument -> {
+            String id = Long.toString(System.currentTimeMillis());
+            map.put(id, queryDocument);
+        });
+        index.addBulk(GridIndex.QUERY_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, map);
     }
     
     public QueryDocument store(Index index) throws IOException {

@@ -22,6 +22,7 @@ package net.yacy.grid.io.index;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
@@ -57,6 +58,16 @@ public class CrawlerDocument extends Document {
         JSONObject json = index.query(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id);
         if (json == null) throw new IOException("no document with id " + id + " in index");
         return new CrawlerDocument(json);
+    }
+
+    public static void storeBulk(Index index, Collection<CrawlerDocument> documents) throws IOException {
+        if (index == null) return;
+        Map<String, JSONObject> map = new HashMap<>();
+        documents.forEach(crawlerDocument -> {
+            String id = Digest.encodeMD5Hex(crawlerDocument.getUrl());
+            map.put(id, crawlerDocument);
+        });
+        index.addBulk(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, map);
     }
 
     public CrawlerDocument store(Index index) throws IOException {
