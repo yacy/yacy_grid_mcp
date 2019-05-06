@@ -22,6 +22,7 @@ package net.yacy.grid.io.index;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.json.JSONArray;
@@ -132,6 +133,17 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
+            public IndexFactory addBulk(String indexName, String typeName, final Map<String, JSONObject> objects) throws IOException {
+                // We do not introduce a new protocol here. Instead we use the add method.
+                // This is not a bad design because grid clients will learn how to use
+                // the native elasticsearch interface to do this in a better way.
+                for (Map.Entry<String, JSONObject> entry: objects.entrySet()) {
+                    add(indexName, typeName, entry.getKey(), entry.getValue());
+                }
+                return MCPIndexFactory.this;
+            }
+
+            @Override
             public boolean exist(String indexName, String typeName, String id) throws IOException {
                 params.put("index", indexName);
                 params.put("type", typeName);
@@ -148,8 +160,8 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             public Set<String> existBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
-                // we do not introduce a new protocol here. Instead we use the exist method
-                // this is not a bad design because grid clients will learn how to use
+                // We do not introduce a new protocol here. Instead we use the exist method.
+                // This is not a bad design because grid clients will learn how to use
                 // the native elasticsearch interface to do this in a better way.
                 Set<String> exists = new HashSet<>();
                 for (String id: ids) {

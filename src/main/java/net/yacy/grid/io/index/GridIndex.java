@@ -21,6 +21,7 @@ package net.yacy.grid.io.index;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 import org.json.JSONObject;
@@ -138,6 +139,39 @@ public class GridIndex implements Index {
         }
         if (this.mcpIndexFactory != null) try {
             this.mcpIndexFactory.getIndex().add(indexName, typeName, id, object);
+            //Data.logger.info("Index/Client: add mcp service '" + mcp_host + "', object with id:" + id);
+            return this.mcpIndexFactory;
+        } catch (IOException e) {
+            Data.logger.debug("Index/Client: add mcp service '" + mcp_host + "',mcp fail", e);
+        }
+        throw new IOException("Index/Client: add mcp service: no factory found!");
+    }
+    
+    @Override
+    public IndexFactory addBulk(String indexName, String typeName, final Map<String, JSONObject> objects) throws IOException {
+        if (this.elasticIndexFactory == null && this.elastic_address != null) {
+            // try to connect again..
+            connectElasticsearch(this.elastic_address);
+        }
+        if (this.elasticIndexFactory == null) {
+            // learn that the address did not work to prevent that this method is used again
+            this.elastic_address = null;
+        } else try {
+            this.elasticIndexFactory.getIndex().addBulk(indexName, typeName, objects);
+            //Data.logger.info("Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
+            return this.elasticIndexFactory;
+        } catch (IOException e) {
+            Data.logger.debug("Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+        }
+        if (this.mcpIndexFactory == null && this.mcp_host != null) {
+            // try to connect again..
+            connectMCP(this.mcp_host, this.mcp_port);
+            if (this.mcpIndexFactory == null) {
+                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+            }
+        }
+        if (this.mcpIndexFactory != null) try {
+            this.mcpIndexFactory.getIndex().addBulk(indexName, typeName, objects);
             //Data.logger.info("Index/Client: add mcp service '" + mcp_host + "', object with id:" + id);
             return this.mcpIndexFactory;
         } catch (IOException e) {

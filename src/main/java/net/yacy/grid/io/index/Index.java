@@ -21,6 +21,7 @@ package net.yacy.grid.io.index;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 import org.json.JSONObject;
@@ -37,6 +38,8 @@ public interface Index {
     public IndexFactory checkConnection() throws IOException;
 
     public IndexFactory add(String indexName, String typeName, final String id, JSONObject object) throws IOException;
+    
+    public IndexFactory addBulk(String indexName, String typeName, final Map<String, JSONObject> objects) throws IOException;
 
     public boolean exist(String indexName, String typeName, String id) throws IOException;
 

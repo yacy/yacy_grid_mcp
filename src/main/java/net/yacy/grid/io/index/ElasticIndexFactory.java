@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import org.elasticsearch.common.unit.Fuzziness;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import net.yacy.grid.io.index.ElasticsearchClient.BulkEntry;
 import net.yacy.grid.mcp.Data;
 import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.JSONList;
@@ -89,6 +91,16 @@ public class ElasticIndexFactory implements IndexFactory {
 
             @Override
             public IndexFactory checkConnection() throws IOException {
+                return ElasticIndexFactory.this;
+            }
+
+            @Override
+            public IndexFactory addBulk(String indexName, String typeName, final Map<String, JSONObject> objects) throws IOException {
+                List<BulkEntry> entries = new ArrayList<>();
+                objects.forEach((id, obj) -> {
+                    entries.add(new BulkEntry(id, typeName, null, obj.toMap()));
+                });
+                ElasticIndexFactory.this.elasticsearchClient.writeMapBulk(indexName, entries);
                 return ElasticIndexFactory.this;
             }
 
