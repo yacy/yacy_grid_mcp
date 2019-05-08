@@ -42,6 +42,13 @@ public class CrawlstartDocument extends Document {
         super(obj);
     }
 
+    public static Map<String, CrawlstartDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
+        Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.CRAWLSTART_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, ids);
+        Map<String, CrawlstartDocument> docmap = new HashMap<>();
+        jsonmap.forEach((id, doc) -> docmap.put(id, new CrawlstartDocument(doc)));
+        return docmap;
+    }
+
     public static CrawlstartDocument load(Index index, String crawlid) throws IOException {
         JSONObject json = index.query(GridIndex.CRAWLSTART_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, crawlid);
         if (json == null) throw new IOException("no crawl start with id " + crawlid + " in index");

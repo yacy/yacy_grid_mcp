@@ -53,6 +53,13 @@ public class CrawlerDocument extends Document {
     public CrawlerDocument(JSONObject obj) {
         super(obj);
     }
+    
+    public static Map<String, CrawlerDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
+        Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, ids);
+        Map<String, CrawlerDocument> docmap = new HashMap<>();
+        jsonmap.forEach((id, doc) -> docmap.put(id, new CrawlerDocument(doc)));
+        return docmap;
+    }
 
     public static CrawlerDocument load(Index index, String id) throws IOException {
         JSONObject json = index.query(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id);

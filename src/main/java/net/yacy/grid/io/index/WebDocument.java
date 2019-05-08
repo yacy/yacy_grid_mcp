@@ -19,7 +19,10 @@
 
 package net.yacy.grid.io.index;
 
+import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -27,6 +30,8 @@ import java.util.regex.Pattern;
 
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.json.JSONObject;
+
+import net.yacy.grid.tools.MultiProtocolURL;
 
 public class WebDocument extends Document {
     
@@ -42,9 +47,41 @@ public class WebDocument extends Document {
         super(obj.toMap());
     }
     
+    public static Map<String, WebDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
+        Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.WEB_INDEX_NAME, "crawler", ids);
+        Map<String, WebDocument> docmap = new HashMap<>();
+        jsonmap.forEach((id, doc) -> docmap.put(id, new WebDocument(doc)));
+        return docmap;
+    }
+
+    public static WebDocument load(Index index, String id) throws IOException {
+        JSONObject json = index.query(GridIndex.WEB_INDEX_NAME, "crawler", id);
+        if (json == null) throw new IOException("no document with id " + id + " in index");
+        return new WebDocument(json);
+    }
+
+    public static void storeBulk(Index index, Collection<WebDocument> documents) throws IOException {
+        if (index == null) return;
+        Map<String, JSONObject> map = new HashMap<>();
+        documents.forEach(webDocument -> {
+            map.put(webDocument.getId(), webDocument);
+        });
+        index.addBulk(GridIndex.WEB_INDEX_NAME, "crawler", map);
+    }
+
+    public WebDocument store(Index index) throws IOException {
+        if (index == null) return this;
+        index.add(GridIndex.WEB_INDEX_NAME, "crawler", getId(), this);
+        return this;
+    }
+    
     public String getTitle() {
         List<String> title = super.getStrings(WebMapping.title);
         return title == null || title.isEmpty() ? "" : title.iterator().next().toString();
+    }
+    
+    public String getId() {
+        return MultiProtocolURL.getDigest(getLink());
     }
     
     public String getLink() {
