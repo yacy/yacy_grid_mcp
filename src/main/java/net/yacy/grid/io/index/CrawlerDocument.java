@@ -71,16 +71,30 @@ public class CrawlerDocument extends Document {
         if (index == null) return;
         Map<String, JSONObject> map = new HashMap<>();
         documents.forEach(crawlerDocument -> {
-            String id = Digest.encodeMD5Hex(crawlerDocument.getUrl());
-            map.put(id, crawlerDocument);
+            if (crawlerDocument != null) {
+                String url = crawlerDocument.getUrl();
+                if (url != null && url.length() > 0) {
+                    String id = Digest.encodeMD5Hex(url);
+                    map.put(id, crawlerDocument);
+                } else {
+                    assert false : "url not set / storeBulk";
+                }
+            } else {
+                assert false : "document is null";
+            }
         });
         index.addBulk(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, map);
     }
 
     public CrawlerDocument store(Index index) throws IOException {
         if (index == null) return this;
-        String id = Digest.encodeMD5Hex(this.getUrl());
-        index.add(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
+        String url = getUrl();
+        if (url != null && url.length() > 0) {
+            String id = Digest.encodeMD5Hex(url);
+            index.add(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
+        } else {
+            assert false : "url not set / store";
+        }
         return this;
     }
 
