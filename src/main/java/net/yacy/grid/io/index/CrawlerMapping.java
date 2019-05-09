@@ -24,10 +24,12 @@ public enum CrawlerMapping implements MappingDeclaration {
     crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
     mustmatch_s(MappingType.string, true, true, false, true, true, "must-match pattern string of the crawl start", true),
     collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation", false, "collections", "Collections", "String", "collection"),
-    url_s(MappingType.string, true, true, false, true, true, "url of the document", true),
+    start_url_s(MappingType.string, true, true, false, true, true, "The start URL", true),
+    start_ssld_s(MappingType.string, true, true, false, true, true, "The smart second level domain of the start URL", true),
     init_date_dt(MappingType.date, true, true, false, false, false, "date when the crawl was started"),
     status_date_dt(MappingType.date, true, true, false, false, false, "date of latest status change"),
     status_s(MappingType.string, true, true, false, true, true, "current crawl status", true),
+    url_s(MappingType.string, true, true, false, true, true, "url of the document", true),
     comment_t(MappingType.text_general, true, true, false, false, true, "comment to crawl status; error messages etc.");
 
     private Mapping mapping;

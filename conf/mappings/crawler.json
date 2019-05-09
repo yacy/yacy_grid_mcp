@@ -8,7 +8,10 @@
   "collection_sxt": {
     "type": "keyword"
   },
-  "url_s": {
+  "start_url_s": {
+    "type": "keyword"
+  },
+  "start_ssld_s": {
     "type": "keyword"
   },
   "init_date_dt": {
@@ -18,6 +21,9 @@
     "type": "date"
   },
   "status_s": {
+    "type": "keyword"
+  },
+  "url_s": {
     "type": "keyword"
   },
   "comment_t": {

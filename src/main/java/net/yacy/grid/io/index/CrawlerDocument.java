@@ -33,7 +33,7 @@ public class CrawlerDocument extends Document {
 
     public static enum Status {
         rejected,     // the crawler has rejected the urls based on a filter setting
-        created,      // the crawler has created the url and it was handed over to the loader
+        accepted,     // the crawler has accepted the url and it was handed over to the loader
         load_failed,  // the loader failed to load the document
         loaded,       // the loader has loaded the document and passed it to the parser
         noncanonical, // in case that the parser rejected further processing
@@ -72,7 +72,7 @@ public class CrawlerDocument extends Document {
         Map<String, JSONObject> map = new HashMap<>();
         documents.forEach(crawlerDocument -> {
             if (crawlerDocument != null) {
-                String url = crawlerDocument.getUrl();
+                String url = crawlerDocument.getURL();
                 if (url != null && url.length() > 0) {
                     String id = Digest.encodeMD5Hex(url);
                     map.put(id, crawlerDocument);
@@ -88,7 +88,7 @@ public class CrawlerDocument extends Document {
 
     public CrawlerDocument store(Index index) throws IOException {
         if (index == null) return this;
-        String url = getUrl();
+        String url = getURL();
         if (url != null && url.length() > 0) {
             String id = Digest.encodeMD5Hex(url);
             index.add(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
@@ -98,12 +98,12 @@ public class CrawlerDocument extends Document {
         return this;
     }
 
-    public CrawlerDocument setCrawlId(String crawlId) {
+    public CrawlerDocument setCrawlID(String crawlId) {
         this.putString(CrawlerMapping.crawl_id_s, crawlId);
         return this;
     }
 
-    public String getCrawlId() {
+    public String getCrawlID() {
         return this.getString(CrawlerMapping.crawl_id_s, "");
     }
 
@@ -125,13 +125,22 @@ public class CrawlerDocument extends Document {
         return this.getStrings(CrawlerMapping.collection_sxt);
     }
 
-    public CrawlerDocument setUrl(String url) {
-        this.putString(CrawlerMapping.url_s, url);
+    public CrawlerDocument setCrawlstartURL(String url) {
+        this.putString(CrawlerMapping.start_url_s, url);
         return this;
     }
 
-    public String getUrl() {
-        return this.getString(CrawlerMapping.url_s, "");
+    public String getCrawstartURL() {
+        return this.getString(CrawlerMapping.start_url_s, "");
+    }
+
+    public CrawlerDocument setCrawlstartSSLD(String url) {
+        this.putString(CrawlerMapping.start_ssld_s, url);
+        return this;
+    }
+
+    public String getCrawstartSSLD() {
+        return this.getString(CrawlerMapping.start_ssld_s, "");
     }
 
     public CrawlerDocument setInitDate(Date date) {
@@ -160,6 +169,15 @@ public class CrawlerDocument extends Document {
     public Status getStatus() {
         String status = this.getString(CrawlerMapping.status_s, "");
         return Status.valueOf(status);
+    }
+
+    public CrawlerDocument setURL(String url) {
+        this.putString(CrawlerMapping.url_s, url);
+        return this;
+    }
+
+    public String getURL() {
+        return this.getString(CrawlerMapping.url_s, "");
     }
 
     public CrawlerDocument setComment(String comment) {

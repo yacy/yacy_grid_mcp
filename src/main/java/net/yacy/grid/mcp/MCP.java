@@ -128,33 +128,33 @@ public class MCP {
                    jsonlist = action.getJSONListAsset(sourceasset_path);
            	   }
                if (jsonlist == null) try {
-        		       Asset<byte[]> asset = Data.gridStorage.load(sourceasset_path);
-        		       byte[] source = asset.getPayload();
-        		       jsonlist = new JSONList(new ByteArrayInputStream(source));
-        	       } catch (IOException e) {
-        	           Data.logger.warn("MCP.processAction could not read asset from storage: " + sourceasset_path, e);
-        	           return false;
-        	       }
-        	   
+                   Asset<byte[]> asset = Data.gridStorage.load(sourceasset_path);
+                   byte[] source = asset.getPayload();
+                   jsonlist = new JSONList(new ByteArrayInputStream(source));
+               } catch (IOException e) {
+                   Data.logger.warn("MCP.processAction could not read asset from storage: " + sourceasset_path, e);
+                   return false;
+               }
+
                // for each document, write search index and crawler index
                indexloop: for (int line = 0; line < jsonlist.length(); line++) try {
-        		       JSONObject json = jsonlist.get(line);
-        		       if (json.has("index")) continue indexloop; // this is an elasticsearch index directive, we just skip that
+                   JSONObject json = jsonlist.get(line);
+                   if (json.has("index")) continue indexloop; // this is an elasticsearch index directive, we just skip that
 
-        		       // write search index
-        		       String date = null;
-        		       if (date == null && json.has(WebMapping.last_modified.getMapping().name())) date = WebMapping.last_modified.getMapping().name();
-        		       if (date == null && json.has(WebMapping.load_date_dt.getMapping().name())) date = WebMapping.load_date_dt.getMapping().name();
-        		       if (date == null && json.has(WebMapping.fresh_date_dt.getMapping().name())) date = WebMapping.fresh_date_dt.getMapping().name();
-        		       String url = json.getString(WebMapping.url_s.getMapping().name());
-        		       String urlid = MultiProtocolURL.getDigest(url);
-        		       boolean created = Data.gridIndex.getElasticClient().writeMap("web", "crawler", urlid, json.toMap());
-        		       Data.logger.info("MCP.processAction indexed " + ((line + 1)/2)  + "/" + jsonlist.length()/2 + "(" + (created ? "created" : "updated")+ "): " + url);
-        		       //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
-        		       //bulk.add(be);
-        		       
+                   // write search index
+                   String date = null;
+                   if (date == null && json.has(WebMapping.last_modified.getMapping().name())) date = WebMapping.last_modified.getMapping().name();
+                   if (date == null && json.has(WebMapping.load_date_dt.getMapping().name())) date = WebMapping.load_date_dt.getMapping().name();
+                   if (date == null && json.has(WebMapping.fresh_date_dt.getMapping().name())) date = WebMapping.fresh_date_dt.getMapping().name();
+                   String url = json.getString(WebMapping.url_s.getMapping().name());
+                   String urlid = MultiProtocolURL.getDigest(url);
+                   boolean created = Data.gridIndex.getElasticClient().writeMap("web", "crawler", urlid, json.toMap());
+                   Data.logger.info("MCP.processAction indexed " + ((line + 1)/2)  + "/" + jsonlist.length()/2 + "(" + (created ? "created" : "updated")+ "): " + url);
+                   //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
+                   //bulk.add(be);
+
                    // write crawler index
-        		       try {
+                   try {
                        CrawlerDocument crawlerDocument = CrawlerDocument.load(Data.gridIndex, urlid);
                        crawlerDocument.setStatus(Status.indexed).setStatusDate(new Date());
                        crawlerDocument.store(Data.gridIndex);
@@ -166,7 +166,7 @@ public class MCP {
                } catch (JSONException je) {
                    Data.logger.warn("", je);
                }
-        	       //Data.index.writeMapBulk("web", bulk);
+               //Data.index.writeMapBulk("web", bulk);
         	       Data.logger.info("MCP.processAction processed indexing message from queue: " + sourceasset_path);
         	       return true;
            } catch (Throwable e) {

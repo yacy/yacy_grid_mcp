@@ -59,24 +59,24 @@ public class CrawlstartDocument extends Document {
         if (index == null) return;
         Map<String, JSONObject> map = new HashMap<>();
         documents.forEach(crawlstartDocument -> {
-            String id = crawlstartDocument.getCrawlId();
+            String id = crawlstartDocument.getCrawlID();
             map.put(id, crawlstartDocument);
         });
         index.addBulk(GridIndex.CRAWLSTART_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, map);
     }
 
     public CrawlstartDocument store(Index index) throws IOException {
-        String crawlid = getCrawlId();
+        String crawlid = getCrawlID();
         index.add(GridIndex.CRAWLSTART_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, crawlid, this);
         return this;
     }
 
-    public CrawlstartDocument setCrawlId(String crawl_id) {
+    public CrawlstartDocument setCrawlID(String crawl_id) {
         this.putString(CrawlstartMapping.crawl_id_s, crawl_id);
         return this;
     }
 
-    public String getCrawlId() {
+    public String getCrawlID() {
         return this.getString(CrawlstartMapping.crawl_id_s, "");
     }
 
@@ -98,13 +98,22 @@ public class CrawlstartDocument extends Document {
         return this.getStrings(CrawlstartMapping.collection_sxt);
     }
 
-    public CrawlstartDocument setCrawlstartUrl(String url) {
-        this.putString(CrawlstartMapping.start_s, url);
+    public CrawlstartDocument setCrawlstartURL(String url) {
+        this.putString(CrawlstartMapping.start_url_s, url);
         return this;
     }
 
-    public String getCrawstartUrl() {
-        return this.getString(CrawlstartMapping.start_s, "");
+    public String getCrawstartURL() {
+        return this.getString(CrawlstartMapping.start_url_s, "");
+    }
+
+    public CrawlstartDocument setCrawlstartSSLD(String url) {
+        this.putString(CrawlstartMapping.start_ssld_s, url);
+        return this;
+    }
+
+    public String getCrawstartSSLD() {
+        return this.getString(CrawlstartMapping.start_ssld_s, "");
     }
 
     public CrawlstartDocument setInitDate(Date date) {

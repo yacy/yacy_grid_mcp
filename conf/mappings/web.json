@@ -3,6 +3,9 @@
   "url_s": {
     "type": "keyword"
   },
+  "crawl_id_s": {
+    "type": "keyword"
+  },
   "last_modified": {
     "type": "date"
   },
@@ -16,6 +19,9 @@
     "type": "text"
   },
   "host_s": {
+    "type": "keyword"
+  },
+  "ssld_s": {
     "type": "keyword"
   },
   "size_i": {

@@ -30,11 +30,13 @@ public enum WebMapping implements MappingDeclaration {
     // mandatory
     url_s(MappingType.string, true, true, false, true, true, "url of document", true), // a 'sku' is a stock-keeping unit, a unique identifier and a default field in unmodified solr.
     //sku(MappingType.text_en_splitting_tight, true, true, false, true, true, "url of document"), // a 'sku' is a stock-keeping unit, a unique identifier and a default field in unmodified solr.
+    crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
     last_modified(MappingType.date, true, true, false, false, false, "last-modified from http header", true), // date document was last modified, needed for media search and /date operator
     load_date_dt(MappingType.date, true, true, false, false, false, "time when resource was loaded", true),
     content_type(MappingType.string, true, true, true, false, false, "mime-type of document", true),
     title(MappingType.text_general, true, true, true, false, true, "content of title tag", true),
-    host_s(MappingType.string, true, true, false, false, true, "host of the url", true, "domains", "Provider", "String", "site"),
+    host_s(MappingType.string, true, true, false, false, true, "the host of the url", true, "domains", "Provider", "String", "site"),
+    ssld_s(MappingType.string, true, true, false, false, true, "the smart second level domain of the url", true, "domains", "Provider", "String", "site"),
     size_i(MappingType.num_integer, true, true, false, false, false, "the size of the raw source", true),// int size();
     failreason_s(MappingType.string, true, true, false, false, false, "fail reason if a page was not loaded. if the page was loaded then this field is empty", true),
     failtype_s(MappingType.string, true, true, false, false, false, "fail type if a page was not loaded. This field is either empty, 'excl' or 'fail'", true),

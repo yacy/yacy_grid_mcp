@@ -75,6 +75,15 @@ public class WebDocument extends Document {
         return this;
     }
     
+    public WebDocument setCrawlId(String crawl_id) {
+        this.putString(WebMapping.crawl_id_s, crawl_id);
+        return this;
+    }
+
+    public String getCrawlId() {
+        return this.getString(WebMapping.crawl_id_s, "");
+    }
+
     public String getTitle() {
         List<String> title = super.getStrings(WebMapping.title);
         return title == null || title.isEmpty() ? "" : title.iterator().next().toString();

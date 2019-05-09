@@ -24,7 +24,8 @@ public enum CrawlstartMapping implements MappingDeclaration {
     crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
     mustmatch_s(MappingType.string, true, true, false, true, true, "must-match pattern string of the crawl start", true),
     collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation", false, "collections", "Collections", "String", "collection"),
-    start_s(MappingType.string, true, true, false, true, true, "The start URL or list of URLs", true),
+    start_url_s(MappingType.string, true, true, false, true, true, "The start URL", true),
+    start_ssld_s(MappingType.string, true, true, false, true, true, "The smart second level domain of the start URL", true),
     init_date_dt(MappingType.date, true, true, false, false, false, "date when the crawl was started"),
     data_o(MappingType.object, false, true, false, true, true, "data object describing the crawl as defined in the api call", true);
 
