@@ -108,12 +108,12 @@ public class CrawlerDocument extends Document {
     }
 
     public CrawlerDocument setMustmatch(String mustmatch) {
-        this.putString(CrawlerMapping.mustmatch_s, mustmatch);
+        this.putString(CrawlerMapping.mustmatch_s, mustmatch.replace("\\", "\\\\"));
         return this;
     }
 
     public String getMustmatch() {
-        return this.getString(CrawlerMapping.mustmatch_s, "");
+        return this.getString(CrawlerMapping.mustmatch_s, "").replace("\\\\", "\\");
     }
 
     public CrawlerDocument setCollections(Collection<String> collections) {
