@@ -97,11 +97,13 @@ public class ElasticIndexFactory implements IndexFactory {
 
             @Override
             public IndexFactory addBulk(String indexName, String typeName, final Map<String, JSONObject> objects) throws IOException {
-                List<BulkEntry> entries = new ArrayList<>();
-                objects.forEach((id, obj) -> {
-                    entries.add(new BulkEntry(id, typeName, null, obj.toMap()));
-                });
-                ElasticIndexFactory.this.elasticsearchClient.writeMapBulk(indexName, entries);
+                if (objects.size() > 0) {
+                    List<BulkEntry> entries = new ArrayList<>();
+                    objects.forEach((id, obj) -> {
+                        entries.add(new BulkEntry(id, typeName, null, obj.toMap()));
+                    });
+                    ElasticIndexFactory.this.elasticsearchClient.writeMapBulk(indexName, entries);
+                }
                 return ElasticIndexFactory.this;
             }
 
