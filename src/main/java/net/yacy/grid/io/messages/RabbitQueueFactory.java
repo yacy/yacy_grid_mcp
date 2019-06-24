@@ -230,10 +230,10 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             }
         }
         private int availableInternal() throws IOException {
-            int a = channel.queueDeclarePassive(this.queueName).getMessageCount();
+            //int a = channel.queueDeclarePassive(this.queueName).getMessageCount();
             int b = (int) channel.messageCount(this.queueName);
-            assert a == b;
-            return a;
+            //assert a == b;
+            return b;
         }
     }
     
