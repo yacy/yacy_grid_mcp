@@ -54,7 +54,7 @@ public interface Queue<A> {
      * @return the number of messages that can be loaded with receive()
      * @throws IOException
      */
-    public int available() throws IOException;
+    public long available() throws IOException;
 
     /**
      * clear a queue

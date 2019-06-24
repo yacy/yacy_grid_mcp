@@ -81,7 +81,7 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
     @Override
     public AvailableContainer available(Services service, GridQueue queueName) throws IOException {
         QueueFactory<byte[]> factory = getConnector(service);
-        return new AvailableContainer(factory, getConnector(service).getQueue(queueName.name()).available());
+        return new AvailableContainer(factory, queueName.name, getConnector(service).getQueue(queueName.name()).available());
     }
 
     @Override

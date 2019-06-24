@@ -61,7 +61,7 @@ public class PeekService extends ObjectAPIHandler implements APIHandler {
                 YaCyServices service = YaCyServices.valueOf(serviceName);
                 GridQueue queue = new GridQueue(queueName);
                 AvailableContainer available = Data.gridBroker.available(service, queue);
-                int ac = available.getAvailable();
+                long ac = available.getAvailable();
                 String url = available.getFactory().getConnectionURL();
                 if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
                 if (ac > 0) {

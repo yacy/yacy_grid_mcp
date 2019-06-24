@@ -74,7 +74,7 @@ public class InquirySubmitService extends ObjectAPIHandler implements APIHandler
                 GridQueue queue = new GridQueue("inquiry_open");
                 Data.gridBroker.send(YaCyServices.mcp, queue, message.toString().getBytes(StandardCharsets.UTF_8));
                 AvailableContainer available = Data.gridBroker.available(YaCyServices.mcp, queue);
-                int queuepos = available.getAvailable();
+                long queuepos = available.getAvailable();
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 json.put(ObjectAPIHandler.COMMENT_KEY, "inquiry enqueued. Your request is on position " + queuepos);
                 json.put("message", message);

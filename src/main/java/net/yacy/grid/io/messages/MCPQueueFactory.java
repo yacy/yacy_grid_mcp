@@ -118,7 +118,7 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
             }
 
             @Override
-            public int available() throws IOException {
+            public long available() throws IOException {
                 JSONObject response = getResponse(APIServer.getAPI(AvailableService.NAME));
                 
                 // read the broker to store the service definition of the remote queue, if exists

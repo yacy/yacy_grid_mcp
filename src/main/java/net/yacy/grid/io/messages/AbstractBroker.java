@@ -144,7 +144,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     private int leastFilled(AvailableContainer[] ac) throws IOException {
         if (ac.length == 1) return 0;
         int index = random.nextInt(ac.length);
-        int leastAvailable = Integer.MAX_VALUE;
+        long leastAvailable = Long.MAX_VALUE;
         List<Integer> zeroCandidates = new ArrayList<>();
         for (int i = 0; i < ac.length; i++) {
             if (ac[i].getAvailable() == 0) zeroCandidates.add(i);

@@ -21,23 +21,35 @@ package net.yacy.grid.io.messages;
 
 public class AvailableContainer {
 
-    private QueueFactory<?> factory;
-    private int available;
+    private final QueueFactory<?> factory;
+    private final String queue;
+    private final long available;
+    private final long time;
     
-    public AvailableContainer(QueueFactory<?> factory, int available) {
+    public AvailableContainer(QueueFactory<?> factory, String queue, long available) {
         this.factory = factory;
+        this.queue = queue;
         this.available = available;
+        this.time = System.currentTimeMillis();
     }
     
     public QueueFactory<?> getFactory() {
         return this.factory;
     }
     
-    public int getAvailable() {
+    public String getQueue() {
+        return this.queue;
+    }
+    
+    public long getAvailable() {
         return this.available;
     }
     
+    public long getTime() {
+        return this.time;
+    }
+    
     public String toString() {
-        return Integer.toString(available);
+        return Long.toString(available);
     }
 }

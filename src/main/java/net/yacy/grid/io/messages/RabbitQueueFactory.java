@@ -218,7 +218,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
 
         @Override
-        public int available() throws IOException {
+        public long available() throws IOException {
             try {
                 return availableInternal();
             } catch (IOException e) {
@@ -230,7 +230,10 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             }
         }
         private int availableInternal() throws IOException {
-            return channel.queueDeclarePassive(this.queueName).getMessageCount();
+            int a = channel.queueDeclarePassive(this.queueName).getMessageCount();
+            int b = (int) channel.messageCount(this.queueName);
+            assert a == b;
+            return a;
         }
     }
     

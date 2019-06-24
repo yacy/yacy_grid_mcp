@@ -213,7 +213,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         if (this.rabbitQueueFactory == null) {
             this.rabbitMQ_host = null;
         } else try {
-            AvailableContainer ac = new AvailableContainer(this.rabbitQueueFactory, this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).available());
+            AvailableContainer ac = new AvailableContainer(this.rabbitQueueFactory, queueName.name, this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).available());
             return ac;
         } catch (IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: available rabbitMQ service '" + serviceName + "', queue '" + queueName + "',rabbitmq fail", e);
@@ -226,7 +226,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             }
         }
         if (this.mcpQueueFactory != null) try {
-            AvailableContainer ac = new AvailableContainer(this.mcpQueueFactory, this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).available());
+            AvailableContainer ac = new AvailableContainer(this.mcpQueueFactory, queueName.name, this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).available());
             return ac;
         } catch (IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: available mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);

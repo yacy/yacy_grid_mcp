@@ -37,6 +37,7 @@ import ai.susi.mind.SusiAction;
 import ai.susi.mind.SusiThought;
 import net.yacy.grid.Services;
 import net.yacy.grid.YaCyServices;
+import net.yacy.grid.io.messages.AvailableContainer;
 import net.yacy.grid.io.messages.GridQueue;
 import net.yacy.grid.io.messages.MessageContainer;
 import net.yacy.grid.tools.Memory;
@@ -65,6 +66,17 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
     @Override
     public void run() {
+        // print out some stats about the queues
+        try {
+            AvailableContainer[] ac = Data.gridBroker.available(AbstractBrokerListener.this.service, this.queueNames);
+            for (int i = 0; i < ac.length; i++) {
+                Data.logger.info("Service " + this.service.name() + ", queue " + ac[i].getQueue() + ": " + ac[i].getAvailable() + " entries.");
+            }
+        } catch (IOException e) {
+            Data.logger.fatal("Service " + this.service.name() + ": AvailableContainer not available: " + e.getMessage(), e);
+        }
+        
+        // start the listeners
         List<QueueListener> threads = new ArrayList<>();
         int threadsPerQueue = Math.max(1, this.threads / this.queueNames.length);
         Data.logger.info("Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.queueNames.length + " queues");
@@ -98,6 +110,13 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     
         @Override
         public void run() {
+            try {
+                AvailableContainer a = Data.gridBroker.available(AbstractBrokerListener.this.service, this.queueName);
+                Data.logger.info("Started QueueListener for Queue " + a.getQueue() + ", thread " + this.threadCounter + ": " + a.getAvailable() + " entries.");
+            } catch (IOException e) {
+                Data.logger.fatal("Could not load AvailableContainer for Queue " + queueName + ": " + e.getMessage(), e);
+            }
+            
             runloop: while (shallRun) {
             	String payload = "";
                 if (Data.gridBroker == null) {

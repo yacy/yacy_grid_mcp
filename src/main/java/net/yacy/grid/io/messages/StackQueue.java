@@ -67,7 +67,7 @@ public class StackQueue<A> extends AbstractQueue<A> implements Queue<A> {
     }
 
     @Override
-    public int available() throws IOException {
+    public long available() throws IOException {
         return this.semaphore.availablePermits();
     }
     
