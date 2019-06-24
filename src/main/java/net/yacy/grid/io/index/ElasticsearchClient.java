@@ -637,10 +637,13 @@ public class ElasticsearchClient {
         for (BulkItemResponse r: bulkResponse.getItems()) {
             String id = r.getId();
             DocWriteResponse response = r.getResponse();
-            if (response.getResult() == DocWriteResponse.Result.CREATED) result.created.add(id);
-            String err = r.getFailureMessage();
-            if (err != null) {
-                result.errors.put(id, err);
+            if (response == null) {
+                String err = r.getFailureMessage();
+                if (err != null) {
+                    result.errors.put(id, err);
+                }
+            } else {
+                if (response.getResult() == DocWriteResponse.Result.CREATED) result.created.add(id);
             }
         }
         long duration = Math.max(1, System.currentTimeMillis() - start);
