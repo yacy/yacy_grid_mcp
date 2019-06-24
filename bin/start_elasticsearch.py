@@ -46,6 +46,7 @@ else:
         while not checkportopen(9200):
             print('waiting until elasticsearch is running...')
             time.sleep(3)
+    print('elasticsearch is running at http://127.0.0.1:9200/')
         #print('preparing index...')
         #os.chdir(path_apphome)
         #subprocess.call('bin/prepare_index.sh', shell=True)
