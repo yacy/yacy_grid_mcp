@@ -71,7 +71,7 @@ public interface Broker<A> extends Closeable {
      * @throws IOException
      */
     public GridQueue queueName(final Services service, final GridQueue[] queues, final ShardingMethod shardingMethod, int[] priorityDimensions, int priority, final String hashingKey) throws IOException;
-    
+
     /**
      * receive a message from the broker. This method blocks until a message is available
      * @param service the name of the grid service
@@ -81,6 +81,29 @@ public interface Broker<A> extends Closeable {
      * @throws IOException
      */
     public MessageContainer<A> receive(Services service, GridQueue queue, long timeout, boolean autoAck) throws IOException;
+
+    /**
+     * acknowledge a message. This MUST be used to remove a message from the broker if
+     * receive() was used with autoAck=false.
+     * @param service the name of the grid service
+     * @param queue the queue of the service
+     * @param deliveryTag the tag as reported by receive()
+     * @return the Queue Factory which was used to create this broker
+     * @throws IOException
+     */
+    public QueueFactory<A> acknowledge(Services service, GridQueue queue, long deliveryTag) throws IOException;
+
+    /**
+     * Messages which had been received with autoAck=false but were not acknowledged with
+     * the acknowledge() method are neither dequeued nor available for another receive.
+     * They can only be accessed using a recover call; this moves all not-acknowledge messages
+     * back to the queue to be available again for receive.
+     * @param service the name of the grid service
+     * @param queue the queue of the service
+     * @return the Queue Factory which was used to create this broker
+     * @throws IOException
+     */
+    public QueueFactory<A> recover(Services service, GridQueue queue) throws IOException;
 
     /**
      * count the number of available messages on the broker

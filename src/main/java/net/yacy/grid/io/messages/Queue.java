@@ -31,7 +31,7 @@ public interface Queue<A> {
      * @throws IOException in case that the connection is invalid
      */
     public void checkConnection() throws IOException;
-    
+
     /**
      * send a message to the queue
      * @param message
@@ -39,7 +39,7 @@ public interface Queue<A> {
      * @throws IOException
      */
     public Queue<A> send(A message) throws IOException;
-    
+
     /**
      * receive a message from the queue. The method blocks until a message is available
      * @param timeout for blocking in milliseconds. if negative the method blocks forever
@@ -49,7 +49,24 @@ public interface Queue<A> {
      * @throws IOException
      */
     public MessageContainer<A> receive(long timeout, boolean autoAck) throws IOException;
-    
+
+    /**
+     * acknowledge a message. This MUST be used to remove a message from the broker if
+     * receive() was used with autoAck=false.
+     * @param deliveryTag the tag as reported by receive()
+     * @throws IOException
+     */
+    public void acknowledge(long deliveryTag) throws IOException;
+
+    /**
+     * Messages which had been received with autoAck=false but were not acknowledged with
+     * the acknowledge() method are neither dequeued nor available for another receive.
+     * They can only be accessed using a recover call; this moves all not-acknowledge messages
+     * back to the queue to be available again for receive.
+     * @throws IOException
+     */
+    public void recover() throws IOException;
+
     /**
      * check how many messages are in the queue
      * @return the number of messages that can be loaded with receive()

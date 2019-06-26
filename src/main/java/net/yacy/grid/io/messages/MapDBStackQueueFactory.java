@@ -136,6 +136,16 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
         }
 
         @Override
+        public void acknowledge(long deliveryTag) throws IOException {
+            // do nothing, this class does not provide a message acknowledge function
+        }
+
+        @Override
+        public void recover() throws IOException {
+            // do nothing, this class does not provide a message acknowledge function
+        }
+
+        @Override
         public long available() throws IOException {
             return this.semaphore.availablePermits();
         }

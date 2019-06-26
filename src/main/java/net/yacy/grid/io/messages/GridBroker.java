@@ -175,7 +175,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         } else try {
             Queue<byte[]> rabbitQueue = this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName));
             MessageContainer<byte[]> mc = rabbitQueue.receive(timeout, autoAck);
-            if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: received rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
+            if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: received rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
             return mc;
         } catch (IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: receive rabbitMQ service '" + serviceName + "', queue '" + queueName + "',rabbitmq fail", e);

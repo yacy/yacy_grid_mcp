@@ -31,8 +31,10 @@ import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Data;
 import net.yacy.grid.mcp.api.info.StatusService;
+import net.yacy.grid.mcp.api.messages.AcknowledgeService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
 import net.yacy.grid.mcp.api.messages.ReceiveService;
+import net.yacy.grid.mcp.api.messages.RecoverService;
 import net.yacy.grid.mcp.api.messages.SendService;
 
 public class MCPQueueFactory implements QueueFactory<byte[]> {
@@ -114,6 +116,27 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                         return new MessageContainer<byte[]>(MCPQueueFactory.this, message == null ? null : message.getBytes(StandardCharsets.UTF_8), deliveryTag);
                     }
                     throw new IOException("bad response from MCP: success but no message key");
+                } else {
+                    throw handleError(response);
+                }
+            }
+
+            @Override
+            public void acknowledge(long deliveryTag) throws IOException {
+                params.put("deliveryTag", Long.toString(deliveryTag));
+                JSONObject response = getResponse(APIServer.getAPI(AcknowledgeService.NAME));
+                if (success(response)) {
+                    connectMCP(response);
+                } else {
+                    throw handleError(response);
+                }
+            }
+
+            @Override
+            public void recover() throws IOException {
+                JSONObject response = getResponse(APIServer.getAPI(RecoverService.NAME));
+                if (success(response)) {
+                    connectMCP(response);
                 } else {
                     throw handleError(response);
                 }

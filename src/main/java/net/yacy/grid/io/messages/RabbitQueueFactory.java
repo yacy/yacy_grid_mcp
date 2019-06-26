@@ -181,7 +181,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             }
             return this;
         }
-        
+
         @Override
         public MessageContainer<byte[]> receive(long timeout, boolean autoAck) throws IOException {
             if (timeout <= 0) timeout = Long.MAX_VALUE;
@@ -206,6 +206,33 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             if (ee == null) return null;
             throw new IOException(ee.getMessage());
         }
+
+        @Override
+        public void acknowledge(long deliveryTag) throws IOException {
+            try {
+                channel.basicAck(deliveryTag, false);
+            } catch (IOException e) {
+                // try again
+                Data.logger.warn("RabbitQueueFactory.acknowledge: re-connecting broker");
+                RabbitQueueFactory.this.init();
+                connect() ;
+                channel.basicAck(deliveryTag, false);
+            }
+        }
+
+        @Override
+        public void recover() throws IOException {
+            try {
+                channel.basicRecover(true);
+            } catch (IOException e) {
+                // try again
+                Data.logger.warn("RabbitQueueFactory.recover: re-connecting broker");
+                RabbitQueueFactory.this.init();
+                connect() ;
+                channel.basicRecover(true);
+            }
+        }
+
         @Override
         public long available() throws IOException {
             try {
