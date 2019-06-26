@@ -80,7 +80,7 @@ public interface Broker<A> extends Closeable {
      * @return the message inside a message container
      * @throws IOException
      */
-    public MessageContainer<A> receive(Services service, GridQueue queue, long timeout) throws IOException;
+    public MessageContainer<A> receive(Services service, GridQueue queue, long timeout, boolean autoAck) throws IOException;
 
     /**
      * count the number of available messages on the broker

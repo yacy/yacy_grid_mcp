@@ -48,16 +48,18 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     private final Services service;
     private final GridQueue[] queueNames;
     private final int threads;
+    private final boolean autoAck;
     //private final ThreadPoolExecutor threadPool;
 
     public AbstractBrokerListener(final YaCyServices service, final int threads) {
-        this(service, service.getQueues(), threads);
+        this(service, service.getQueues(), threads, true);
     }
-    
-    public AbstractBrokerListener(final Services service, final GridQueue[] queueNames, final int threads) {
+
+    public AbstractBrokerListener(final Services service, final GridQueue[] queueNames, final int threads, final boolean autoAck) {
         this.service = service;
         this.queueNames = queueNames;
         this.threads = threads;
+        this.autoAck = autoAck;
         //	this.threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(this.threads);
         this.shallRun = true;
     }
@@ -82,7 +84,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         Data.logger.info("Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.queueNames.length + " queues");
         for (GridQueue queue: this.queueNames) {
             for (int qc = 0; qc < threadsPerQueue; qc++) {
-                QueueListener listener = new QueueListener(queue, qc);
+                QueueListener listener = new QueueListener(queue, qc, this.autoAck);
                 listener.start();
                 threads.add(listener);
                 Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + queue + " started thread " + qc);
@@ -102,10 +104,12 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     private class QueueListener extends Thread {
         private final GridQueue queueName;
         private final int threadCounter;
+        private final boolean autoAck;
         
-        public QueueListener(final GridQueue queueName, final int threadCounter) {
+        public QueueListener(final GridQueue queueName, final int threadCounter, final boolean autoAck) {
             this.queueName = queueName;
             this.threadCounter = threadCounter;
+            this.autoAck = autoAck;
         }
     
         @Override
@@ -129,7 +133,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     }
                     
                 	    // wait until message arrives
-                    MessageContainer<byte[]> mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000);
+                    MessageContainer<byte[]> mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000, autoAck);
                     if (mc == null || mc.getPayload() == null || mc.getPayload().length == 0) {
                         try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                         continue runloop;

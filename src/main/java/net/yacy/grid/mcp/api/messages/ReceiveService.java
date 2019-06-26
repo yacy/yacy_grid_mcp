@@ -53,11 +53,12 @@ public class ReceiveService extends ObjectAPIHandler implements APIHandler {
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
         String serviceName = call.get("serviceName", "");
         String queueName = call.get("queueName", "");
+        boolean autoAck = "true".equals(call.get("autoAck", "true"));
         long timeout = call.get("timeout", -1);
         JSONObject json = new JSONObject(true);
         if (serviceName.length() > 0 && queueName.length() > 0) {
             try {
-                MessageContainer<byte[]> message = Data.gridBroker.receive(YaCyServices.valueOf(serviceName), new GridQueue(queueName), timeout);
+                MessageContainer<byte[]> message = Data.gridBroker.receive(YaCyServices.valueOf(serviceName), new GridQueue(queueName), timeout, autoAck);
                 // message can be null if a timeout occurred
                 if (message == null) {
                     json.put(ObjectAPIHandler.SUCCESS_KEY, false);
@@ -66,6 +67,7 @@ public class ReceiveService extends ObjectAPIHandler implements APIHandler {
                     String url = message.getFactory().getConnectionURL();
                     byte[] payload = message.getPayload();
                     json.put(ObjectAPIHandler.MESSAGE_KEY, payload == null ? "" : new String(payload, StandardCharsets.UTF_8));
+                    json.put(ObjectAPIHandler.DELIVERY_TAG, message.getDeliveryTag());
                     json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                     if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
                 }

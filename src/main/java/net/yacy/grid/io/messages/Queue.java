@@ -44,10 +44,11 @@ public interface Queue<A> {
      * receive a message from the queue. The method blocks until a message is available
      * @param timeout for blocking in milliseconds. if negative the method blocks forever
      * or until a message is submitted. 
+     * @oaram autoAck if true the received message is autoAck'ed. If false, the message must be acknowledged to free up resources
      * @return the message or null if a timeout occurred
      * @throws IOException
      */
-    public A receive(long timeout) throws IOException;
+    public MessageContainer<A> receive(long timeout, boolean autoAck) throws IOException;
     
     /**
      * check how many messages are in the queue

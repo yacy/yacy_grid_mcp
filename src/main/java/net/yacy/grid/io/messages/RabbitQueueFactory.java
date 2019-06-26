@@ -20,6 +20,7 @@
 package net.yacy.grid.io.messages;
 
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 
@@ -92,7 +93,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
 
     @Override
     public String getConnectionURL() {
-    	return PROTOCOL_PREFIX +
+        return PROTOCOL_PREFIX +
                (this.username != null && this.username.length() > 0 ? username + (this.password != null && this.password.length() > 0 ? ":" + this.password : "") + "@" : "") +
                this.getHost() + ((this.hasDefaultPort() ? "" : ":" + this.getPort()));
     }
@@ -133,22 +134,22 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
 
         private void connect() throws IOException {
-            	Map<String, Object> arguments = new HashMap<>();
-            	arguments.put("x-queue-mode", "lazy"); // we want to minimize memory usage; see http://www.rabbitmq.com/lazy-queues.html
-            	boolean lazys = lazy.get();
-            	try {
-            		RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, lazys ? arguments : null);
-            	} catch (AlreadyClosedException e) {
-            		lazys = !lazys;
-            		try {
-            		    channel = connection.createChannel();
-            		    // may happen if a queue was previously not declared "lazy". So we try non-lazy queue setting now.
-            		    RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, lazys ? arguments : null);
-            		    // if this is successfull, set the new lazy value
-            		    lazy.set(lazys);
-            		} catch (AlreadyClosedException ee) {
-            		    throw new IOException(ee.getMessage());
-            		}
+                Map<String, Object> arguments = new HashMap<>();
+                arguments.put("x-queue-mode", "lazy"); // we want to minimize memory usage; see http://www.rabbitmq.com/lazy-queues.html
+                boolean lazys = lazy.get();
+                try {
+                    RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, lazys ? arguments : null);
+                } catch (AlreadyClosedException e) {
+                    lazys = !lazys;
+                    try {
+                        channel = connection.createChannel();
+                        // may happen if a queue was previously not declared "lazy". So we try non-lazy queue setting now.
+                        RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, lazys ? arguments : null);
+                        // if this is successfull, set the new lazy value
+                        lazy.set(lazys);
+                    } catch (AlreadyClosedException ee) {
+                        throw new IOException(ee.getMessage());
+                    }
             }
         }
         
@@ -182,29 +183,18 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
         
         @Override
-        public byte[] receive(long timeout) throws IOException {
-            try {
-                return receiveInternal(timeout);
-            } catch (IOException e) {
-                // try again
-                Data.logger.warn("RabbitQueueFactory.receive: re-connecting broker");
-                RabbitQueueFactory.this.init();
-                connect() ;
-                return receiveInternal(timeout);
-            }
-        }
-        private byte[] receiveInternal(long timeout) throws IOException {
+        public MessageContainer<byte[]> receive(long timeout, boolean autoAck) throws IOException {
             if (timeout <= 0) timeout = Long.MAX_VALUE;
             long termination = timeout <= 0 || timeout == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeout;
             Throwable ee = null;
             while (System.currentTimeMillis() < termination) {
                 try {
-                    GetResponse response = channel.basicGet(this.queueName, true);
+                    GetResponse response = channel.basicGet(this.queueName, autoAck);
                     if (response != null) {
-                    	    //Envelope envelope = response.getEnvelope();
-                    	    //long deliveryTag = envelope.getDeliveryTag();
+                        Envelope envelope = response.getEnvelope();
+                        long deliveryTag = envelope.getDeliveryTag();
                         //channel.basicAck(deliveryTag, false);
-                        return response.getBody();
+                        return new MessageContainer<byte[]>(RabbitQueueFactory.this, response.getBody(), deliveryTag);
                     }
                     //Data.logger.warn("receive failed: response empty");
                 } catch (Throwable e) {
@@ -216,7 +206,6 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             if (ee == null) return null;
             throw new IOException(ee.getMessage());
         }
-
         @Override
         public long available() throws IOException {
             try {
@@ -254,7 +243,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         try {
             qc = new RabbitQueueFactory("127.0.0.1", -1, null, null, true);
             qc.getQueue("test").send("Hello World".getBytes());
-            System.out.println(qc.getQueue("test2").receive(60000));
+            System.out.println(qc.getQueue("test2").receive(60000, true));
             qc.close();
         } catch (IOException e) {
             Data.logger.warn("", e);

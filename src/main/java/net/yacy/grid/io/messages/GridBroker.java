@@ -165,41 +165,38 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
 
     @Override
-    public MessageContainer<byte[]> receive(Services serviceName, GridQueue queueName, long timeout) throws IOException {
+    public MessageContainer<byte[]> receive(Services serviceName, GridQueue queueName, long timeout, boolean autoAck) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
             // try to connect again..
             connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
         }
-      	if (this.rabbitQueueFactory == null) {
-      	    this.rabbitMQ_host = null;
-      	} else try {
-        	    Queue<byte[]> rabbitQueue = this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName));
-        	    byte[] message = rabbitQueue.receive(timeout);
-        	    if (message == null) return null; // this is not a failure, we actually have a connection but we do not get content because the queue may be empty
-            MessageContainer<byte[]> mc = new MessageContainer<byte[]>(this.rabbitQueueFactory, message);
+        if (this.rabbitQueueFactory == null) {
+            this.rabbitMQ_host = null;
+        } else try {
+            Queue<byte[]> rabbitQueue = this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName));
+            MessageContainer<byte[]> mc = rabbitQueue.receive(timeout, autoAck);
             if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: received rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
             return mc;
         } catch (IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: receive rabbitMQ service '" + serviceName + "', queue '" + queueName + "',rabbitmq fail", e);
         }
-        	if (this.mcpQueueFactory == null && this.mcp_host != null) {
-        	    // try to connect again..
-        	    connectMCP(this.mcp_host, this.mcp_port);
+        if (this.mcpQueueFactory == null && this.mcp_host != null) {
+            // try to connect again..
+            connectMCP(this.mcp_host, this.mcp_port);
             if (this.mcpQueueFactory == null) {
                 Data.logger.warn("Broker/Client: FATAL: connection to MCP lost! receive mcp service '" + serviceName + "', queue '" + queueName);
             }
         }
-        	if (this.mcpQueueFactory != null) try {
+        if (this.mcpQueueFactory != null) try {
             Queue<byte[]> mcpQueue = this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName));
-            byte[] message = mcpQueue.receive(timeout);
-            MessageContainer<byte[]> mc = new MessageContainer<byte[]>(this.mcpQueueFactory, message);
+            MessageContainer<byte[]> mc = mcpQueue.receive(timeout, autoAck);
             if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: receive mcp service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
             return mc;
         } catch (IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: receive mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
         }
         Data.logger.info("Broker/Client: receive() on peer broker/local db");
-        MessageContainer<byte[]> mc = super.receive(serviceName, queueName, timeout);
+        MessageContainer<byte[]> mc = super.receive(serviceName, queueName, timeout, autoAck);
         if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: received peer broker/local db service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
         return mc;  
     }

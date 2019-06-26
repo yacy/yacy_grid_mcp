@@ -23,9 +23,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import net.yacy.grid.io.db.MapDBSortedMap;
 import net.yacy.grid.io.db.MapStack;
+import net.yacy.grid.io.db.Stack;
 import net.yacy.grid.mcp.Data;
 
 /**
@@ -34,8 +37,8 @@ import net.yacy.grid.mcp.Data;
 public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
 
     private File location;
-    private Map<String, StackQueue<byte[]>> queues;
-    
+    private Map<String, StackQueue> queues;
+
     /**
      * initialize a stack factory based on a file stack
      * @param storageLocationPath the path where the stacks shall be stored
@@ -76,17 +79,17 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
      */
     @Override
     public Queue<byte[]> getQueue(String queueName) throws IOException {
-        StackQueue<byte[]> queue = queues.get(queueName);
+        StackQueue queue = queues.get(queueName);
         if (queue != null) return queue;
         synchronized (this) {
             queue = queues.get(queueName);
             if (queue != null) return queue;
-            queue = new StackQueue<byte[]>(new MapStack<byte[]>(new MapDBSortedMap(new File(this.location, queueName))));
+            queue = new StackQueue(new MapStack<byte[]>(new MapDBSortedMap(new File(this.location, queueName))));
             this.queues.put(queueName, queue);
             return queue;
         }
     }
-    
+
     /**
      * Close the Factory
      */
@@ -95,23 +98,55 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
         this.queues.values().forEach(queue -> queue.close());
     }
 
-    public static void main(String[] args) {
-    	File location = new File("/tmp/queuetest");
-    	location.mkdirs();
-    	try {
-			StackQueue<byte[]> queue = new StackQueue<byte[]>(new MapStack<byte[]>(new MapDBSortedMap(new File(location, "testqueue"))));
-			for (int i = 0; i < 10; i++) {
-				queue.send(("x" + i).getBytes());
-			}
-			queue.close();
-			queue = new StackQueue<byte[]>(new MapStack<byte[]>(new MapDBSortedMap(new File(location, "testqueue"))));
-			while (queue.available() > 0) {
-				System.out.println(new String(queue.receive(1000)));
-			}
-			queue.close();
-		} catch (IOException e) {
-            Data.logger.warn("", e);
-		}
+    public class StackQueue extends AbstractQueue<byte[]> implements Queue<byte[]> {
+
+        private Stack<byte[]> stack;
+        private Semaphore semaphore;
+
+        public StackQueue(Stack<byte[]> backedStack) throws IOException {
+            this.stack = backedStack;
+            this.semaphore = new Semaphore(this.stack.size(), true);
+        }
+
+        @Override
+        public void checkConnection() throws IOException {
+            available();
+        }
+
+        @Override
+        public Queue<byte[]> send(byte[] message) throws IOException {
+            this.stack.push(message);
+            this.semaphore.release();
+            return this;
+        }
+
+        @Override
+        public MessageContainer<byte[]> receive(long timeout, boolean autoAck) throws IOException {
+            try {
+                if (timeout > 0) {
+                    if (!this.semaphore.tryAcquire(timeout, TimeUnit.MILLISECONDS)) return null;
+                } else {
+                    this.semaphore.acquire();
+                }
+                return new MessageContainer<byte[]>(MapDBStackQueueFactory.this, this.stack.pot(), 0);
+            } catch (InterruptedException e) {
+                Data.logger.debug("StackQueue: receive interrupted", e);
+            }
+            return null;
+        }
+
+        @Override
+        public long available() throws IOException {
+            return this.semaphore.availablePermits();
+        }
+
+        public void close() {
+            try {
+                this.stack.close();
+            } catch (IOException e) {
+                Data.logger.debug("StackQueue: close error", e);
+            }
+        }
     }
-    
+
 }

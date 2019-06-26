@@ -92,7 +92,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     
 
     @Override
-    public abstract MessageContainer<A> receive(final Services service, final GridQueue queue, long timeout) throws IOException;
+    public abstract MessageContainer<A> receive(final Services service, final GridQueue queue, long timeout, boolean autoAck) throws IOException;
 
     @Override
     public abstract AvailableContainer available(final Services service, final GridQueue queue) throws IOException;

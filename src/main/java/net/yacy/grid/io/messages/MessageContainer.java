@@ -21,12 +21,14 @@ package net.yacy.grid.io.messages;
 
 public class MessageContainer<A> {
 
-    private QueueFactory<A> factory;
-    private A payload;
+    private final QueueFactory<A> factory;
+    private final A payload;
+    private final long deliveryTag;
     
-    public MessageContainer(QueueFactory<A> factory, A payload) {
+    public MessageContainer(final QueueFactory<A> factory, final A payload, final long deliveryTag) {
         this.factory = factory;
         this.payload = payload;
+        this.deliveryTag = deliveryTag;
     }
     
     public QueueFactory<A> getFactory() {
@@ -35,5 +37,9 @@ public class MessageContainer<A> {
     
     public A getPayload() {
         return this.payload;
+    }
+    
+    public long getDeliveryTag() {
+        return this.deliveryTag;
     }
 }
