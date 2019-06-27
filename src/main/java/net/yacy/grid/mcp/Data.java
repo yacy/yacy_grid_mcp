@@ -81,7 +81,8 @@ public class Data {
         File messagesPath = new File(gridServicePath, "messages");
         if (!messagesPath.exists()) messagesPath.mkdirs();
         boolean lazy = config.containsKey("grid.broker.lazy") && config.get("grid.broker.lazy").equals("true");
-        gridBroker = new GridBroker(lazy, localStorage ? messagesPath : null);
+        boolean autoAck = config.containsKey("grid.broker.autoAck") && config.get("grid.broker.autoAck").equals("true");
+        gridBroker = new GridBroker(localStorage ? messagesPath : null, lazy, autoAck);
 
         // create storage
         File assetsPath = new File(gridServicePath, "assets");

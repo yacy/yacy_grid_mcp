@@ -93,10 +93,10 @@ public class MCP {
             //RetrieveService.class,
             StoreService.class,
             LoadService.class,
-            
+
             // admin services
             InquirySubmitService.class,
-            
+
             // search services
             YaCySearchService.class,
             GSASearchService.class,
@@ -111,8 +111,8 @@ public class MCP {
     public static class IndexListener extends AbstractBrokerListener implements BrokerListener {
 
        public IndexListener(YaCyServices service) {
-			super(service, Runtime.getRuntime().availableProcessors());
-		}
+            super(service, Runtime.getRuntime().availableProcessors());
+        }
 
        @Override
        public boolean processAction(SusiAction action, JSONArray data, String processName, int processNumber) {
@@ -120,13 +120,13 @@ public class MCP {
 
            String sourceasset_path = action.getStringAttr("sourceasset");
            if (sourceasset_path == null || sourceasset_path.length() == 0) return false;
-            
+
            try {
                // get the message with parsed documents
                JSONList jsonlist = null;
                if (action.hasAsset(sourceasset_path)) {
                    jsonlist = action.getJSONListAsset(sourceasset_path);
-           	   }
+                  }
                if (jsonlist == null) try {
                    Asset<byte[]> asset = Data.gridStorage.load(sourceasset_path);
                    byte[] source = asset.getPayload();
@@ -167,8 +167,8 @@ public class MCP {
                    Data.logger.warn("", je);
                }
                //Data.index.writeMapBulk("web", bulk);
-        	       Data.logger.info("MCP.processAction processed indexing message from queue: " + sourceasset_path);
-        	       return true;
+                   Data.logger.info("MCP.processAction processed indexing message from queue: " + sourceasset_path);
+                   return true;
            } catch (Throwable e) {
                Data.logger.warn("MCP.processAction", e);
                return false;
@@ -179,23 +179,23 @@ public class MCP {
     public static void main(String[] args) {
         // initialize environment variables
         System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
-        
+
         // start server
         List<Class<? extends Servlet>> services = new ArrayList<>();
         services.addAll(Arrays.asList(MCP_SERVICES));
         Service.initEnvironment(MCP_SERVICE, services, DATA_PATH, true);
-        
+
         // start listener
         BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);
         new Thread(brokerListener).start();
-        
+
         // start server
         Data.logger.info("started MCP");
         Data.logger.info(new GitTool().toString());
         Data.logger.info("you can now search using the query api, i.e.:");
         Data.logger.info("curl http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=test");
         Service.runService(null);
-        
+
         // this line is reached if the server was shut down
         brokerListener.terminate();
     }

@@ -44,13 +44,14 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     private String mcp_host;
     private int mcp_port;
     private boolean lazy;
-    
+    private boolean autoAck;
+
     /**
      * Make a grid-based broker
      * @param lazy if true, support lazy queues in rabbitmq, see http://www.rabbitmq.com/lazy-queues.html
      * @param basePath the local storage path of an db-based queue. This can also be NULL if no local queue is wanted
      */
-    public GridBroker(boolean lazy, File basePath) {
+    public GridBroker(File basePath, boolean lazy, boolean autoAck) {
         super(basePath);
         this.rabbitQueueFactory = null;
         this.mcpQueueFactory = null;
@@ -61,8 +62,13 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         this.mcp_host = null;
         this.mcp_port = -1;
         this.lazy = lazy;
+        this.autoAck = autoAck;
     }
-    
+
+    public boolean isAutoAck() {
+        return this.autoAck;
+    }
+
     public static String serviceQueueName(Services service, GridQueue queue) {
         return service.name() + '_' + queue.name();
     }
@@ -72,7 +78,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         address = address.substring(RabbitQueueFactory.PROTOCOL_PREFIX.length());
         return connectRabbitMQ(Data.getHost(address), Data.getPort(address, "-1"), Data.getUser(address, null), Data.getPassword(address, null));
     }
-    
+
     public boolean connectRabbitMQ(String host, int port, String username, String password) {
         //boolean firsttry = false;
         if (this.rabbitMQ_host == null) {

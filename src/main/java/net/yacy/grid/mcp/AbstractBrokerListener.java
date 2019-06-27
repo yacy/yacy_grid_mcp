@@ -31,8 +31,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import com.rabbitmq.client.AlreadyClosedException;
-
 import ai.susi.mind.SusiAction;
 import ai.susi.mind.SusiThought;
 import net.yacy.grid.Services;
@@ -43,24 +41,18 @@ import net.yacy.grid.io.messages.MessageContainer;
 import net.yacy.grid.tools.Memory;
 
 public abstract class AbstractBrokerListener implements BrokerListener {
-    
+
     public boolean shallRun;
     private final Services service;
     private final GridQueue[] queueNames;
     private final int threads;
-    private final boolean autoAck;
     //private final ThreadPoolExecutor threadPool;
 
-    public AbstractBrokerListener(final YaCyServices service, final int threads) {
-        this(service, service.getQueues(), threads, true);
-    }
-
-    public AbstractBrokerListener(final Services service, final GridQueue[] queueNames, final int threads, final boolean autoAck) {
+    public AbstractBrokerListener(final Services service, final int threads) {
         this.service = service;
-        this.queueNames = queueNames;
+        this.queueNames = service.getQueues();
         this.threads = threads;
-        this.autoAck = autoAck;
-        //	this.threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(this.threads);
+        //    this.threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(this.threads);
         this.shallRun = true;
     }
 
@@ -68,6 +60,15 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
     @Override
     public void run() {
+        // recover unacknowledged entries - possibly from last start
+        for (GridQueue queue: this.queueNames) {
+            try {
+                Data.gridBroker.recover(AbstractBrokerListener.this.service, queue);
+            } catch (IOException e) {
+                Data.logger.fatal("Service " + this.service.name() + ": recover not possible: " + e.getMessage(), e);
+            }
+        }
+
         // print out some stats about the queues
         try {
             AvailableContainer[] ac = Data.gridBroker.available(AbstractBrokerListener.this.service, this.queueNames);
@@ -77,14 +78,14 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         } catch (IOException e) {
             Data.logger.fatal("Service " + this.service.name() + ": AvailableContainer not available: " + e.getMessage(), e);
         }
-        
+
         // start the listeners
         List<QueueListener> threads = new ArrayList<>();
         int threadsPerQueue = Math.max(1, this.threads / this.queueNames.length);
         Data.logger.info("Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.queueNames.length + " queues");
         for (GridQueue queue: this.queueNames) {
             for (int qc = 0; qc < threadsPerQueue; qc++) {
-                QueueListener listener = new QueueListener(queue, qc, this.autoAck);
+                QueueListener listener = new QueueListener(queue, qc, Data.gridBroker.isAutoAck());
                 listener.start();
                 threads.add(listener);
                 Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + queue + " started thread " + qc);
@@ -99,19 +100,19 @@ public abstract class AbstractBrokerListener implements BrokerListener {
             }
         });
     }
-    
-    
+
+
     private class QueueListener extends Thread {
         private final GridQueue queueName;
         private final int threadCounter;
         private final boolean autoAck;
-        
+
         public QueueListener(final GridQueue queueName, final int threadCounter, final boolean autoAck) {
             this.queueName = queueName;
             this.threadCounter = threadCounter;
             this.autoAck = autoAck;
         }
-    
+
         @Override
         public void run() {
             try {
@@ -120,54 +121,55 @@ public abstract class AbstractBrokerListener implements BrokerListener {
             } catch (IOException e) {
                 Data.logger.fatal("Could not load AvailableContainer for Queue " + queueName + ": " + e.getMessage(), e);
             }
-            
-            runloop: while (shallRun) {
-            	String payload = "";
+
+            while (shallRun) {
                 if (Data.gridBroker == null) {
                     try {Thread.sleep(1000);} catch (InterruptedException ee) {}
-                } else try {
+                    continue; // wait until initialization complete
+                }
+                String payload = "";
+                MessageContainer<byte[]> mc = null;
+                try {
                     // check short memory status
                     if (Memory.shortStatus()) {
                         Data.logger.info("AbstractBrokerListener.QueueListener short memory status: assigned = " + Memory.assigned() + ", used = " + Memory.used());
                         Data.clearCaches();
                     }
-                    
-                	    // wait until message arrives
-                    MessageContainer<byte[]> mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000, autoAck);
-                    if (mc == null || mc.getPayload() == null || mc.getPayload().length == 0) {
-                        try {Thread.sleep(1000);} catch (InterruptedException ee) {}
-                        continue runloop;
+
+                    // wait until message arrives
+                    mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000, autoAck);
+                    if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) {
+                        handleMessage(mc, this.queueName.name(), this.threadCounter);
                     }
-                    handleMessage(mc, this.queueName.name(), this.threadCounter);
+                    // try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                 } catch (JSONException e) {
                     // happens if the payload has a wrong form
-                    Data.logger.info("message syntax error with '" + payload + "' in queue: " + e.getMessage(), e);
+                    Data.logger.info("QueueListener: message syntax error with '" + payload + "' in queue: " + e.getMessage(), e);
                     try {Thread.sleep(10000);} catch (InterruptedException ee) {}
-                    continue runloop;
-                } catch (IOException e) {
-                    Data.logger.info("IOException: " + e.getMessage(), e);
-                    try {Thread.sleep(10000);} catch (InterruptedException ee) {}
-                    continue runloop;
-                } catch (AlreadyClosedException e) {
-                    Data.logger.info("error: " + e.getMessage(), e);
-                    try {Thread.sleep(10000);} catch (InterruptedException ee) {}
-                    continue runloop;
                 } catch (Throwable e) {
-                    Data.logger.info("error: " + e.getMessage(), e);
+                    Data.logger.info("QueueListener: " + e.getMessage(), e);
                     try {Thread.sleep(10000);} catch (InterruptedException ee) {}
-                    continue runloop;
+                } finally {
+                    if (!this.autoAck && mc != null && mc.getDeliveryTag() > 0) {
+                        // acknowledge the message
+                        try {
+                            Data.gridBroker.acknowledge(AbstractBrokerListener.this.service, this.queueName, mc.getDeliveryTag());
+                        } catch (IOException e) {
+                            Data.logger.info("QueueListener: cannot acknowledge queue: " + e.getMessage(), e);
+                        }
+                    }
                 }
             }
         }
     }
-    
+
     private void handleMessage(final MessageContainer<byte[]> mc, final String processName, final int processNumber) {
         String payload = new String(mc.getPayload(), StandardCharsets.UTF_8);
         JSONObject json = new JSONObject(new JSONTokener(payload));
         final SusiThought process = new SusiThought(json);
         final JSONArray data = process.getData();
         final List<SusiAction> actions = process.getActions();
-        
+
         // loop though all actions
         actionloop: for (int ac = 0; ac < actions.size(); ac++) {
             SusiAction action = actions.get(ac);
@@ -179,7 +181,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 Data.logger.info("bad message in queue, continue");
                 continue actionloop;
             }
-            
+
             // check if this is the correct queue
             if (!type.equals(this.service.name())) {
                 Data.logger.info("wrong message in queue: " + type + ", continue");
@@ -196,51 +198,51 @@ public abstract class AbstractBrokerListener implements BrokerListener {
             new ActionProcess(action, data, processName, processNumber).run(); // run, not start: we execute this in the current thread
         }
     }
-    
+
     private final class ActionProcess implements Runnable {
-        	
-        	private final SusiAction action;
-        	private final JSONArray data;
-        	private final String processName;
-        	private final int processNumber;
-        	
-        	public ActionProcess(final SusiAction action, final JSONArray data, final String processName, final int processNumber) {
-        		this.action = action;
-        		this.data = data;
-        		this.processName = processName;
-        		this.processNumber = processNumber;
-        	}
-    		
-        	@Override
-		public void run() {
-        	    Thread.currentThread().setName(this.processName + "-" + this.processNumber + "-running");
-			boolean processed = processAction(this.action, this.data, this.processName, this.processNumber);
-	        if (processed) {
-	            // send next embedded action(s) to queue
-	            JSONObject ao = action.toJSONClone();
-	            if (ao.has("actions")) {
-	                JSONArray embeddedActions = ao.getJSONArray("actions");
-	                for (int j = 0; j < embeddedActions.length(); j++) {
-	                    try {
-							loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), data);
-						} catch (UnsupportedOperationException | JSONException e) {
-		                    Data.logger.warn("", e);
-						} catch (IOException e) {
-		                    Data.logger.warn("", e);
-							// do a re-try
-							try {Thread.sleep(10000);} catch (InterruptedException e1) {}
-							try {
-								loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), data);
-							} catch (UnsupportedOperationException | JSONException | IOException ee) {
-			                    Data.logger.warn("", e);
-							}
-						}
-	                }
-	            }
-	        }
-		}	
+
+        private final SusiAction action;
+        private final JSONArray data;
+        private final String processName;
+        private final int processNumber;
+
+        public ActionProcess(final SusiAction action, final JSONArray data, final String processName, final int processNumber) {
+            this.action = action;
+            this.data = data;
+            this.processName = processName;
+            this.processNumber = processNumber;
+        }
+
+        @Override
+        public void run() {
+            Thread.currentThread().setName(this.processName + "-" + this.processNumber + "-running");
+            boolean processed = processAction(this.action, this.data, this.processName, this.processNumber);
+            if (processed) {
+                // send next embedded action(s) to queue
+                JSONObject ao = action.toJSONClone();
+                if (ao.has("actions")) {
+                    JSONArray embeddedActions = ao.getJSONArray("actions");
+                    for (int j = 0; j < embeddedActions.length(); j++) {
+                        try {
+                            loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), data);
+                        } catch (UnsupportedOperationException | JSONException e) {
+                            Data.logger.warn("", e);
+                        } catch (IOException e) {
+                            Data.logger.warn("", e);
+                            // do a re-try
+                            try {Thread.sleep(10000);} catch (InterruptedException e1) {}
+                            try {
+                                loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), data);
+                            } catch (UnsupportedOperationException | JSONException | IOException ee) {
+                                Data.logger.warn("", e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
-    
+
     private void loadNextAction(SusiAction action, JSONArray data) throws UnsupportedOperationException, IOException {
         String type = action.getStringAttr("type");
         if (type == null || type.length() == 0) throw new UnsupportedOperationException("missing type in action");
@@ -259,5 +261,5 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     public void terminate() {
         this.shallRun = false;
     }
-    
+
 }
