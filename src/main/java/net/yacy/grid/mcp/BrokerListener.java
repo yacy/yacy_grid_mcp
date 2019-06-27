@@ -40,6 +40,12 @@ public interface BrokerListener extends Runnable {
     public boolean processAction(SusiAction action, JSONArray data, String processName, int processNumber);
 
     /**
+     * calculate the number of messages that the broker listener processes
+     * @return message per minute
+     */
+    public int messagesPerMinute();
+
+    /**
      * termination of the thread which runs the listener
      */
     public void terminate();
