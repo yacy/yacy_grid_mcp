@@ -98,7 +98,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             return false;
         }
     }
-    
+
     public boolean isRabbitMQConnected() {
         return this.rabbitQueueFactory != null;
     }
@@ -124,7 +124,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
 
     private final static Pattern SPACE2 = Pattern.compile("  ");
-    
+
     private final static String messagePP(byte[] message) {
         if (message == null) return "NULL";
         String m = new String(message, 0, Math.min(1000, message.length), StandardCharsets.UTF_8);
@@ -136,7 +136,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         }
         return m;
     }
-    
+
     @Override
     public QueueFactory<byte[]> send(Services serviceName, GridQueue queueName, byte[] message) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
@@ -153,11 +153,11 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {
-        	    // try to connect again..
-        	    connectMCP(this.mcp_host, this.mcp_port);
-        	    if (this.mcpQueueFactory == null) {
-        	        Data.logger.warn("Broker/Client: FATAL: connection to MCP lost! send mcp service '" + serviceName + "', queue '" + queueName);
-        	    }
+            // try to connect again..
+            connectMCP(this.mcp_host, this.mcp_port);
+            if (this.mcpQueueFactory == null) {
+                Data.logger.warn("Broker/Client: FATAL: connection to MCP lost! send mcp service '" + serviceName + "', queue '" + queueName);
+            }
         }
         if (this.mcpQueueFactory != null) try {
             this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).send(message);
@@ -208,6 +208,72 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     }
 
     @Override
+    public QueueFactory<byte[]> acknowledge(Services serviceName, GridQueue queueName, long deliveryTag) throws IOException {
+        if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
+            // try to connect again..
+            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+        }
+        if (this.rabbitQueueFactory == null) {
+            this.rabbitMQ_host = null;
+        } else try {
+            this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).acknowledge(deliveryTag);
+            Data.logger.info("Broker/Client: acknowledged rabbitMQ service '" + serviceName + "', queue '" + queueName + "', deliveryTag " + deliveryTag);
+            return this.rabbitQueueFactory;
+        } catch (IOException e) {
+            /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: acknowledge rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
+        }
+        if (this.mcpQueueFactory == null && this.mcp_host != null) {
+            // try to connect again..
+            connectMCP(this.mcp_host, this.mcp_port);
+            if (this.mcpQueueFactory == null) {
+                Data.logger.warn("Broker/Client: FATAL: connection to MCP lost! send mcp service '" + serviceName + "', queue '" + queueName);
+            }
+        }
+        if (this.mcpQueueFactory != null) try {
+            this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).acknowledge(deliveryTag);
+            Data.logger.info("Broker/Client: acknowledged mcp service '" + serviceName + "', queue '" + queueName + "', deliveryTag " + deliveryTag);
+            return this.mcpQueueFactory;
+        } catch (IOException e) {
+            /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: acknowledge mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
+        }
+        Data.logger.info("Broker/Client: acknowledge() on peer broker/local db");
+        return super.acknowledge(serviceName, queueName, deliveryTag);
+    }
+
+    @Override
+    public QueueFactory<byte[]> recover(Services serviceName, GridQueue queueName) throws IOException {
+        if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
+            // try to connect again..
+            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+        }
+        if (this.rabbitQueueFactory == null) {
+            this.rabbitMQ_host = null;
+        } else try {
+            this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).recover();
+            Data.logger.info("Broker/Client: recovered rabbitMQ service '" + serviceName + "', queue '" + queueName + "'");
+            return this.rabbitQueueFactory;
+        } catch (IOException e) {
+            /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: recover rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
+        }
+        if (this.mcpQueueFactory == null && this.mcp_host != null) {
+            // try to connect again..
+            connectMCP(this.mcp_host, this.mcp_port);
+            if (this.mcpQueueFactory == null) {
+                Data.logger.warn("Broker/Client: FATAL: connection to MCP lost! recover mcp service '" + serviceName + "', queue '" + queueName);
+            }
+        }
+        if (this.mcpQueueFactory != null) try {
+            this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).recover();
+            Data.logger.info("Broker/Client: recovered mcp service '" + serviceName + "', queue '" + queueName + "'");
+            return this.mcpQueueFactory;
+        } catch (IOException e) {
+            /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: recover mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
+        }
+        Data.logger.info("Broker/Client: recover() on peer broker/local db");
+        return super.recover(serviceName, queueName);
+    }
+
+    @Override
     public AvailableContainer available(Services serviceName, GridQueue queueName) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
             // try to connect again..
@@ -237,7 +303,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         Data.logger.info("Broker/Client: available() on peer broker/local db");
         return super.available(serviceName, queueName);
     }
-    
+
     @Override
     public QueueFactory<byte[]> clear(Services serviceName, GridQueue queueName) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
@@ -270,11 +336,11 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         Data.logger.info("Broker/Client: send() on peer broker/local db");
         return super.clear(serviceName, queueName);
     }
-    
+
     public void close() {
         if (this.rabbitQueueFactory != null) try {this.rabbitQueueFactory.close();} catch (Throwable e) {}
         if (this.mcpQueueFactory != null) try {this.mcpQueueFactory.close();} catch (Throwable e) {}
         try {super.close();} catch (Throwable e) {}
     }
-    
+
 }
