@@ -134,22 +134,31 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
 
         private void connect() throws IOException {
-                Map<String, Object> arguments = new HashMap<>();
-                arguments.put("x-queue-mode", "lazy"); // we want to minimize memory usage; see http://www.rabbitmq.com/lazy-queues.html
-                boolean lazys = lazy.get();
+            Map<String, Object> arguments = new HashMap<>();
+            arguments.put("x-queue-mode", lazy.get() ? "lazy" : "default"); // we want to minimize memory usage; see http://www.rabbitmq.com/lazy-queues.html
+            arguments.put("x-max-length", 10);
+            arguments.put("x-overflow", "reject-publish");
+            try {
+                RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
+            } catch (Throwable e) {
+                // we first try to delete the old queue, but only if it is not used and if empty
+                RabbitQueueFactory.this.channel.queueDelete(this.queueName, true, true);
+
+                // try again
                 try {
-                    RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, lazys ? arguments : null);
-                } catch (AlreadyClosedException e) {
-                    lazys = !lazys;
+                    RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
+                } catch (Throwable ee) {
+                    // that did not work. Try to modify the call to match with the previous queueDeclare
+                    arguments.remove("x-max-length");
+                    arguments.remove("x-overflow");
+                    //arguments.put("x-queue-mode", lazy.get() ? "default" : "lazy");
                     try {
                         channel = connection.createChannel();
-                        // may happen if a queue was previously not declared "lazy". So we try non-lazy queue setting now.
-                        RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, lazys ? arguments : null);
-                        // if this is successfull, set the new lazy value
-                        lazy.set(lazys);
-                    } catch (AlreadyClosedException ee) {
-                        throw new IOException(ee.getMessage());
+                        RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
+                    } catch (AlreadyClosedException eee) {
+                        throw new IOException(eee.getMessage());
                     }
+                }
             }
         }
         
