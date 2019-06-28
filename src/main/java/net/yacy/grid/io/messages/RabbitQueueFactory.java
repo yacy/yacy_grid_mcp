@@ -142,20 +142,26 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                 RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
             } catch (Throwable e) {
                 // we first try to delete the old queue, but only if it is not used and if empty
-                RabbitQueueFactory.this.channel.queueDelete(this.queueName, true, true);
+                try {
+                    channel = connection.createChannel();
+                    RabbitQueueFactory.this.channel.queueDelete(this.queueName, true, true);
+                } catch (Throwable ee) {}
 
                 // try again
                 try {
+                    channel = connection.createChannel();
                     RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
                 } catch (Throwable ee) {
                     // that did not work. Try to modify the call to match with the previous queueDeclare
-                    arguments.remove("x-max-length");
-                    arguments.remove("x-overflow");
+                    if (e.getMessage() != null && e.getMessage().contains("'signedint' but current is none")) {
+                        arguments.remove("x-max-length");
+                        arguments.remove("x-overflow");
+                    }
                     //arguments.put("x-queue-mode", lazy.get() ? "default" : "lazy");
                     try {
                         channel = connection.createChannel();
                         RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
-                    } catch (AlreadyClosedException eee) {
+                    } catch (Throwable eee) {
                         throw new IOException(eee.getMessage());
                     }
                 }
