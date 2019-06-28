@@ -53,10 +53,12 @@ import net.yacy.grid.mcp.api.info.LogService;
 import net.yacy.grid.mcp.api.info.ServicesService;
 import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.mcp.api.info.ThreaddumpService;
+import net.yacy.grid.mcp.api.messages.AcknowledgeService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
 import net.yacy.grid.mcp.api.messages.ClearService;
 import net.yacy.grid.mcp.api.messages.PeekService;
 import net.yacy.grid.mcp.api.messages.ReceiveService;
+import net.yacy.grid.mcp.api.messages.RecoverService;
 import net.yacy.grid.mcp.api.messages.SendService;
 import net.yacy.grid.tools.GitTool;
 import net.yacy.grid.tools.JSONList;
@@ -83,11 +85,13 @@ public class MCP {
             LogService.class,
 
             // message services
-            SendService.class,
-            ReceiveService.class,
+            AcknowledgeService.class,
             AvailableService.class,
-            PeekService.class,
             ClearService.class,
+            PeekService.class,
+            ReceiveService.class,
+            RecoverService.class,
+            SendService.class,
 
             // asset services
             //RetrieveService.class,

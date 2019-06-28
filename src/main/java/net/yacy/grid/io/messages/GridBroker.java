@@ -196,14 +196,14 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         if (this.mcpQueueFactory != null) try {
             Queue<byte[]> mcpQueue = this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName));
             MessageContainer<byte[]> mc = mcpQueue.receive(timeout, autoAck);
-            if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: receive mcp service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
+            if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: receive mcp service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
             return mc;
         } catch (IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: receive mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
         }
         Data.logger.info("Broker/Client: receive() on peer broker/local db");
         MessageContainer<byte[]> mc = super.receive(serviceName, queueName, timeout, autoAck);
-        if (mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: received peer broker/local db service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
+        if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) Data.logger.info("Broker/Client: received peer broker/local db service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
         return mc;  
     }
 
