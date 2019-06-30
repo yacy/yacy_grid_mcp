@@ -136,8 +136,8 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         private void connect() throws IOException {
             Map<String, Object> arguments = new HashMap<>();
             arguments.put("x-queue-mode", lazy.get() ? "lazy" : "default"); // we want to minimize memory usage; see http://www.rabbitmq.com/lazy-queues.html
-            arguments.put("x-max-length", 10);
-            arguments.put("x-overflow", "reject-publish");
+            //arguments.put("x-max-length", 10);
+            //arguments.put("x-overflow", "reject-publish");
             try {
                 RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
             } catch (Throwable e) {
