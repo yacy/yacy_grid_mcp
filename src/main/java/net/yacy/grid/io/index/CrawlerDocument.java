@@ -57,7 +57,9 @@ public class CrawlerDocument extends Document {
     public static Map<String, CrawlerDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
         Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, ids);
         Map<String, CrawlerDocument> docmap = new HashMap<>();
-        jsonmap.forEach((id, doc) -> docmap.put(id, new CrawlerDocument(doc)));
+        jsonmap.forEach((id, doc) -> {
+            if (doc != null) docmap.put(id, new CrawlerDocument(doc)); 
+        });
         return docmap;
     }
 
