@@ -29,14 +29,20 @@ import net.yacy.grid.mcp.Data;
 import com.rabbitmq.client.Connection;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConfirmCallback;
 
 /**
  * to monitor the rabbitMQ queue, open the admin console at
@@ -112,7 +118,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     public int getPort() {
         return hasDefaultPort() ? DEFAULT_PORT : this.port;
     }
-    
+
     @Override
     public Queue<byte[]> getQueue(String queueName) throws IOException {
         Queue<byte[]> queue = queues.get(queueName);
@@ -125,11 +131,13 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             return queue;
         }
     }
-    
+
     private class RabbitMessageQueue extends AbstractQueue<byte[]> implements Queue<byte[]> {
-        private String queueName;
+        private final String queueName;
+        private final SortedMap<Long, BlockingQueue<Boolean>> unconfirmedSet;
         public RabbitMessageQueue(String queueName) throws IOException {
             this.queueName = queueName;
+            this.unconfirmedSet = Collections.synchronizedSortedMap(new TreeMap<>());
             connect();
         }
 
@@ -166,13 +174,42 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                     }
                 }
             }
+            RabbitQueueFactory.this.channel.confirmSelect(); // declare that the channel sends confirmations
+            RabbitQueueFactory.this.channel.addConfirmListener(
+                new ConfirmCallback() { // ack
+                    @Override
+                    public void handle(long seqNo, boolean multiple) throws IOException {
+                        if (multiple) {
+                            Map<Long, BlockingQueue<Boolean>> m = unconfirmedSet.headMap(seqNo + 1);
+                            m.forEach((s, b) -> b.add(Boolean.TRUE));
+                            m.clear();
+                        } else {
+                            BlockingQueue<Boolean> b = unconfirmedSet.remove(seqNo);
+                            assert b != null;
+                            if (b != null) b.add(Boolean.TRUE);
+                        }
+                    }},
+                new ConfirmCallback() { // nack
+                    @Override
+                    public void handle(long seqNo, boolean multiple) throws IOException {
+                        if (multiple) {
+                            Map<Long, BlockingQueue<Boolean>> m = unconfirmedSet.headMap(seqNo + 1);
+                            m.forEach((s, b) -> b.add(Boolean.FALSE));
+                            m.clear();
+                        } else {
+                            BlockingQueue<Boolean> b = unconfirmedSet.remove(seqNo);
+                            assert b != null;
+                            if (b != null) b.add(Boolean.FALSE);
+                        }
+                    }}
+            );
         }
-        
+
         @Override
         public void checkConnection() throws IOException {
             available();
         }
-        
+
         @Override
         public Queue<byte[]> send(byte[] message) throws IOException {
             try {
@@ -186,15 +223,19 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             }
         }
         private Queue<byte[]> sendInternal(byte[] message) throws IOException {
+            BlockingQueue<Boolean> semaphore = new ArrayBlockingQueue<>(1);
+            long seqNo = channel.getNextPublishSeqNo();
+            unconfirmedSet.put(seqNo, semaphore);
+            channel.basicPublish(DEFAULT_EXCHANGE, this.queueName, MessageProperties.PERSISTENT_BASIC, message);
+            // wait for confirmation
             try {
-                channel.basicPublish(DEFAULT_EXCHANGE, this.queueName, MessageProperties.PERSISTENT_BASIC, message);
-            } catch (Exception e) {
-                // try to reconnect and re-try once...
-                connect();
-                channel.basicPublish(DEFAULT_EXCHANGE, this.queueName, MessageProperties.PERSISTENT_BASIC, message);
-                // if that fails, it simply throws an exception
+                boolean delivered = semaphore.poll(10, TimeUnit.SECONDS);
+                if (delivered) return this;
+                throw new IOException("message was not delivered"); // will be tried again below
+            } catch (InterruptedException x) {
+                unconfirmedSet.remove(seqNo); // prevent a memory leak
+                throw new IOException("message sending timeout"); // will be tried again below
             }
-            return this;
         }
 
         @Override
