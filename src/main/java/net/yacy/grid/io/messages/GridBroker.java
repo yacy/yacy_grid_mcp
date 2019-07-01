@@ -36,6 +36,7 @@ import net.yacy.grid.mcp.Data;
  */
 public class GridBroker extends PeerBroker implements Broker<byte[]> {
 
+    public final static String TARGET_LIMIT_MESSAGE = "message not delivered - target limitation";
     private QueueFactory<byte[]> rabbitQueueFactory;
     private QueueFactory<byte[]> mcpQueueFactory;
 
@@ -150,6 +151,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             Data.logger.info("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(message));
             return this.rabbitQueueFactory;
         } catch (IOException e) {
+            if (e.getMessage().equals(TARGET_LIMIT_MESSAGE)) throw e; // consider this as fatal to trigger throttling
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {

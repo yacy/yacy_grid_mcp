@@ -144,8 +144,8 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         private void connect() throws IOException {
             Map<String, Object> arguments = new HashMap<>();
             arguments.put("x-queue-mode", lazy.get() ? "lazy" : "default"); // we want to minimize memory usage; see http://www.rabbitmq.com/lazy-queues.html
-            //arguments.put("x-max-length", 10);
-            //arguments.put("x-overflow", "reject-publish");
+            arguments.put("x-max-length", 10);
+            arguments.put("x-overflow", "reject-publish");
             try {
                 RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
             } catch (Throwable e) {
@@ -161,7 +161,8 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                     RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
                 } catch (Throwable ee) {
                     // that did not work. Try to modify the call to match with the previous queueDeclare
-                    if (e.getMessage() != null && e.getMessage().contains("'signedint' but current is none")) {
+                    String ec = ee.getCause().getMessage();
+                    if (ec != null && ec.contains("'signedint' but current is none")) {
                         arguments.remove("x-max-length");
                         arguments.remove("x-overflow");
                     }
@@ -215,6 +216,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             try {
                 return sendInternal(message);
             } catch (IOException e) {
+                if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) throw e;
                 // try again
                 Data.logger.warn("RabbitQueueFactory.send: re-connecting broker");
                 RabbitQueueFactory.this.init();
@@ -231,7 +233,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             try {
                 boolean delivered = semaphore.poll(10, TimeUnit.SECONDS);
                 if (delivered) return this;
-                throw new IOException("message was not delivered"); // will be tried again below
+                throw new IOException(GridBroker.TARGET_LIMIT_MESSAGE); // will be tried again below
             } catch (InterruptedException x) {
                 unconfirmedSet.remove(seqNo); // prevent a memory leak
                 throw new IOException("message sending timeout"); // will be tried again below

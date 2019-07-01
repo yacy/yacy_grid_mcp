@@ -40,6 +40,7 @@ import ai.susi.mind.SusiThought;
 import net.yacy.grid.Services;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.messages.AvailableContainer;
+import net.yacy.grid.io.messages.GridBroker;
 import net.yacy.grid.io.messages.GridQueue;
 import net.yacy.grid.io.messages.MessageContainer;
 import net.yacy.grid.tools.Memory;
@@ -226,7 +227,9 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         }
     }
 
-    private void handleMessage(final MessageContainer<byte[]> mc, final String processName, final int processNumber) {
+    private void handleMessage(final MessageContainer<byte[]> mc, final String processName, final int processNumber) throws IOException {
+        Thread.currentThread().setName(processName + "-" + processNumber + "-running");
+
         String payload = new String(mc.getPayload(), StandardCharsets.UTF_8);
         JSONObject json = new JSONObject(new JSONTokener(payload));
         final SusiThought process = new SusiThought(json);
@@ -251,35 +254,14 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 try {
                     loadNextAction(action, process.getData()); // put that into the correct queue
                 } catch (Throwable e) {
+                    if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) throw e;
                     Data.logger.warn("", e);
                 }
                 continue actionloop;
             }
 
             // process the action using the previously acquired execution thread
-            //this.threadPool.execute(new ActionProcess(action, data));
-            new ActionProcess(action, data, processName, processNumber).run(); // run, not start: we execute this in the current thread
-        }
-    }
-
-    private final class ActionProcess implements Runnable {
-
-        private final SusiAction action;
-        private final JSONArray data;
-        private final String processName;
-        private final int processNumber;
-
-        public ActionProcess(final SusiAction action, final JSONArray data, final String processName, final int processNumber) {
-            this.action = action;
-            this.data = data;
-            this.processName = processName;
-            this.processNumber = processNumber;
-        }
-
-        @Override
-        public void run() {
-            Thread.currentThread().setName(this.processName + "-" + this.processNumber + "-running");
-            boolean processed = processAction(this.action, this.data, this.processName, this.processNumber);
+            boolean processed = processAction(action, data, processName, processNumber);
             if (processed) {
                 // send next embedded action(s) to queue
                 JSONObject ao = action.toJSONClone();
@@ -291,6 +273,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                         } catch (UnsupportedOperationException | JSONException e) {
                             Data.logger.warn("", e);
                         } catch (IOException e) {
+                            if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) throw e;
                             Data.logger.warn("", e);
                             // do a re-try
                             try {Thread.sleep(10000);} catch (InterruptedException e1) {}
