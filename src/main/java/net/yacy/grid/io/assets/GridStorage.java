@@ -94,6 +94,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
                     return sf;
                 } catch (IOException e) {
                     String cause = e.getMessage();
+                    if (cause != null && cause.contains("refused")) break retryloop;
                     // possible causes:
                     // 421 too many connections. possible counteractions: in apacheftpd, set i.e. ftpserver.user.anonymous.maxloginnumber=200 and ftpserver.user.anonymous.maxloginperip=200
                     if (cause.indexOf("421") >= 0) {try {Thread.sleep(retry * 500);} catch (InterruptedException e1) {} continue retryloop;}
