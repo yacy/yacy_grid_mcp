@@ -59,6 +59,14 @@ public interface Queue<A> {
     public void acknowledge(long deliveryTag) throws IOException;
 
     /**
+     * reject a message. This MUST be used to return a message to the broker if
+     * receive() was used with autoAck=false.
+     * @param deliveryTag the tag as reported by receive()
+     * @throws IOException
+     */
+    public void reject(long deliveryTag) throws IOException;
+
+    /**
      * Messages which had been received with autoAck=false but were not acknowledged with
      * the acknowledge() method are neither dequeued nor available for another receive.
      * They can only be accessed using a recover call; this moves all not-acknowledge messages

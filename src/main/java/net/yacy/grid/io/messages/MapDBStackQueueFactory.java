@@ -141,6 +141,11 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
         }
 
         @Override
+        public void reject(long deliveryTag) throws IOException {
+            // do nothing, this class does not provide a message reject function
+        }
+
+        @Override
         public void recover() throws IOException {
             // do nothing, this class does not provide a message acknowledge function
         }

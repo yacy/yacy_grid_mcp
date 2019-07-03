@@ -279,6 +279,19 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
 
         @Override
+        public void reject(long deliveryTag) throws IOException {
+            try {
+                channel.basicReject(deliveryTag, true);
+            } catch (IOException e) {
+                // try again
+                Data.logger.warn("RabbitQueueFactory.reject: re-connecting broker");
+                RabbitQueueFactory.this.init();
+                connect() ;
+                channel.basicReject(deliveryTag, false);
+            }
+        }
+
+        @Override
         public void recover() throws IOException {
             try {
                 channel.basicRecover(true);

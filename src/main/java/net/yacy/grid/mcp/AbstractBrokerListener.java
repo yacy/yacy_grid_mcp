@@ -213,6 +213,19 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 } catch (Throwable e) {
                     Data.logger.info("QueueListener: " + e.getMessage(), e);
                     try {Thread.sleep(10000);} catch (InterruptedException ee) {}
+                    String m = e.getMessage();
+                    if (m == null) m = e.getCause().getMessage();
+                    if (m.equals(GridBroker.TARGET_LIMIT_MESSAGE)) {
+                        // do not process message!
+                        if (!this.autoAck && mc != null && mc.getDeliveryTag() > 0) {
+                            // reject the message
+                            try {
+                                Data.gridBroker.reject(AbstractBrokerListener.this.service, this.queueName, mc.getDeliveryTag());
+                            } catch (IOException ee) {
+                                Data.logger.info("QueueListener: cannot acknowledge queue: " + ee.getMessage(), ee);
+                            }
+                        }
+                    }
                 } finally {
                     if (!this.autoAck && mc != null && mc.getDeliveryTag() > 0) {
                         // acknowledge the message

@@ -151,7 +151,9 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             Data.logger.info("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(message));
             return this.rabbitQueueFactory;
         } catch (IOException e) {
-            if (e.getMessage().equals(TARGET_LIMIT_MESSAGE)) throw e; // consider this as fatal to trigger throttling
+            String m = e.getMessage();
+            if (m == null) m = e.getCause().getMessage();
+            if (m.equals(TARGET_LIMIT_MESSAGE)) throw e; // consider this as fatal to trigger throttling
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {
@@ -240,6 +242,39 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         }
         Data.logger.info("Broker/Client: acknowledge() on peer broker/local db");
         return super.acknowledge(serviceName, queueName, deliveryTag);
+    }
+
+    @Override
+    public QueueFactory<byte[]> reject(Services serviceName, GridQueue queueName, long deliveryTag) throws IOException {
+        if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
+            // try to connect again..
+            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+        }
+        if (this.rabbitQueueFactory == null) {
+            this.rabbitMQ_host = null;
+        } else try {
+            this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).reject(deliveryTag);
+            Data.logger.info("Broker/Client: rejected rabbitMQ service '" + serviceName + "', queue '" + queueName + "', deliveryTag " + deliveryTag);
+            return this.rabbitQueueFactory;
+        } catch (IOException e) {
+            /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: acknowledge rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
+        }
+        if (this.mcpQueueFactory == null && this.mcp_host != null) {
+            // try to connect again..
+            connectMCP(this.mcp_host, this.mcp_port);
+            if (this.mcpQueueFactory == null) {
+                Data.logger.warn("Broker/Client: FATAL: connection to MCP lost! send mcp service '" + serviceName + "', queue '" + queueName);
+            }
+        }
+        if (this.mcpQueueFactory != null) try {
+            this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).reject(deliveryTag);
+            Data.logger.info("Broker/Client: rejected mcp service '" + serviceName + "', queue '" + queueName + "', deliveryTag " + deliveryTag);
+            return this.mcpQueueFactory;
+        } catch (IOException e) {
+            /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: acknowledge mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
+        }
+        Data.logger.info("Broker/Client: reject() on peer broker/local db");
+        return super.reject(serviceName, queueName, deliveryTag);
     }
 
     @Override

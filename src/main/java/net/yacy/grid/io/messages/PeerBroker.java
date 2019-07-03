@@ -85,6 +85,13 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
     }
 
     @Override
+    public QueueFactory<byte[]> reject(Services service, GridQueue queueName, long deliveryTag) throws IOException {
+        QueueFactory<byte[]> factory = getConnector(service);
+        factory.getQueue(queueName.name()).reject(deliveryTag);
+        return factory;
+    }
+
+    @Override
     public QueueFactory<byte[]> recover(Services service, GridQueue queueName) throws IOException {
         QueueFactory<byte[]> factory = getConnector(service);
         factory.getQueue(queueName.name()).recover();

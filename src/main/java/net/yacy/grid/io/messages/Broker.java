@@ -94,6 +94,17 @@ public interface Broker<A> extends Closeable {
     public QueueFactory<A> acknowledge(Services service, GridQueue queue, long deliveryTag) throws IOException;
 
     /**
+     * reject a message. This MUST be used to return a message to the broker if
+     * receive() was used with autoAck=false.
+     * @param service the name of the grid service
+     * @param queue the queue of the service
+     * @param deliveryTag the tag as reported by receive()
+     * @return the Queue Factory which was used to create this broker
+     * @throws IOException
+     */
+    public QueueFactory<A> reject(Services service, GridQueue queue, long deliveryTag) throws IOException;
+
+    /**
      * Messages which had been received with autoAck=false but were not acknowledged with
      * the acknowledge() method are neither dequeued nor available for another receive.
      * They can only be accessed using a recover call; this moves all not-acknowledge messages
