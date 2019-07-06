@@ -39,7 +39,7 @@ RUN tar -xzf elasticsearch-5.5.0.tar.gz
 RUN git clone https://github.com/nikhilrayaprolu/yacy_grid_mcp.git
 WORKDIR /yacy_grid_mcp
 
-RUN cat docker/config-ftp.properties > ../apache-ftpserver-1.1.0/res/conf/users.properties
+RUN cat docker/config-ftp.properties > ../apache-ftpserver-1.1.1/res/conf/users.properties
 
 
 # compile
