@@ -21,9 +21,9 @@ RUN PATH=$PATH:/opt/gradle/gradle-3.4.1/bin
 ENV GRADLE_HOME=/opt/gradle/gradle-3.4.1
 ENV PATH=$PATH:$GRADLE_HOME/bin
 RUN gradle -v
-# install apache ftp server 1.1.0
-RUN wget http://www-eu.apache.org/dist/mina/ftpserver/1.1.0/dist/apache-ftpserver-1.1.0.tar.gz
-RUN tar xfz apache-ftpserver-1.1.0.tar.gz
+# install apache ftp server 1.1.1
+RUN wget http://www-eu.apache.org/dist/mina/ftpserver/1.1.1/dist/apache-ftpserver-1.1.1.tar.gz
+RUN tar xfz apache-ftpserver-1.1.1.tar.gz
 
 # install RabbitMQ server
 RUN wget https://www.rabbitmq.com/releases/rabbitmq-server/v3.6.6/rabbitmq-server-generic-unix-3.6.6.tar.xz
