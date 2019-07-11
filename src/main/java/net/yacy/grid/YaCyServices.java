@@ -47,7 +47,7 @@ public enum YaCyServices implements Services {
     }, new String[0]),
     parser(8500, new GridQueue[]{   // a parser service which turns WARC into YaCy JSON
             new GridQueue("yacyparser_00") // parsing is fast, we do not need more queues here
-    }, new String[] {"indexer", "crawler"}),
+    }, new String[] {"indexer" /*, "crawler"*/}), // omitting the crawler to get the opportunity to flush all queues if they are too full
     loader(8200, new GridQueue[]{
             new GridQueue("webloader_00"), new GridQueue("webloader_01"), new GridQueue("webloader_02"), new GridQueue("webloader_03"),
             new GridQueue("webloader_04"), new GridQueue("webloader_05"), new GridQueue("webloader_06"), new GridQueue("webloader_07"),

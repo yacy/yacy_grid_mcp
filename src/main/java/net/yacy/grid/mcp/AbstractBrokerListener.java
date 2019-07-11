@@ -194,7 +194,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                         Data.logger.info("AbstractBrokerListener.QueueListener short memory status: assigned = " + Memory.assigned() + ", used = " + Memory.used());
                         Data.clearCaches();
                     }
-                    
+
                     // check target throttling
                     if (this.targetQueueThrottling > 0) {
                         int targetQueueAggregator = 0;
@@ -204,14 +204,17 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                                 targetQueueAggregator += a.getAvailable();
                             }
                         }
-                        Data.logger.info("AbstractBrokerListener.QueueListener target queue aggregated size = " + targetQueueAggregator);
-                        long throttlingTime = 60000 * targetQueueAggregator / this.targetQueueThrottling;
-                        if (throttlingTime > 1000) {
-                            Data.logger.info("AbstractBrokerListener.QueueListener throttling = " + this.targetQueueThrottling + ", sleeping for " + throttlingTime + " milliseconds");
-                            try {Thread.sleep(throttlingTime);} catch (InterruptedException e) {}
+                        int throttlingStart = this.targetQueueThrottling / 10 * 9;
+                        Data.logger.info("AbstractBrokerListener.QueueListener target queue aggregated size = " + targetQueueAggregator + ", throttling start is " + throttlingStart);
+                        if (targetQueueAggregator > throttlingStart) {
+                            long throttlingTime = 10000 * (targetQueueAggregator - throttlingStart) / (this.targetQueueThrottling / 10);
+                            if (throttlingTime > 1000) {
+                                Data.logger.info("AbstractBrokerListener.QueueListener throttling = " + this.targetQueueThrottling + ", sleeping for " + throttlingTime + " milliseconds");
+                                try {Thread.sleep(throttlingTime);} catch (InterruptedException e) {}
+                            }
                         }
                     }
-                    
+
                     // wait until message arrives
                     mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000, autoAck);
                     if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) {
