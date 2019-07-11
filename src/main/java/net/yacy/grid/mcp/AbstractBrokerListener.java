@@ -24,10 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-//import java.util.concurrent.Executors;
-//import java.util.concurrent.ThreadPoolExecutor;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -51,8 +48,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     private final GridQueue[] sourceQueues;
     private final int threadCount;
     private final List<QueueListener> threads;
-    private final Set<String> servicequeues;
-    //private final ThreadPoolExecutor threadPool;
+    private final AtomicInteger targetFill;
 
     public AbstractBrokerListener(final Services service, final int threadCount) {
         this.service = service;
@@ -61,7 +57,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         //    this.threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(this.threads);
         this.shallRun = true;
         this.threads = new ArrayList<>();
-        this.servicequeues = ConcurrentHashMap.newKeySet();
+        this.targetFill = new AtomicInteger(0);
     }
 
     public abstract boolean processAction(SusiAction action, JSONArray data, String processName, int processNumber);
@@ -136,19 +132,15 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 try {Thread.sleep(60000);} catch (InterruptedException ee) {}
 
                 // collect size of target queues:
-                int targetsize = 0;
-                for (String servicequeue: AbstractBrokerListener.this.servicequeues) {
-                    int p = servicequeue.indexOf(':');
-                    String type = servicequeue.substring(0, p);
-                    String queue = servicequeue.substring(p + 1);
-                    try {
-                        AvailableContainer ac = Data.gridBroker.available(YaCyServices.valueOf(type), new GridQueue(queue));
-                        targetsize += ac.getAvailable();
-                    } catch (IOException e) {
-                    }
+                int targetQueueAggregator = 0;
+                for (Services targetService: AbstractBrokerListener.this.service.getTargetServices()) {
+                    for (GridQueue targetQueue: targetService.getSourceQueues()) try {
+                        AvailableContainer a = Data.gridBroker.available(targetService, targetQueue);
+                        targetQueueAggregator += a.getAvailable();
+                    } catch (IOException e) {}
                 }
-
-                Data.logger.info("BrokerListener operates with" + AbstractBrokerListener.this.messagesPerMinute() + " messages per minute; target queues size: " + targetsize);
+                AbstractBrokerListener.this.targetFill.set(targetQueueAggregator);
+                Data.logger.info("BrokerListener operates with " + AbstractBrokerListener.this.messagesPerMinute() + " messages per minute; target queues size: " + targetQueueAggregator);
             }
         }
     }
@@ -197,17 +189,11 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
                     // check target throttling
                     if (this.targetQueueThrottling > 0) {
-                        int targetQueueAggregator = 0;
-                        for (Services targetService: AbstractBrokerListener.this.service.getTargetServices()) {
-                            for (GridQueue targetQueue: targetService.getSourceQueues()) {
-                                AvailableContainer a = Data.gridBroker.available(targetService, targetQueue);
-                                targetQueueAggregator += a.getAvailable();
-                            }
-                        }
                         int throttlingStart = this.targetQueueThrottling / 10 * 9;
+                        int targetQueueAggregator = AbstractBrokerListener.this.targetFill.get();
                         Data.logger.info("AbstractBrokerListener.QueueListener target queue aggregated size = " + targetQueueAggregator + ", throttling start is " + throttlingStart);
                         if (targetQueueAggregator > throttlingStart) {
-                            long throttlingTime = 10000 * (targetQueueAggregator - throttlingStart) / (this.targetQueueThrottling / 10);
+                            long throttlingTime = Math.min(10000, 10000 * (targetQueueAggregator - throttlingStart) / (this.targetQueueThrottling / 10));
                             if (throttlingTime > 1000) {
                                 Data.logger.info("AbstractBrokerListener.QueueListener throttling = " + this.targetQueueThrottling + ", sleeping for " + throttlingTime + " milliseconds");
                                 try {Thread.sleep(throttlingTime);} catch (InterruptedException e) {}
@@ -335,8 +321,6 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 .put("actions", new JSONArray().put(action.toJSONClone()));
         byte[] b = nextProcess.toString(2).getBytes(StandardCharsets.UTF_8);
         Data.gridBroker.send(YaCyServices.valueOf(type), new GridQueue(queue), b);
-        // remember which service queues are targets
-        this.servicequeues.add(type + ":" + queue);
     }
 
     @Override
