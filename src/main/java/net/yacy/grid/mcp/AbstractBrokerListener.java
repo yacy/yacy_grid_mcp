@@ -129,8 +129,6 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         @Override
         public void run() {
             while (shallRun) {
-                try {Thread.sleep(60000);} catch (InterruptedException ee) {}
-
                 // collect size of target queues:
                 int targetQueueAggregator = 0;
                 for (Services targetService: AbstractBrokerListener.this.service.getTargetServices()) {
@@ -141,6 +139,9 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 }
                 AbstractBrokerListener.this.targetFill.set(targetQueueAggregator);
                 Data.logger.info("BrokerListener operates with " + AbstractBrokerListener.this.messagesPerMinute() + " messages per minute; target queues size: " + targetQueueAggregator);
+
+                // wait a bit
+                try {Thread.sleep(60000);} catch (InterruptedException ee) {}
             }
         }
     }
