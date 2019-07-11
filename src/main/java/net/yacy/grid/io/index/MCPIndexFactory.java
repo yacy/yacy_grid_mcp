@@ -160,6 +160,7 @@ public class MCPIndexFactory implements IndexFactory {
                 }
             }
 
+            @Override
             public Set<String> existBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
                 // We do not introduce a new protocol here. Instead we use the exist method.
                 // This is not a bad design because grid clients will learn how to use
