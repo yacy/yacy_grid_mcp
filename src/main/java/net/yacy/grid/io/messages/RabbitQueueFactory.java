@@ -170,7 +170,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                     RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
                 } catch (Throwable ee) {
                     // that did not work. Try to modify the call to match with the previous queueDeclare
-                    String ec = ee.getCause().getMessage();
+                    String ec = ee.getCause() == null ? ee.getMessage() : ee.getCause().getMessage();
                     if (ec != null && ec.contains("'signedint' but current is none")) {
                         arguments.remove("x-max-length");
                         arguments.remove("x-overflow");
