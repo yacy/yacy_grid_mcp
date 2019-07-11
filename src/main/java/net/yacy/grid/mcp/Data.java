@@ -82,7 +82,9 @@ public class Data {
         if (!messagesPath.exists()) messagesPath.mkdirs();
         boolean lazy = config.containsKey("grid.broker.lazy") && config.get("grid.broker.lazy").equals("true");
         boolean autoAck = config.containsKey("grid.broker.autoAck") && config.get("grid.broker.autoAck").equals("true");
-        gridBroker = new GridBroker(localStorage ? messagesPath : null, lazy, autoAck);
+        int queueLimit = config.containsKey("grid.broker.queue.limit") ? Integer.parseInt(config.get("grid.broker.queue.limit")) : 0;
+        int queueThrottling = config.containsKey("grid.broker.queue.throttling") ? Integer.parseInt(config.get("grid.broker.queue.throttling")) : 0;        
+        gridBroker = new GridBroker(localStorage ? messagesPath : null, lazy, autoAck, queueLimit, queueThrottling);
 
         // create storage
         File assetsPath = new File(gridServicePath, "assets");

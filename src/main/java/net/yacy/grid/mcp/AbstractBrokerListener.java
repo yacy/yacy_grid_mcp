@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -49,7 +48,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
     public boolean shallRun;
     private final Services service;
-    private final GridQueue[] queueNames;
+    private final GridQueue[] sourceQueues;
     private final int threadCount;
     private final List<QueueListener> threads;
     private final Set<String> servicequeues;
@@ -57,7 +56,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
     public AbstractBrokerListener(final Services service, final int threadCount) {
         this.service = service;
-        this.queueNames = service.getQueues();
+        this.sourceQueues = service.getSourceQueues();
         this.threadCount = threadCount;
         //    this.threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(this.threads);
         this.shallRun = true;
@@ -70,7 +69,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
     @Override
     public void run() {
         // recover unacknowledged entries - possibly from last start
-        for (GridQueue queue: this.queueNames) {
+        for (GridQueue queue: this.sourceQueues) {
             try {
                 Data.gridBroker.recover(AbstractBrokerListener.this.service, queue);
             } catch (IOException e) {
@@ -80,7 +79,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
         // print out some stats about the queues
         try {
-            AvailableContainer[] ac = Data.gridBroker.available(AbstractBrokerListener.this.service, this.queueNames);
+            AvailableContainer[] ac = Data.gridBroker.available(AbstractBrokerListener.this.service, this.sourceQueues);
             for (int i = 0; i < ac.length; i++) {
                 Data.logger.info("Service " + this.service.name() + ", queue " + ac[i].getQueue() + ": " + ac[i].getAvailable() + " entries.");
             }
@@ -89,11 +88,11 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         }
 
         // start the listeners
-        int threadsPerQueue = Math.max(1, this.threadCount / this.queueNames.length);
-        Data.logger.info("Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.queueNames.length + " queues");
-        for (GridQueue queue: this.queueNames) {
+        int threadsPerQueue = Math.max(1, this.threadCount / this.sourceQueues.length);
+        Data.logger.info("Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.sourceQueues.length + " queues");
+        for (GridQueue queue: this.sourceQueues) {
             for (int qc = 0; qc < threadsPerQueue; qc++) {
-                QueueListener listener = new QueueListener(queue, qc, Data.gridBroker.isAutoAck());
+                QueueListener listener = new QueueListener(queue, qc, Data.gridBroker.isAutoAck(), Data.gridBroker.getQueueThrottling());
                 listener.start();
                 threads.add(listener);
                 Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + queue + " started thread " + qc);
@@ -159,11 +158,13 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         private final int threadCounter;
         private final boolean autoAck;
         private final LinkedList<Long> tracker;
+        private final int targetQueueThrottling;
 
-        public QueueListener(final GridQueue queueName, final int threadCounter, final boolean autoAck) {
+        public QueueListener(final GridQueue queueName, final int threadCounter, final boolean autoAck, int queueThrottling) {
             this.queueName = queueName;
             this.threadCounter = threadCounter;
             this.autoAck = autoAck;
+            this.targetQueueThrottling = queueThrottling;
             this.tracker = new LinkedList<>();
         }
 
@@ -193,7 +194,24 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                         Data.logger.info("AbstractBrokerListener.QueueListener short memory status: assigned = " + Memory.assigned() + ", used = " + Memory.used());
                         Data.clearCaches();
                     }
-
+                    
+                    // check target throttling
+                    if (this.targetQueueThrottling > 0) {
+                        int targetQueueAggregator = 0;
+                        for (Services targetService: AbstractBrokerListener.this.service.getTargetServices()) {
+                            for (GridQueue targetQueue: targetService.getSourceQueues()) {
+                                AvailableContainer a = Data.gridBroker.available(targetService, targetQueue);
+                                targetQueueAggregator += a.getAvailable();
+                            }
+                        }
+                        Data.logger.info("AbstractBrokerListener.QueueListener target queue aggregated size = " + targetQueueAggregator);
+                        long throttlingTime = 60000 * targetQueueAggregator / this.targetQueueThrottling;
+                        if (throttlingTime > 1000) {
+                            Data.logger.info("AbstractBrokerListener.QueueListener throttling = " + this.targetQueueThrottling + ", sleeping for " + throttlingTime + " milliseconds");
+                            try {Thread.sleep(throttlingTime);} catch (InterruptedException e) {}
+                        }
+                    }
+                    
                     // wait until message arrives
                     mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000, autoAck);
                     if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) {

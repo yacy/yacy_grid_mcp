@@ -46,13 +46,14 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     private int mcp_port;
     private boolean lazy;
     private boolean autoAck;
+    private int queueLimit, queueThrottling;
 
     /**
      * Make a grid-based broker
      * @param lazy if true, support lazy queues in rabbitmq, see http://www.rabbitmq.com/lazy-queues.html
      * @param basePath the local storage path of an db-based queue. This can also be NULL if no local queue is wanted
      */
-    public GridBroker(File basePath, boolean lazy, boolean autoAck) {
+    public GridBroker(File basePath, boolean lazy, boolean autoAck, int queueLimit, int queueThrottling) {
         super(basePath);
         this.rabbitQueueFactory = null;
         this.mcpQueueFactory = null;
@@ -64,12 +65,22 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         this.mcp_port = -1;
         this.lazy = lazy;
         this.autoAck = autoAck;
+        this.queueLimit = queueLimit;
+        this.queueThrottling = queueThrottling;
     }
 
     public boolean isAutoAck() {
         return this.autoAck;
     }
 
+    public int getQueueLimit() {
+        return this.queueLimit;
+    }
+
+    public int getQueueThrottling() {
+        return this.queueThrottling;
+    }
+    
     public static String serviceQueueName(Services service, GridQueue queue) {
         return service.name() + '_' + queue.name();
     }
@@ -90,7 +101,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             //firsttry = true;
         }
         try {
-            QueueFactory<byte[]> qc = new RabbitQueueFactory(host, port, username, password, lazy);
+            QueueFactory<byte[]> qc = new RabbitQueueFactory(host, port, username, password, this.lazy, this.queueLimit);
             this.rabbitQueueFactory = qc;
             Data.logger.info("Broker/Client: connected to the rabbitMQ broker at " + host + ":" + port);
             return true;
@@ -113,7 +124,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         }
         try {
             QueueFactory<byte[]> mcpqf = new MCPQueueFactory(this, host, port);
-            String queueName = YaCyServices.indexer.name() + "_" + YaCyServices.indexer.getQueues()[0].name();
+            String queueName = YaCyServices.indexer.name() + "_" + YaCyServices.indexer.getSourceQueues()[0].name();
             mcpqf.getQueue(queueName).checkConnection();
             this.mcpQueueFactory = mcpqf;
             Data.logger.info("Broker/Client: connected to a Queue over MCP at " + host + ":" + port);

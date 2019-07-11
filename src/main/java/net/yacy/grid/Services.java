@@ -25,7 +25,9 @@ public interface Services {
 
     public int getDefaultPort();
 
-    public GridQueue[] getQueues();
+    public GridQueue[] getSourceQueues();
+
+    public Services[] getTargetServices();
     
     public String name();
     

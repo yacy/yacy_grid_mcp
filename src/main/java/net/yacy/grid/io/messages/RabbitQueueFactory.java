@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConfirmCallback;
@@ -56,25 +57,31 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     public static String PROTOCOL_PREFIX = "amqp://";
     
     
-    private String server, username, password;
-    private int port;
+    private final String server, username, password;
+    private final int port;
     private Connection connection;
     private Channel channel;
     private Map<String, Queue<byte[]>> queues;
-    private AtomicBoolean lazy;
+    private final AtomicBoolean lazy;
+    private final AtomicInteger queueLimit;
     
     /**
      * create a queue factory for a rabbitMQ message server
      * @param server the host name of the rabbitMQ server
      * @param port a port for the access to the rabbitMQ server. If given -1, then the default port will be used
+     * @param username
+     * @param password
+     * @param lazy 
+     * @param queueLimit maximum number of entries for the queue, 0 = unlimited
      * @throws IOException
      */
-    public RabbitQueueFactory(String server, int port, String username, String password, boolean lazy) throws IOException {
+    public RabbitQueueFactory(final String server, final int port, final String username, final String password, final boolean lazy, final int queueLimit) throws IOException {
         this.server = server;
         this.port = port;
         this.username = username;
         this.password = password;
         this.lazy = new AtomicBoolean(lazy);
+        this.queueLimit = new AtomicInteger(queueLimit);
         this.init();
     }
     
@@ -144,8 +151,10 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         private void connect() throws IOException {
             Map<String, Object> arguments = new HashMap<>();
             arguments.put("x-queue-mode", lazy.get() ? "lazy" : "default"); // we want to minimize memory usage; see http://www.rabbitmq.com/lazy-queues.html
-            arguments.put("x-max-length", 10);
-            arguments.put("x-overflow", "reject-publish");
+            if (queueLimit.get() > 0) {
+                arguments.put("x-max-length", 10);
+                arguments.put("x-overflow", "reject-publish");
+            }
             try {
                 RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
             } catch (Throwable e) {
@@ -339,7 +348,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     public static void main(String[] args) {
         RabbitQueueFactory qc;
         try {
-            qc = new RabbitQueueFactory("127.0.0.1", -1, null, null, true);
+            qc = new RabbitQueueFactory("127.0.0.1", -1, null, null, true, 0);
             qc.getQueue("test").send("Hello World".getBytes());
             System.out.println(qc.getQueue("test2").receive(60000, true));
             qc.close();

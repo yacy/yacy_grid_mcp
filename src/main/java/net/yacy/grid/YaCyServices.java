@@ -41,7 +41,13 @@ public enum YaCyServices implements Services {
             new GridQueue("inquiry_open"),
             new GridQueue("inquiry_working"),
             new GridQueue("inquiry_close")
-    }),
+    }, new String[0]),
+    indexer(8700, new GridQueue[]{  // an uploader which pushes parsed/enriched YaCy JSON content to a search index
+            new GridQueue("elasticsearch_00") // indexing is fast, we do no need more queues here
+    }, new String[0]),
+    parser(8500, new GridQueue[]{   // a parser service which turns WARC into YaCy JSON
+            new GridQueue("yacyparser_00") // parsing is fast, we do not need more queues here
+    }, new String[] {"indexer", "crawler"}),
     loader(8200, new GridQueue[]{
             new GridQueue("webloader_00"), new GridQueue("webloader_01"), new GridQueue("webloader_02"), new GridQueue("webloader_03"),
             new GridQueue("webloader_04"), new GridQueue("webloader_05"), new GridQueue("webloader_06"), new GridQueue("webloader_07"),
@@ -51,19 +57,13 @@ public enum YaCyServices implements Services {
             new GridQueue("webloader_20"), new GridQueue("webloader_21"), new GridQueue("webloader_22"), new GridQueue("webloader_23"),
             new GridQueue("webloader_24"), new GridQueue("webloader_25"), new GridQueue("webloader_26"), new GridQueue("webloader_27"),
             new GridQueue("webloader_28"), new GridQueue("webloader_29"), new GridQueue("webloader_30"), new GridQueue("webloader_31")
-    }),      // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
+    }, new String[] {"parser"}),      // a network resource loader acting (b.o.) as headless browser which is able to enrich http with AJAX content
     crawler(8300, new GridQueue[]{  // a crawler which loads a lot of documents from web or other network resources
             new GridQueue("webcrawler_00"), new GridQueue("webcrawler_01"), new GridQueue("webcrawler_02"), new GridQueue("webcrawler_03"),
             new GridQueue("webcrawler_04"), new GridQueue("webcrawler_05"), new GridQueue("webcrawler_06"), new GridQueue("webcrawler_07")
-    }),
+    }, new String[] {"loader"}),
     warcmanager(8400),              // a process which combines single WARC files to bigger ones to create archives
-    parser(8500, new GridQueue[]{   // a parser service which turns WARC into YaCy JSON
-            new GridQueue("yacyparser_00") // parsing is fast, we do not need more queues here
-    }),
     enricher(8600),                 // a semantic enricher for YaCy JSON objects
-    indexer(8700, new GridQueue[]{  // an uploader which pushes parsed/enriched YaCy JSON content to a search index
-            new GridQueue("elasticsearch_00") // indexing is fast, we do no need more queues here
-    }),
     aggregation(8800),              // a search front-end which combines different index sources into one
     moderation(8900),               // a search front-end which for content moderation, i.e. search index account management
     successmessages(10100),         // a service which handles the successful operation messages
@@ -74,16 +74,18 @@ public enum YaCyServices implements Services {
     elastic(9300);                  // an elasticsearch server or main cluster address for global database storage
 
     private int default_port;
-    private GridQueue[] queues;
+    private GridQueue[] sourceQueues;
+    private String[] targetServices; // we cannot use "Services" here as type because that would require a circular declaration
 
     private YaCyServices(int default_port) {
         this.default_port = default_port;
-        this.queues = null;
+        this.sourceQueues = null;
     }
     
-    private YaCyServices(int default_port, GridQueue[] queues) {
+    private YaCyServices(int default_port, GridQueue[] sourceQueues, String[] targetServices) {
         this.default_port = default_port;
-        this.queues = queues;
+        this.sourceQueues = sourceQueues;
+        this.targetServices = targetServices;
     }
 
     @Override
@@ -92,8 +94,15 @@ public enum YaCyServices implements Services {
     }
 
     @Override
-    public GridQueue[] getQueues() {
-        return this.queues;
+    public GridQueue[] getSourceQueues() {
+        return this.sourceQueues;
+    }
+
+    @Override
+    public Services[] getTargetServices() {
+        Services[] services = new Services[this.targetServices.length];
+        for (int i = 0; i < this.targetServices.length; i++) services[i] = YaCyServices.valueOf(this.targetServices[i]);
+        return services;
     }
 
 }

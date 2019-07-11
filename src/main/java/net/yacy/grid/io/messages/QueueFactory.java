@@ -55,7 +55,7 @@ public interface QueueFactory<A> {
      * Get the connection to a queue. The connection is either established initially
      * or created as a new connection. If the queue did not exist, it will exist automatically
      * after calling the method
-     * @param queueName
+     * @param queueName name of the queue
      * @return the Queue
      * @throws IOException
      */
