@@ -227,7 +227,7 @@ public class GridIndex implements Index {
             //Data.logger.info("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Data.logger.debug("Index/Client: existBulk elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             // try to connect again..
@@ -241,9 +241,9 @@ public class GridIndex implements Index {
             //Data.logger.info("Index/Client: exist mcp service '" + mcp_host + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: exist mcp service '" + mcp_host + "',mcp fail", e);
+            Data.logger.debug("Index/Client: existBulk mcp service '" + mcp_host + "',mcp fail", e);
         }
-        throw new IOException("Index/Client: exist mcp service: no factory found!");
+        throw new IOException("Index/Client: existBulk mcp service: no factory found!");
     }
 
     @Override
