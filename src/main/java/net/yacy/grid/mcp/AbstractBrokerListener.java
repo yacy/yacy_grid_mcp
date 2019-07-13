@@ -151,7 +151,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         private final int threadCounter;
         private final boolean autoAck;
         private final LinkedList<Long> tracker;
-        private final int targetQueueThrottling;
+        private final long targetQueueThrottling;
 
         public QueueListener(final GridQueue queueName, final int threadCounter, final boolean autoAck, int queueThrottling) {
             this.queueName = queueName;
@@ -190,12 +190,12 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
                     // check target throttling
                     if (this.targetQueueThrottling > 0) {
-                        int throttlingStart = this.targetQueueThrottling / 10 * 9;
-                        int targetQueueAggregator = AbstractBrokerListener.this.targetFill.get();
+                        long throttlingStart = this.targetQueueThrottling / 10 * 9;
+                        long targetQueueAggregator = AbstractBrokerListener.this.targetFill.get();
                         Data.logger.info("AbstractBrokerListener.QueueListener target queue aggregated size = " + targetQueueAggregator + ", throttling start is " + throttlingStart);
                         if (targetQueueAggregator > throttlingStart) {
-                            long throttlingTime = Math.min(10000, 10000 * (targetQueueAggregator - throttlingStart) / (this.targetQueueThrottling / 10));
-                            if (throttlingTime > 1000) {
+                            long throttlingTime = Math.min(10000L, (targetQueueAggregator - throttlingStart) / this.targetQueueThrottling * 100000L);
+                            if (throttlingTime > 1000L) {
                                 Data.logger.info("AbstractBrokerListener.QueueListener throttling = " + this.targetQueueThrottling + ", sleeping for " + throttlingTime + " milliseconds");
                                 try {Thread.sleep(throttlingTime);} catch (InterruptedException e) {}
                             }
