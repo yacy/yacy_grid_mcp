@@ -255,6 +255,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             long termination = timeout <= 0 || timeout == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeout;
             Throwable ee = null;
             while (System.currentTimeMillis() < termination) {
+                ee = null;
                 try {
                     GetResponse response = channel.basicGet(this.queueName, autoAck);
                     if (response != null) {
@@ -266,6 +267,8 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                     //Data.logger.warn("receive failed: response empty");
                 } catch (Throwable e) {
                     Data.logger.warn("receive failed: " + e.getMessage(), e);
+                    RabbitQueueFactory.this.init();
+                    connect() ;
                     ee = e;
                 }
                 try {Thread.sleep(1000);} catch (InterruptedException e) {return null;}

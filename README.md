@@ -59,7 +59,7 @@ Other port numbers will be:
 -  9300: elastic, an elasticsearch server or main cluster address for global database storage
 
 ## Communication
-Please join our forums at http://forum.yacy.net
+Please join our forums at https://searchlab.eu
 
 ## How do I install the yacy_grid_mcp: Download, Build, Run
 At this time, yacy_grid_mcp is not provided in compiled form, you easily build it yourself. It's not difficult and done in one minute! The source code is hosted at https://github.com/yacy/yacy_grid_mcp, you can download it and run loklak with:
