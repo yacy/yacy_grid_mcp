@@ -52,30 +52,31 @@ public enum Service {
             "lastseen",    // ISO 8601 Time of the latest contact of the mcp to the service. Empty if the service has never been seen.
             "lastping"     // ISO 8601 Time of the latest contact of the service to the mcp
     });
-    
+
     public static YaCyServices type = null;
     private final Set<String> fields;
     public static File conf_dir;
     public static File data_dir;
-    
+    private static int port = 0;
+
     Service(final String[] fields) {
         this.fields = new LinkedHashSet<String>();
         for (String field: fields) this.fields.add(field);
     }
-    
+
     public static void initEnvironment(
             final YaCyServices serviceType,
             final List<Class<? extends Servlet>> services,
             final String data_path,
             final boolean localStorage) {
         type = serviceType;
-        
+
         // run in headless mode
         System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
 
         // configure logging
         BasicConfigurator.configure();
-        
+
         // load the config file(s);
         // what we are doing here is a bootstraping of configuration file(s): first we load the system configuration
         // then we know the port for the service. As every server for a specific port may have its own configuration
@@ -83,10 +84,10 @@ public enum Service {
         conf_dir = FileSystems.getDefault().getPath("conf").toFile();
         data_dir = FileSystems.getDefault().getPath(data_path).toFile();
         Map<String, String> config = readDoubleConfig("config.properties");
-        
+
         // define services
         services.forEach(service -> APIServer.addService(service));
-        
+
         // find data path
         int port = Integer.parseInt(config.get("port"));
         Data.init(dataInstancePath(data_dir, port), config, localStorage);
@@ -101,7 +102,7 @@ public enum Service {
     public static Map<String, String> readDoubleConfig(String confFileName) {
         File user_dir = new File(dataInstancePath(data_dir, type.getDefaultPort()) , "conf");
         Map<String, String> config = MapUtil.readConfig(conf_dir, user_dir, confFileName);
-        
+
         // read the port again and then read also the configuration again because the path of the custom settings may have moved
         if (config.containsKey("port")) {
             int port = Integer.parseInt(config.get("port"));
@@ -110,18 +111,22 @@ public enum Service {
         }
         return config;
     }
-    
+
     private static File dataInstancePath(File data_dir, int port) {
         return new File(data_dir, type.name() + "-" + port);
     }
-    
+
+    public static int getPort() {
+        return port == 0 ? Integer.parseInt(Data.config.get("port")) : port;
+    }
+
     public static void runService(final String html_path) {
-        
+
         // read the port again and then read also the configuration again because the path of the custom settings may have moved
-        int port = Integer.parseInt(Data.config.get("port"));
+        port = Integer.parseInt(Data.config.get("port"));
 
         // start server
-        try {            
+        try {
             // open the server on available port
             boolean portForce = Boolean.getBoolean(Data.config.get("port.force"));
             port = APIServer.open(port, html_path, portForce);
@@ -151,7 +156,7 @@ public enum Service {
                 Data.logger.info("kill file " + killfile.getAbsolutePath() + " creation failed: " + e.getMessage());
                 pidkillfileCreated = false;
             }
-            
+
             // wait for shutdown signal (kill on process)
             if (pidkillfileCreated) {
                 // we can control this by deletion of the kill file
@@ -173,5 +178,5 @@ public enum Service {
         Data.close();
         Data.logger.info("server terminated.");
     }
-    
+
 }
