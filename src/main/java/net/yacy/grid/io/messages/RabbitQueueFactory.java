@@ -60,7 +60,6 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     private final String server, username, password;
     private final int port;
     private Connection connection;
-    private Channel channel;
     private Map<String, Queue<byte[]>> queues;
     private final AtomicBoolean lazy;
     private final AtomicInteger queueLimit;
@@ -82,10 +81,12 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         this.password = password;
         this.lazy = new AtomicBoolean(lazy);
         this.queueLimit = new AtomicInteger(queueLimit);
-        this.init();
+        this.connection = null;
+        this.queues = new ConcurrentHashMap<>();
     }
-    
-    private void init() throws IOException {
+
+    private Connection getConnection() throws IOException {
+        if (this.connection != null && this.connection.isOpen()) return this.connection;
         ConnectionFactory factory = new ConnectionFactory();
         factory.setAutomaticRecoveryEnabled(true);
         factory.setHost(this.server);
@@ -96,12 +97,17 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             this.connection = factory.newConnection();
             //Map<String, Object> map = this.connection.getServerProperties();
             if (!this.connection.isOpen()) throw new IOException("no connection");
-            this.channel = connection.createChannel();
-            if (!this.channel.isOpen()) throw new IOException("no channel");
-            this.queues = new ConcurrentHashMap<>();
+            return this.connection;
         } catch (TimeoutException e) {
             throw new IOException(e.getMessage());
         }
+    }
+
+    private Channel getChannel() throws IOException {
+        getConnection();
+        Channel channel = connection.createChannel();
+        if (!channel.isOpen()) throw new IOException("no channel");
+        return channel;
     }
 
     @Override
@@ -142,6 +148,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     private class RabbitMessageQueue extends AbstractQueue<byte[]> implements Queue<byte[]> {
         private final String queueName;
         private final SortedMap<Long, BlockingQueue<Boolean>> unconfirmedSet;
+        private Channel channel;
         public RabbitMessageQueue(String queueName) throws IOException {
             this.queueName = queueName;
             this.unconfirmedSet = Collections.synchronizedSortedMap(new TreeMap<>());
@@ -155,19 +162,20 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                 arguments.put("x-max-length", 10);
                 arguments.put("x-overflow", "reject-publish");
             }
+            this.channel = RabbitQueueFactory.this.getChannel();
             try {
-                RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
+                this.channel.queueDeclare(this.queueName, true, false, false, arguments);
             } catch (Throwable e) {
                 // we first try to delete the old queue, but only if it is not used and if empty
                 try {
                     channel = connection.createChannel();
-                    RabbitQueueFactory.this.channel.queueDelete(this.queueName, true, true);
+                    this.channel.queueDelete(this.queueName, true, true);
                 } catch (Throwable ee) {}
 
                 // try again
                 try {
                     channel = connection.createChannel();
-                    RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
+                    this.channel.queueDeclare(this.queueName, true, false, false, arguments);
                 } catch (Throwable ee) {
                     // that did not work. Try to modify the call to match with the previous queueDeclare
                     String ec = ee.getCause() == null ? ee.getMessage() : ee.getCause().getMessage();
@@ -178,14 +186,14 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                     //arguments.put("x-queue-mode", lazy.get() ? "default" : "lazy");
                     try {
                         channel = connection.createChannel();
-                        RabbitQueueFactory.this.channel.queueDeclare(this.queueName, true, false, false, arguments);
+                        this.channel.queueDeclare(this.queueName, true, false, false, arguments);
                     } catch (Throwable eee) {
                         throw new IOException(eee.getMessage());
                     }
                 }
             }
-            RabbitQueueFactory.this.channel.confirmSelect(); // declare that the channel sends confirmations
-            RabbitQueueFactory.this.channel.addConfirmListener(
+            this.channel.confirmSelect(); // declare that the channel sends confirmations
+            this.channel.addConfirmListener(
                 new ConfirmCallback() { // ack
                     @Override
                     public void handle(long seqNo, boolean multiple) throws IOException {
@@ -228,7 +236,6 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                 if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) throw e;
                 // try again
                 Data.logger.warn("RabbitQueueFactory.send: re-connecting broker");
-                RabbitQueueFactory.this.init();
                 connect() ;
                 return sendInternal(message);
             }
@@ -268,9 +275,9 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                     //Data.logger.warn("receive failed: response empty");
                 } catch (Throwable e) {
                     Data.logger.warn("receive failed: " + e.getMessage(), e);
-                    RabbitQueueFactory.this.init();
                     connect() ;
                     ee = e;
+                    //autoAck = ! autoAck;
                 }
                 try {Thread.sleep(1000);} catch (InterruptedException e) {return null;}
             }
@@ -285,7 +292,6 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             } catch (IOException e) {
                 // try again
                 Data.logger.warn("RabbitQueueFactory.acknowledge: re-connecting broker");
-                RabbitQueueFactory.this.init();
                 connect() ;
                 channel.basicAck(deliveryTag, false);
             }
@@ -298,7 +304,6 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             } catch (IOException e) {
                 // try again
                 Data.logger.warn("RabbitQueueFactory.reject: re-connecting broker");
-                RabbitQueueFactory.this.init();
                 connect() ;
                 channel.basicReject(deliveryTag, false);
             }
@@ -311,7 +316,6 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             } catch (IOException e) {
                 // try again
                 Data.logger.warn("RabbitQueueFactory.recover: re-connecting broker");
-                RabbitQueueFactory.this.init();
                 connect() ;
                 channel.basicRecover(true);
             }
@@ -324,7 +328,6 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             } catch (IOException e) {
                 // try again
                 Data.logger.warn("RabbitQueueFactory.available: re-connecting broker");
-                RabbitQueueFactory.this.init();
                 connect() ;
                 return availableInternal();
             }
@@ -336,19 +339,16 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             return b;
         }
     }
-    
+
     @Override
     public void close() {
         this.queues.clear();
-        try {
-            this.channel.close();
-        } catch (IOException | TimeoutException e) {}
         try {
             this.connection.close();
         } catch (IOException e) {}
         this.queues = null;
     }
-    
+
     public static void main(String[] args) {
         RabbitQueueFactory qc;
         try {
