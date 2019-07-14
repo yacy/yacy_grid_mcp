@@ -240,12 +240,13 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             channel.basicPublish(DEFAULT_EXCHANGE, this.queueName, MessageProperties.PERSISTENT_BASIC, message);
             // wait for confirmation
             try {
-                boolean delivered = semaphore.poll(10, TimeUnit.SECONDS);
+                Boolean delivered = semaphore.poll(10, TimeUnit.SECONDS);
+                if (delivered == null) throw new IOException("message sending timeout");
                 if (delivered) return this;
-                throw new IOException(GridBroker.TARGET_LIMIT_MESSAGE); // will be tried again below
+                throw new IOException(GridBroker.TARGET_LIMIT_MESSAGE);
             } catch (InterruptedException x) {
                 unconfirmedSet.remove(seqNo); // prevent a memory leak
-                throw new IOException("message sending timeout"); // will be tried again below
+                throw new IOException("message sending interrupted");
             }
         }
 
