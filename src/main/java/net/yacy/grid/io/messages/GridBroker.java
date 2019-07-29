@@ -164,7 +164,14 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         } catch (IOException e) {
             String m = e.getMessage();
             if (m == null) m = e.getCause().getMessage();
-            if (m.equals(TARGET_LIMIT_MESSAGE)) throw e; // consider this as fatal to trigger throttling
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            if (m.equals(TARGET_LIMIT_MESSAGE)) {
+                // queue limitation is like running against a wall: don't do this at all (if you know there is a wall)
+                // at least: If you insist in queue limitation don't do this too aggressive;
+                // I recommend to do not to limit queues; instead do throttling
+                try {Thread.sleep(3000);} catch (InterruptedException ee) {}
+                throw e; // consider this as fatal to trigger throttling (hope throttling is done on every send-location
+            }
             /*if (!e.getMessage().contains("timeout"))*/ Data.logger.debug("Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {
