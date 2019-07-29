@@ -29,15 +29,21 @@ import ai.susi.mind.SusiAction;
  */
 public interface BrokerListener extends Runnable {
 
+    public enum ActionResult {
+        SUCCESS,              // the action was performed with success AND it is wanted that embedded actions from another "actions" object is executed. If this is true, the process is not executed in the same thread, instead, the process is pushed to the broker to be executed by another thread
+        FAIL_RETRY,           // the action was not performed with success but it might be successfull at a later time
+        FAIL_IRREVERSIBLE;    // the action was not successfull and should bot be tried again
+    }
+
     /**
      * Process an action from the broker
      * @param action an action
      * @param data additional data that the process can use
      * @param processName a name for the process
      * @param processNumber a number of the process within the given name space
-     * @return true, if the process was successful AND it is wanted that embedded actions from another "actions" object is executed. If this is true, the process is not executed in the same thread, instead, the process is pushed to the broker to be executed by another thread
+     * @return ActionResult
      */
-    public boolean processAction(SusiAction action, JSONArray data, String processName, int processNumber);
+    public ActionResult processAction(SusiAction action, JSONArray data, String processName, int processNumber);
 
     /**
      * calculate the number of messages that the broker listener processes

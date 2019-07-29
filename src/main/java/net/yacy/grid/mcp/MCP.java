@@ -119,11 +119,11 @@ public class MCP {
         }
 
        @Override
-       public boolean processAction(SusiAction action, JSONArray data, String processName, int processNumber) {
+       public ActionResult processAction(SusiAction action, JSONArray data, String processName, int processNumber) {
            // find result of indexing with http://localhost:9200/web/crawler/_search?q=text_t:*
 
            String sourceasset_path = action.getStringAttr("sourceasset");
-           if (sourceasset_path == null || sourceasset_path.length() == 0) return false;
+           if (sourceasset_path == null || sourceasset_path.length() == 0) return ActionResult.FAIL_IRREVERSIBLE;
 
            try {
                // get the message with parsed documents
@@ -137,7 +137,7 @@ public class MCP {
                    jsonlist = new JSONList(new ByteArrayInputStream(source));
                } catch (IOException e) {
                    Data.logger.warn("MCP.processAction could not read asset from storage: " + sourceasset_path, e);
-                   return false;
+                   return ActionResult.FAIL_IRREVERSIBLE;
                }
 
                // for each document, write search index and crawler index
@@ -171,11 +171,11 @@ public class MCP {
                    Data.logger.warn("", je);
                }
                //Data.index.writeMapBulk("web", bulk);
-                   Data.logger.info("MCP.processAction processed indexing message from queue: " + sourceasset_path);
-                   return true;
+               Data.logger.info("MCP.processAction processed indexing message from queue: " + sourceasset_path);
+               return ActionResult.SUCCESS;
            } catch (Throwable e) {
                Data.logger.warn("MCP.processAction", e);
-               return false;
+               return ActionResult.FAIL_IRREVERSIBLE;
            }
        }
     }
