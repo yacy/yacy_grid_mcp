@@ -60,7 +60,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         this.targetFill = new AtomicInteger(0);
     }
 
-    public abstract boolean processAction(SusiAction action, JSONArray data, String processName, int processNumber);
+    public abstract ActionResult processAction(SusiAction action, JSONArray data, String processName, int processNumber);
 
     @Override
     public void run() {
@@ -181,6 +181,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 }
                 String payload = "";
                 MessageContainer<byte[]> mc = null;
+                ActionResult result = ActionResult.SUCCESS;
                 try {
                     // check short memory status
                     if (Memory.shortStatus()) {
@@ -205,8 +206,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     // wait until message arrives
                     mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000, autoAck);
                     if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) {
-                        handleMessage(mc, this.queueName.name(), this.threadCounter);
-
+                        result = handleMessage(mc, this.queueName.name(), this.threadCounter);
                         // track number of handles messages
                         long time = System.currentTimeMillis();
                         this.tracker.add(time);
@@ -248,7 +248,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         }
     }
 
-    private void handleMessage(final MessageContainer<byte[]> mc, final String processName, final int processNumber) throws IOException {
+    private ActionResult handleMessage(final MessageContainer<byte[]> mc, final String processName, final int processNumber) {
         Thread.currentThread().setName(processName + "-" + processNumber + "-running");
 
         String payload = new String(mc.getPayload(), StandardCharsets.UTF_8);
@@ -258,6 +258,8 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         final List<SusiAction> actions = process.getActions();
 
         // loop though all actions
+        boolean fail_irreversible = false;
+        boolean fail_retry = false;
         actionloop: for (int ac = 0; ac < actions.size(); ac++) {
             SusiAction action = actions.get(ac);
             String type = action.getStringAttr("type");
@@ -275,15 +277,15 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 try {
                     loadNextAction(action, process.getData()); // put that into the correct queue
                 } catch (Throwable e) {
-                    if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) throw e;
+                    if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) return ActionResult.FAIL_RETRY;
                     Data.logger.warn("", e);
                 }
                 continue actionloop;
             }
 
             // process the action using the previously acquired execution thread
-            boolean processed = processAction(action, data, processName, processNumber);
-            if (processed) {
+            ActionResult processed = processAction(action, data, processName, processNumber);
+            if (processed == ActionResult.SUCCESS) {
                 // send next embedded action(s) to queue
                 JSONObject ao = action.toJSONClone();
                 if (ao.has("actions")) {
@@ -294,7 +296,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                         } catch (UnsupportedOperationException | JSONException e) {
                             Data.logger.warn("", e);
                         } catch (IOException e) {
-                            if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) throw e;
+                            if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) return ActionResult.FAIL_RETRY;
                             Data.logger.warn("", e);
                             // do a re-try
                             try {Thread.sleep(10000);} catch (InterruptedException e1) {}
@@ -307,7 +309,12 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     }
                 }
             }
+            if (processed == ActionResult.FAIL_RETRY) fail_retry = true;
+            if (processed == ActionResult.FAIL_IRREVERSIBLE) fail_irreversible = true;
         }
+        if (fail_irreversible) return ActionResult.FAIL_IRREVERSIBLE;
+        if (fail_retry) return ActionResult.FAIL_RETRY;
+        return ActionResult.SUCCESS;
     }
 
     private void loadNextAction(SusiAction action, JSONArray data) throws UnsupportedOperationException, IOException {
