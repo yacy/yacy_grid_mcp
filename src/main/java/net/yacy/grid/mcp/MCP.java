@@ -41,6 +41,7 @@ import net.yacy.grid.io.index.CrawlerDocument.Status;
 import net.yacy.grid.mcp.api.admin.InquirySubmitService;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
+import net.yacy.grid.mcp.api.control.LoaderThrottlingService;
 import net.yacy.grid.mcp.api.index.AddService;
 import net.yacy.grid.mcp.api.index.CheckService;
 import net.yacy.grid.mcp.api.index.CountService;
@@ -83,6 +84,9 @@ public class MCP {
             StatusService.class,
             ThreaddumpService.class,
             LogService.class,
+
+            // control services
+            LoaderThrottlingService.class,
 
             // message services
             AcknowledgeService.class,
