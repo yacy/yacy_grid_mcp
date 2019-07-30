@@ -82,10 +82,8 @@ public class GridIndex implements Index {
     }
 
     public boolean connectMCP(String host, int port) {
-        if (this.mcp_host == null) {
-            this.mcp_host = host;
-            this.mcp_port = port;
-        }
+        this.mcp_host = host;
+        this.mcp_port = port;
         this.mcpIndexFactory = new MCPIndexFactory(this, host, port);
         Data.logger.info("Index/Client: connected to an index over MCP at " + host + ":" + port);
         return true;
