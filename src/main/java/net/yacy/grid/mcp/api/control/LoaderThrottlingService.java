@@ -60,7 +60,8 @@ public class LoaderThrottlingService extends ObjectAPIHandler implements APIHand
         JSONObject json = new JSONObject(true);
         json.put("delay", 500);
         json.put("time", System.currentTimeMillis() + 500);
-
+        json.put(ObjectAPIHandler.SUCCESS_KEY, true);
+        json.put(ObjectAPIHandler.COMMENT_KEY, "");
         return new ServiceResponse(json);
     }
 
