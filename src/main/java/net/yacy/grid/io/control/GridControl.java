@@ -20,12 +20,14 @@
 package net.yacy.grid.io.control;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.Servlet;
 
@@ -37,6 +39,7 @@ import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Service;
 import net.yacy.grid.mcp.api.control.LoaderThrottlingService;
 import net.yacy.grid.mcp.api.info.StatusService;
+import net.yacy.grid.tools.MultiProtocolURL;
 import net.yacy.grid.mcp.Data;
 import net.yacy.grid.mcp.MCP;
 
@@ -44,6 +47,8 @@ public class GridControl {
 
     private String mcp_host;
     private int mcp_port;
+
+    private static Map<String, Long> loaderAccess = new ConcurrentHashMap<>();
 
     public GridControl() {
         this.mcp_host = null;
@@ -84,6 +89,39 @@ public class GridControl {
         String protocolhostportstub = GridControl.this.getConnectionURL();
         ServiceResponse sr = APIServer.getAPI(StatusService.NAME).serviceImpl(protocolhostportstub, params);
         if (!sr.getObject().has("system")) throw new IOException("MCP does not respond properly");
+    }
+
+    public static long computeThrottling(String id, String url, int depth, int crawlingDepth, boolean loaderHeadless, int priority) {
+        MultiProtocolURL u;
+        try {
+            u = new MultiProtocolURL(url);
+        } catch (MalformedURLException e) {
+            return 500;
+        }
+        String host = u.getHost();
+        Long lastLoadTime = loaderAccess.get(host);
+        if (lastLoadTime == null) {
+            // the host was never loaded!
+            loaderAccess.put(host, System.currentTimeMillis());
+            Data.logger.info("GridControl.computeThrottling: never-loaded " + host + ", delay = 0, url = " + url);
+            return 0;
+        }
+        // compute access delta
+        long delta = lastLoadTime.longValue() - System.currentTimeMillis();
+        if (delta < 0) {
+            // the latest load time was in the past
+            loaderAccess.put(host, System.currentTimeMillis());
+            long delay = Math.max(0, delta + 500); // in case that delta < -500, we don't need a throttling at all
+            Data.logger.info("GridControl.computeThrottling: past-loaded " + host + ", delay = " + delay + ", url = " + url);
+            return delay; 
+        }
+        // the latest load time will be loaded by another thread in the future
+        // we must add another delay to this
+        long future = System.currentTimeMillis() + delta + 500;
+        long delay = future - System.currentTimeMillis();
+        loaderAccess.put(host, future);
+        Data.logger.info("GridControl.computeThrottling: future-loading " + host + ", delay = " + delay + ", url = " + url);
+        return delay; // == delta + 500
     }
 
     public long checkThrottling(String id, String url, int depth, int crawlingDepth, boolean loaderHeadless, int priority) throws IOException {

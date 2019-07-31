@@ -27,6 +27,7 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.io.control.GridControl;
 
 /**
  * The loader throttling Service:
@@ -55,10 +56,11 @@ public class LoaderThrottlingService extends ObjectAPIHandler implements APIHand
         int depth = call.get("depth", 0);
         int crawlingDepth = call.get("crawlingDepth", 0); // the maximum depth for the crawl start of this domain
         boolean loaderHeadless = call.get("loaderHeadless", false);
+        int priority = call.get("priority", 0);
 
         // generate json
         JSONObject json = new JSONObject(true);
-        json.put("delay", 500);
+        json.put("delay", GridControl.computeThrottling(id, url, depth, crawlingDepth, loaderHeadless, priority));
         json.put("time", System.currentTimeMillis() + 500);
         json.put(ObjectAPIHandler.SUCCESS_KEY, true);
         json.put(ObjectAPIHandler.COMMENT_KEY, "");
