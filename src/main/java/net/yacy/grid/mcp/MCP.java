@@ -38,6 +38,7 @@ import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.io.index.CrawlerDocument;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.io.index.CrawlerDocument.Status;
+import net.yacy.grid.io.index.GridIndex;
 import net.yacy.grid.mcp.api.admin.InquirySubmitService;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
@@ -156,7 +157,7 @@ public class MCP {
                    if (date == null && json.has(WebMapping.fresh_date_dt.getMapping().name())) date = WebMapping.fresh_date_dt.getMapping().name();
                    String url = json.getString(WebMapping.url_s.getMapping().name());
                    String urlid = MultiProtocolURL.getDigest(url);
-                   boolean created = Data.gridIndex.getElasticClient().writeMap("web", "crawler", urlid, json.toMap());
+                   boolean created = Data.gridIndex.getElasticClient().writeMap(GridIndex.WEB_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, urlid, json.toMap());
                    Data.logger.info("MCP.processAction indexed " + ((line + 1)/2)  + "/" + jsonlist.length()/2 + "(" + (created ? "created" : "updated")+ "): " + url);
                    //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
                    //bulk.add(be);
@@ -174,7 +175,7 @@ public class MCP {
                } catch (JSONException je) {
                    Data.logger.warn("", je);
                }
-               //Data.index.writeMapBulk("web", bulk);
+               //Data.index.writeMapBulk(GridIndex.WEB_INDEX_NAME, bulk);
                Data.logger.info("MCP.processAction processed indexing message from queue: " + sourceasset_path);
                return ActionResult.SUCCESS;
            } catch (Throwable e) {

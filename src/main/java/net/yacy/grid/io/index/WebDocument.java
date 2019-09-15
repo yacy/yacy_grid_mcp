@@ -48,14 +48,14 @@ public class WebDocument extends Document {
     }
     
     public static Map<String, WebDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
-        Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.WEB_INDEX_NAME, "crawler", ids);
+        Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.WEB_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, ids);
         Map<String, WebDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> docmap.put(id, new WebDocument(doc)));
         return docmap;
     }
 
     public static WebDocument load(Index index, String id) throws IOException {
-        JSONObject json = index.query(GridIndex.WEB_INDEX_NAME, "crawler", id);
+        JSONObject json = index.query(GridIndex.WEB_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id);
         if (json == null) throw new IOException("no document with id " + id + " in index");
         return new WebDocument(json);
     }
@@ -66,12 +66,12 @@ public class WebDocument extends Document {
         documents.forEach(webDocument -> {
             map.put(webDocument.getId(), webDocument);
         });
-        index.addBulk(GridIndex.WEB_INDEX_NAME, "crawler", map);
+        index.addBulk(GridIndex.WEB_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, map);
     }
 
     public WebDocument store(Index index) throws IOException {
         if (index == null) return this;
-        index.add(GridIndex.WEB_INDEX_NAME, "crawler", getId(), this);
+        index.add(GridIndex.WEB_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, getId(), this);
         return this;
     }
     
