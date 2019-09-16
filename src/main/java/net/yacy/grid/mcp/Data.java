@@ -20,6 +20,8 @@
 package net.yacy.grid.mcp;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 
 import org.apache.log4j.ConsoleAppender;
@@ -98,6 +100,13 @@ public class Data {
 
         // create control
         gridControl = new GridControl();
+
+        // check network situation
+        try {
+            Data.logger.info("Local Host Address: " + InetAddress.getLocalHost().getHostAddress());
+        } catch (UnknownHostException e1) {
+            e1.printStackTrace();
+        }
 
         // connect outside services
         // first try to connect to the configured MCPs.
