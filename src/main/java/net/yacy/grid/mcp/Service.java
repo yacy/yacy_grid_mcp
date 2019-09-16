@@ -85,7 +85,8 @@ public enum Service {
         data_dir = FileSystems.getDefault().getPath(data_path).toFile();
         Map<String, String> config = readDoubleConfig("config.properties");
 
-        // overwrite the config with environment variables, i.e. like:
+        // overwrite the config with environment variables. Because a '.' (dot) is not allowed in system environments
+        // the dot can be replaced by "_" (underscore), i.e. like:
         // grid_broker_address="anonymous:yacy@127.0.0.1:5672" java -jar build/libs/yacy_grid_mcp-0.0.1-SNAPSHOT.jar
         String[] keys = config.keySet().toArray(new String[config.size()]); // create a clone of the keys to prevent a ConcurrentModificationException
         for (String key: keys) if (System.getenv().containsKey(key.replace('.', '_'))) config.put(key, System.getenv().get(key.replace('.', '_')));
