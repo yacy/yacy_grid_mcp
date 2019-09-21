@@ -205,7 +205,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
                 switchedIDs = ConcurrentHashMap.newKeySet();
                 switchedIDsMap.put(service, switchedIDs);
             }
-            if (available[leastFilled].getAvailable() == 0 && !switchedIDs.contains(hashingKey)) {
+            if (available[lookupIndex].getAvailable() > 100 && available[leastFilled].getAvailable() == 0 && !switchedIDs.contains(hashingKey)) {
                 switchedIDs.add(hashingKey);
                 // switch to leastFilled
                 Data.logger.info("AbstractBroker switching " + hashingKey + " from " + lookupIndex + " to " + leastFilled);
