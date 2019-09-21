@@ -75,14 +75,14 @@ Maven and Gradle tools should be installed. To refresh gradle settings in eclips
 ## How to install the infrastructure services (message server, ftp server)?
 
 ### install and start apache ftp server
-- Download apache-ftpserver-1.1.0.tar.gz (or a later version) from https://mina.apache.org/downloads-ftpserver.html
+- Download apache-ftpserver-1.1.1.tar.gz (or a later version) from https://mina.apache.org/downloads-ftpserver.html
 - decompress the server package with
 
-    > tar xfz apache-ftpserver-1.1.0.tar.gz
+    > tar xfz apache-ftpserver-1.1.1.tar.gz
     
 - modify the write right of the anonymous user that we will use to write assets: edit the file
 
-    apache-ftpserver-1.1.0/res/conf/users.properties
+    apache-ftpserver-1.1.1/res/conf/users.properties
 
 - set the write permission for anonymous.. if you don't want to set an user account
 
@@ -112,13 +112,13 @@ ftpserver.user.yacygrid.uploadrate=0
 ftpserver.user.yacygrid.downloadrate=0
 ```
     
-- edit the file apache-ftpserver-1.1.0/bin/ftpd.sh and set JAVA_HOME according to your system, i.e. on a Mac you set
+- edit the file apache-ftpserver-1.1.1/bin/ftpd.sh and set JAVA_HOME according to your system, i.e. on a Mac you set
 
     JAVA_HOME=/usr
     
 - run the server, doing:
 
-    > cd apache-ftpserver-1.1.0
+    > cd apache-ftpserver-1.1.1
     > bin/ftpd.sh res/conf/ftpd-typical.xml
     
 This will run the ftp server at port 2121. To test the connection use a standard ftp client and start it with
