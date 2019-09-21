@@ -3,33 +3,30 @@
  *  Copyright 18.02.2016 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
+ *  modify it under the terms of the GNU Lesser General private
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
  *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
+ *  Lesser General private License for more details.
  *
- *  You should have received a copy of the GNU Lesser General Public License
+ *  You should have received a copy of the GNU Lesser General private License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package net.yacy.grid.io.index;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -47,7 +44,6 @@ import org.elasticsearch.action.admin.cluster.stats.ClusterStatsNodes;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequest;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsResponse;
-import org.elasticsearch.action.admin.cluster.tasks.PendingClusterTasksResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -57,20 +53,18 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -85,6 +79,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
+import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -101,9 +96,9 @@ public class ElasticsearchClient {
     private static long throttling_time_threshold = 2000L; // update time high limit
     private static long throttling_ops_threshold = 1000L; // messages per second low limit
     private static double throttling_factor = 1.0d; // factor applied on update duration if both thresholds are passed
-    
-    public final static BulkWriteResult EMPTY_BULK_RESULT = new BulkWriteResult();
-    
+
+    private String[] addresses;
+    private String clusterName;
     private Client elasticsearchClient;
 
     /**
@@ -112,12 +107,19 @@ public class ElasticsearchClient {
      * @param clusterName
      */
     public ElasticsearchClient(final String[] addresses, final String clusterName) {
+        Data.logger.info("ElasticsearchClient initiated client, address: " + addresses[0] + ", clusterName: " + clusterName);
+        this.addresses = addresses;
+        this.clusterName = clusterName;
+        connect();
+    }
+
+    private void connect() {
         // create default settings and add cluster name
         Settings.Builder settings = Settings.builder()
                 .put("cluster.routing.allocation.enable", "all")
                 .put("cluster.routing.allocation.allow_rebalance", "always");
         if (clusterName != null) settings.put("cluster.name", clusterName);
-        
+
         // create a client
         TransportClient tc = new PreBuiltTransportClient(settings.build());
 
@@ -127,16 +129,20 @@ public class ElasticsearchClient {
             if (p >= 0) try {
                 InetAddress i = InetAddress.getByName(a.substring(0, p));
                 int port = Integer.parseInt(a.substring(p + 1));
-                tc.addTransportAddress(new InetSocketTransportAddress(i, port));
-                //tc.addTransportAddress(new TransportAddress(i, port));
+                //tc.addTransportAddress(new InetSocketTransportAddress(i, port));
+                tc.addTransportAddress(new TransportAddress(i, port));
             } catch (UnknownHostException e) {
                 Data.logger.warn("", e);
             }
         }
+        if (this.elasticsearchClient != null) try {
+            this.elasticsearchClient.close();
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {}
         this.elasticsearchClient = tc;
     }
 
-    public ClusterStatsNodes getClusterStatsNodes() {
+    @SuppressWarnings("unused")
+    private ClusterStatsNodes getClusterStatsNodes() {
         ClusterStatsRequest clusterStatsRequest =
             new ClusterStatsRequestBuilder(elasticsearchClient.admin().cluster(), ClusterStatsAction.INSTANCE).request();
         ClusterStatsResponse clusterStatsResponse =
@@ -144,16 +150,19 @@ public class ElasticsearchClient {
         ClusterStatsNodes clusterStatsNodes = clusterStatsResponse.getNodesStats();
         return clusterStatsNodes;
     }
-    
+
     private boolean clusterReadyCache = false;
-    public boolean clusterReady() {
+
+    @SuppressWarnings("unused")
+    private boolean clusterReady() {
         if (clusterReadyCache) return true;
         ClusterHealthResponse chr = elasticsearchClient.admin().cluster().prepareHealth().get();
         clusterReadyCache = chr.getStatus() != ClusterHealthStatus.RED;
         return clusterReadyCache;
     }
 
-    public boolean wait_ready(long maxtimemillis, ClusterHealthStatus status) {
+    @SuppressWarnings("unused")
+    private boolean wait_ready(long maxtimemillis, ClusterHealthStatus status) {
         // wait for yellow status
         long start = System.currentTimeMillis();
         boolean is_ready;
@@ -165,15 +174,15 @@ public class ElasticsearchClient {
         } while (!is_ready);
         return is_ready;
     }
-    
+
     /**
      * create a new index. This method must be called to ensure that an elasticsearch index is available and can be used.
      * @param indexName
      * @param shards
      * @param replicas
-     * @throws NoNodeAvailableException in case that no elasticsearch server can be contacted.
+     * @throws NoNodeAvailableException | IllegalStateException in case that no elasticsearch server can be contacted.
      */
-    public void createIndexIfNotExists(String indexName, final int shards, final int replicas) throws NoNodeAvailableException {
+    public void createIndexIfNotExists(String indexName, final int shards, final int replicas) {
         // create an index if not existent
         if (!this.elasticsearchClient.admin().indices().prepareExists(indexName).execute().actionGet().isExists()) {
             Settings.Builder settings = Settings.builder()
@@ -187,58 +196,16 @@ public class ElasticsearchClient {
         }
     }
 
-    public void setMapping(String indexName, XContentBuilder mapping) {
-        try {
-            this.elasticsearchClient.admin().indices().preparePutMapping(indexName)
-                .setSource(mapping)
-                .setType("_default_").execute().actionGet();
-        } catch (Throwable e) {
-            Data.logger.warn("", e);
-        };
-    }
-
-    public void setMapping(String indexName, Map<String, Object> mapping) {
-        try {
-            this.elasticsearchClient.admin().indices().preparePutMapping(indexName)
-                .setSource(mapping)
-                .setType("_default_").execute().actionGet();
-        } catch (Throwable e) {
-            Data.logger.warn("", e);
-        };
-    }
-
     public void setMapping(String indexName, String mapping) {
         try {
             this.elasticsearchClient.admin().indices().preparePutMapping(indexName)
                 .setSource(mapping, XContentType.JSON)
                 .setType("_default_").execute().actionGet();
-        } catch (Throwable e) {
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
             Data.logger.warn("", e);
         };
     }
 
-    public void setMapping(String indexName, File json) {
-        try {
-            this.elasticsearchClient.admin().indices().preparePutMapping(indexName)
-                .setSource(new String(Files.readAllBytes(json.toPath()), StandardCharsets.UTF_8), XContentType.JSON)
-                .setType("_default_")
-                .execute()
-                .actionGet();
-        } catch (Throwable e) {
-            Data.logger.warn("", e);
-        };
-    }
-
-    public String pendingClusterTasks() {
-        PendingClusterTasksResponse r = this.elasticsearchClient.admin().cluster().preparePendingClusterTasks().get();
-        return r.toString();
-    }
-    
-    public String clusterStats() {
-        ClusterStatsResponse r = this.elasticsearchClient.admin().cluster().prepareClusterStats().get();
-        return r.toString();
-    }
-    
     /**
      * Close the connection to the remote elasticsearch client. This should only be called when the application is
      * terminated.
@@ -254,7 +221,6 @@ public class ElasticsearchClient {
         }
     }
 
-
     /**
      * A finalize method is added to ensure that close() is always called.
      */
@@ -262,13 +228,13 @@ public class ElasticsearchClient {
         this.close(); // will not cause harm if this is the second call to close()
     }
 
-
     /**
      * Retrieve a statistic object from the connected elasticsearch cluster
      * 
      * @return cluster stats from connected cluster
      */
-    public ClusterStatsNodes getStats() {
+    @SuppressWarnings("unused")
+    private ClusterStatsNodes getStats() {
         final ClusterStatsRequest clusterStatsRequest =
             new ClusterStatsRequestBuilder(elasticsearchClient.admin().cluster(), ClusterStatsAction.INSTANCE)
                 .request();
@@ -278,16 +244,14 @@ public class ElasticsearchClient {
         return clusterStatsNodes;
     }
 
-
     /**
      * Get the number of documents in the search index
      * 
      * @return the count of all documents in the index
      */
-    public long count(String indexName) {
+    private long count(String indexName) {
         return count(QueryBuilders.constantScoreQuery(QueryBuilders.matchAllQuery()), indexName);
     }
-
 
     /**
      * Get the number of documents in the search index for a given search query
@@ -296,42 +260,24 @@ public class ElasticsearchClient {
      *            the query
      * @return the count of all documents in the index which matches with the query
      */
-    public long count(final QueryBuilder q, final String indexName) {
+    private long count(final QueryBuilder q, final String indexName) {
         SearchResponse response = elasticsearchClient.prepareSearch(indexName).setQuery(q).setSize(0).execute().actionGet();
         return response.getHits().getTotalHits();
     }
-    
+
     public long count(final QueryBuilder q, final String indexName, final String typeName) {
-        SearchResponse response = elasticsearchClient.prepareSearch(indexName).setTypes(typeName).setQuery(q).setSize(0).execute().actionGet();
-        return response.getHits().getTotalHits();
+        while (true) try {
+            return countInternal(q, indexName, typeName);
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+            Data.logger.info("ElasticsearchClient count failed with " + e.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            connect();
+        }
     }
 
-    public long count(final String index, final String histogram_timefield, final long millis) {
-        try {
-            SearchResponse response = elasticsearchClient.prepareSearch(index)
-                .setSize(0)
-                .setQuery(millis <= 0 ? QueryBuilders.constantScoreQuery(QueryBuilders.matchAllQuery()) : QueryBuilders.rangeQuery(histogram_timefield).from(new Date(System.currentTimeMillis() - millis)))
-                .execute()
-                .actionGet();
-            return response.getHits().getTotalHits();
-        } catch (Throwable e) {
-            Data.logger.warn("", e);
-            return 0;
-        }
-    }
-    
-    public long countLocal(final String index, final String provider_hash) {
-        try {
-            SearchResponse response = elasticsearchClient.prepareSearch(index)
-                .setSize(0)
-                .setQuery(QueryBuilders.matchQuery("provider_hash", provider_hash))
-                .execute()
-                .actionGet();
-            return response.getHits().getTotalHits();
-        } catch (Throwable e) {
-            Data.logger.warn("", e);
-            return 0;
-        }
+    public long countInternal(final QueryBuilder q, final String indexName, final String typeName) {
+        SearchResponse response = elasticsearchClient.prepareSearch(indexName).setTypes(typeName).setQuery(q).setSize(0).execute().actionGet();
+        return response.getHits().getTotalHits();
     }
 
     /**
@@ -359,6 +305,16 @@ public class ElasticsearchClient {
      * @return the document, if it exists or null otherwise;
      */
     public boolean exist(String indexName, String typeName, final String id) {
+        while (true) try {
+            return existInternal(indexName, typeName, id);
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+            Data.logger.info("ElasticsearchClient exist failed with " + e.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            connect();
+        }
+    }
+
+    public boolean existInternal(String indexName, String typeName, final String id) {
         GetResponse getResponse = elasticsearchClient
                 .prepareGet(indexName, typeName, id)
                 .setFetchSource(false)
@@ -369,6 +325,17 @@ public class ElasticsearchClient {
     }
 
     public Set<String> existBulk(String indexName, String typeName, final Collection<String> ids) {
+        while (true) try {
+            return existBulkInternal(indexName, typeName, ids);
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+            Data.logger.info("ElasticsearchClient existBulk failed with " + e.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            connect();
+            continue;
+        }
+    }
+
+    private Set<String> existBulkInternal(String indexName, String typeName, final Collection<String> ids) {
         if (ids == null || ids.size() == 0) return new HashSet<>();
         MultiGetResponse multiGetItemResponses = elasticsearchClient.prepareMultiGet()
                 .add(indexName, typeName, ids)
@@ -394,7 +361,8 @@ public class ElasticsearchClient {
      *            the unique identifier of a document
      * @return the type name of the document if it exists, null otherwise
      */
-    public String getType(String indexName, final String id) {
+    @SuppressWarnings("unused")
+    private String getType(String indexName, final String id) {
         GetResponse getResponse = elasticsearchClient.prepareGet(indexName, null, id).execute().actionGet();
         return getResponse.isExists() ? getResponse.getType() : null;
     }
@@ -412,29 +380,21 @@ public class ElasticsearchClient {
      * @return true if the document existed and was deleted, false otherwise
      */
     public boolean delete(String indexName, String typeName, final String id) {
+        while (true) try {
+            return deleteInternal(indexName, typeName, id);
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+            Data.logger.info("ElasticsearchClient delete failed with " + e.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            connect();
+            continue;
+        }
+    }
+
+    private boolean deleteInternal(String indexName, String typeName, final String id) {
         DeleteResponse response = elasticsearchClient.prepareDelete(indexName, typeName, id).get();
         return response.getResult() == DocWriteResponse.Result.DELETED;
     }
 
-    /**
-     * Delete a list of documents for a given set of ids
-     * ATTENTION: read about the time-out of version number checking in the method above.
-     * 
-     * @param ids
-     *            a map from the unique identifier of a document to the document type
-     * @return the number of deleted documents
-     */
-    public int deleteBulk(String indexName, Map<String, String> ids) {
-        // bulk-delete the ids
-        if (ids == null || ids.size() == 0) return 0;
-        BulkRequestBuilder bulkRequest = elasticsearchClient.prepareBulk();
-        for (Map.Entry<String, String> id : ids.entrySet()) {
-            bulkRequest.add(new DeleteRequest().id(id.getKey()).index(indexName).type(id.getValue()));
-        }
-        bulkRequest.execute().actionGet();
-        return ids.size();
-    }
-    
     /**
      * Delete documents using a query. Check what would be deleted first with a normal search query!
      * Elasticsearch once provided a native prepareDeleteByQuery method, but this was removed
@@ -446,6 +406,17 @@ public class ElasticsearchClient {
      * @return delete document count
      */
     public int deleteByQuery(String indexName, String typeName, final QueryBuilder q) {
+        while (true) try {
+            return deleteByQueryInternal(indexName, typeName, q);
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+            Data.logger.info("ElasticsearchClient deleteByQuery failed with " + e.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            connect();
+            continue;
+        }
+    }
+
+    private int deleteByQueryInternal(String indexName, String typeName, final QueryBuilder q) {
         Map<String, String> ids = new TreeMap<>();
         SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName);
         if (typeName != null) request.setTypes(typeName);
@@ -470,6 +441,25 @@ public class ElasticsearchClient {
     }
 
     /**
+     * Delete a list of documents for a given set of ids
+     * ATTENTION: read about the time-out of version number checking in the method above.
+     * 
+     * @param ids
+     *            a map from the unique identifier of a document to the document type
+     * @return the number of deleted documents
+     */
+    private int deleteBulk(String indexName, Map<String, String> ids) {
+        // bulk-delete the ids
+        if (ids == null || ids.size() == 0) return 0;
+        BulkRequestBuilder bulkRequest = elasticsearchClient.prepareBulk();
+        for (Map.Entry<String, String> id : ids.entrySet()) {
+            bulkRequest.add(new DeleteRequest().id(id.getKey()).index(indexName).type(id.getValue()));
+        }
+        bulkRequest.execute().actionGet();
+        return ids.size();
+    }
+
+    /**
      * Read a document from the search index for a given id.
      * This is the cheapest document retrieval from the '_source' field because
      * elasticsearch does not do any json transformation or parsing. We
@@ -480,7 +470,8 @@ public class ElasticsearchClient {
      *            the unique identifier of a document
      * @return the document as source text
      */
-    public byte[] readSource(String indexName, final String id) {
+    @SuppressWarnings("unused")
+    private byte[] readSource(String indexName, final String id) {
         GetResponse response = elasticsearchClient.prepareGet(indexName, null, id).execute().actionGet();
         return response.getSourceAsBytes();
     }
@@ -494,12 +485,34 @@ public class ElasticsearchClient {
      * @return the document as json, matched on a Map<String, Object> object instance
      */
     public Map<String, Object> readMap(final String indexName, final String typeName, final String id) {
+        while (true) try {
+            return readMapInternal(indexName, typeName, id);
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+            Data.logger.info("ElasticsearchClient readMap failed with " + e.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            connect();
+            continue;
+        }
+    }
+
+    private Map<String, Object> readMapInternal(final String indexName, final String typeName, final String id) {
         GetResponse response = elasticsearchClient.prepareGet(indexName, typeName, id).execute().actionGet();
         Map<String, Object> map = getMap(response);
         return map;
     }
-    
+
     public Map<String, Map<String, Object>> readMapBulk(final String indexName, final String typeName, final Collection<String> ids) {
+        while (true) try {
+            return readMapBulkInternal(indexName, typeName, ids);
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+            Data.logger.info("ElasticsearchClient readMapBulk failed with " + e.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            connect();
+            continue;
+        }
+    }
+
+    private Map<String, Map<String, Object>> readMapBulkInternal(final String indexName, final String typeName, final Collection<String> ids) {
         MultiGetRequestBuilder mgrb = elasticsearchClient.prepareMultiGet();
         ids.forEach(id -> mgrb.add(indexName, typeName, id).execute().actionGet());
         MultiGetResponse response = mgrb.execute().actionGet();
@@ -513,7 +526,7 @@ public class ElasticsearchClient {
         }
         return bulkresponse;
     }
-    
+
     protected static Map<String, Object> getMap(GetResponse response) {
         Map<String, Object> map = null;
         if (response.isExists() && (map = response.getSourceAsMap()) != null) {
@@ -521,30 +534,6 @@ public class ElasticsearchClient {
             if (!map.containsKey("type")) map.put("type", response.getType());
         }
         return map;
-    }
-    
-    /**
-     * Write a json document into the search index.
-     * Writing using a XContentBuilder is the most efficient way to add content to elasticsearch
-     * 
-     * @param jsonMap
-     *            the json document to be indexed in elasticsearch
-     * @param id
-     *            the unique identifier of a document
-     * @param indexName
-     *            the name of the index
-     * @param typeName
-     *            the type of the index
-     */
-    public IndexResponse writeSource(String indexName, XContentBuilder json, String id, String typeName, long version, VersionType versionType) {
-        // put this to the index
-        IndexResponse r = elasticsearchClient.prepareIndex(indexName, typeName, id).setSource(json)
-            .setVersion(version).setVersionType(versionType).execute()
-            .actionGet();
-        // documentation about the versioning is available at
-        // https://www.elastic.co/blog/elasticsearch-versioning-support
-        // TODO: error handling
-        return r;
     }
 
     /**
@@ -559,55 +548,37 @@ public class ElasticsearchClient {
      * @return true if the document with given id did not exist before, false if it existed and was overwritten
      */
     public boolean writeMap(String indexName, String typeName, String id, final Map<String, Object> jsonMap) {
+        while (true) try {
+            return writeMapInternal(indexName, typeName, id, jsonMap);
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+            Data.logger.info("ElasticsearchClient writeMap failed with " + e.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            connect();
+            continue;
+        }
+    }
+
+    // internal method used for a re-try after NoNodeAvailableException | IllegalStateException
+    private boolean writeMapInternal(String indexName, String typeName, String id, final Map<String, Object> jsonMap) {
         long start = System.currentTimeMillis();
         // get the version number out of the json, if any is given
         Long version = (Long) jsonMap.remove("_version");
         // put this to the index
-        UpdateResponse r = null;
-        //IndexResponse r = null;
-        try {
-            r = elasticsearchClient
-                .prepareUpdate(indexName, typeName, id)
-                .setDoc(jsonMap)
-                .setUpsert(jsonMap)
-                //.setVersion(version == null ? 1 : version.longValue())
-                //.setVersionType(VersionType.EXTERNAL_GTE)
-                .execute()
-                .actionGet();
-            /*
-            r = elasticsearchClient
-                .prepareIndex(indexName, typeName, id)
-                .setCreate(false) // enforces OpType.INDEX
-                .setSource(jsonMap)
-                .setVersion(version == null ? 1 : version.longValue())
-                .setVersionType(VersionType.EXTERNAL_GTE)
-                .execute()
-                .actionGet();
-             */
-        } catch (ClusterBlockException e) {
-            /*
-            elasticsearchClient.admin().indices().prepareUpdateSettings(indexName)   
-                .setSettings(Settings.builder()                     
-                    .put("index.number_of_replicas", 0)
-                )
-           .get();
-           */
-            throw e;
-        }
+        UpdateResponse r = elasticsearchClient
+            .prepareUpdate(indexName, typeName, id)
+            .setDoc(jsonMap)
+            .setUpsert(jsonMap)
+            //.setVersion(version == null ? 1 : version.longValue())
+            //.setVersionType(VersionType.EXTERNAL_GTE)
+            .execute()
+            .actionGet();
         if (version != null) jsonMap.put("_version", version); // to prevent side effects
         // documentation about the versioning is available at
         // https://www.elastic.co/blog/elasticsearch-versioning-support
         // TODO: error handling
         boolean created = r != null && r.status() == RestStatus.CREATED; // true means created, false means updated
         long duration = Math.max(1, System.currentTimeMillis() - start);
-        long regulator = 0;
-        /*
-        if (duration > throttling_time_threshold) {
-            regulator = (long) (throttling_factor * duration);
-            try {Thread.sleep(regulator);} catch (InterruptedException e) {}
-        }
-        */
-        Data.logger.info("elastic write entry to index " + indexName + ": " + (created ? "created":"updated") + ", " + duration + " ms" + (regulator == 0 ? "" : ", throttled with " + regulator + " ms"));
+        Data.logger.info("ElasticsearchClient write entry to index " + indexName + ": " + (created ? "created":"updated") + ", " + duration + " ms");
         return created;
     }
 
@@ -625,6 +596,17 @@ public class ElasticsearchClient {
      *            This must be a list, because keys may appear several times.
      */
     public BulkWriteResult writeMapBulk(final String indexName, final List<BulkEntry> jsonMapList) {
+        while (true) try {
+            return writeMapBulkInternal(indexName, jsonMapList);
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+            Data.logger.info("ElasticsearchClient writeMapBulk failed with " + e.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            connect();
+            continue;
+        }
+    }
+
+    private BulkWriteResult writeMapBulkInternal(final String indexName, final List<BulkEntry> jsonMapList) {
         long start = System.currentTimeMillis();
         BulkRequestBuilder bulkRequest = elasticsearchClient.prepareBulk();
         for (BulkEntry be: jsonMapList) {
@@ -656,10 +638,10 @@ public class ElasticsearchClient {
             regulator = (long) (throttling_factor * duration);
             try {Thread.sleep(regulator);} catch (InterruptedException e) {}
         }
-        Data.logger.info("elastic write bulk to index " + indexName + ": " + jsonMapList.size() + " entries, " + result.created.size() + " created, " + result.errors.size() + " errors, " + duration + " ms" + (regulator == 0 ? "" : ", throttled with " + regulator + " ms") + ", " + ops + " objects/second");
+        Data.logger.info("ElasticsearchClient write bulk to index " + indexName + ": " + jsonMapList.size() + " entries, " + result.created.size() + " created, " + result.errors.size() + " errors, " + duration + " ms" + (regulator == 0 ? "" : ", throttled with " + regulator + " ms") + ", " + ops + " objects/second");
         return result;
     }
-    
+
     public static class BulkWriteResult {
         private Map<String, String> errors;
         private Set<String> created;
@@ -676,13 +658,13 @@ public class ElasticsearchClient {
     }
 
     private final static DateTimeFormatter utcFormatter = ISODateTimeFormat.dateTime().withZoneUTC();
-    
+
     public static class BulkEntry {
         private String id;
         private String type;
         //private Long version;
-        public Map<String, Object> jsonMap;
-        
+        private Map<String, Object> jsonMap;
+
         /**
          * initialize entry for bulk writes
          * @param id the id of the entry
@@ -700,41 +682,17 @@ public class ElasticsearchClient {
         }
     }
 
-    public Map<String, Object> query(final String indexName, final String typeName, final String field_name, String field_value) {
-        if (field_value == null || field_value.length() == 0) return null;
-        // prepare request
-        BoolQueryBuilder query = QueryBuilders.boolQuery();
-        query.must(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery(field_name, field_value)));
-        return query(indexName, typeName, query);
-    }
-
-    public Map<String, Object> query(final String indexName, final String typeName, final QueryBuilder query) {
-        SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName);
-        if (typeName != null) request.setTypes(typeName);
-        request
-            .setSearchType(SearchType.QUERY_THEN_FETCH)
-            .setQuery(query)
-            .setFrom(0)
-            .setSize(1).setTerminateAfter(1);
-        
-        // get response
-        SearchResponse response = request.execute().actionGet();
-
-        // evaluate search result
-        //long totalHitCount = response.getHits().getTotalHits();
-        SearchHit[] hits = response.getHits().getHits();
-        if (hits.length == 0) return null;
-        assert hits.length == 1;
-        Map<String, Object> map = hits[0].getSourceAsMap();
-        if (!map.containsKey("id")) map.put("id", hits[0].getId());
-        if (!map.containsKey("type")) map.put("type", hits[0].getType());
-        return map;
-    }
-    
     public Query query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
-        return new Query(indexName, typeName,  queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+        while (true) try {
+            return new Query(indexName, typeName,  queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+            Data.logger.info("ElasticsearchClient query failed with " + e.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            connect();
+            continue;
+        }
     }
-    
+
     public class Query {
         public List<Map<String, Object>> results;
         public List<String> explanations;
@@ -753,7 +711,7 @@ public class ElasticsearchClient {
          * @param aggregationLimit - the maximum count of facet entities, not search results
          * @param aggregationFields - names of the aggregation fields. If no aggregation is wanted, pass no (zero) field(s)
          */
-        public Query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
+        private Query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
             // prepare request
             SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName);
             if (typeName != null) request.setTypes(typeName);
@@ -777,7 +735,7 @@ public class ElasticsearchClient {
             SearchResponse response = request.execute().actionGet();
             SearchHits searchHits = response.getHits();
             hitCount = (int) searchHits.getTotalHits();
-            
+
             // evaluate search result
             //long totalHitCount = response.getHits().getTotalHits();
             SearchHit[] hits = searchHits.getHits();
@@ -797,7 +755,7 @@ public class ElasticsearchClient {
                     this.explanations.add("");
                 }
             }
-            
+
             // evaluate aggregation
             // collect results: fields
             this.aggregations = new HashMap<>();
@@ -830,8 +788,9 @@ public class ElasticsearchClient {
             }
         }
     }
-    
-    public List<Map<String, Object>> queryWithConstraints(final String indexName, final String fieldName, final String fieldValue, final Map<String, String> constraints, boolean latest) throws IOException {
+
+    @SuppressWarnings("unused")
+    private List<Map<String, Object>> queryWithConstraints(final String indexName, final String fieldName, final String fieldValue, final Map<String, String> constraints, boolean latest) throws IOException {
         SearchRequestBuilder request = this.elasticsearchClient.prepareSearch(indexName)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setFrom(0);
@@ -844,7 +803,7 @@ public class ElasticsearchClient {
             bFilter.must(QueryBuilders.constantScoreQuery(QueryBuilders.termQuery((String) entry.getKey(), ((String) entry.getValue()).toLowerCase())));
         }
         request.setQuery(bFilter);
-        
+
         // get response
         SearchResponse response = request.execute().actionGet();
 
@@ -858,20 +817,20 @@ public class ElasticsearchClient {
 
         return result;
     }
-    
+
     public static void main(String[] args) {
-    	ElasticsearchClient client = new ElasticsearchClient(new String[]{"localhost:9300"}, "");
-    	// check access
-    	client.createIndexIfNotExists("test", 1, 0);
-    	System.out.println(client.count("test"));
-    	// upload a schema
-    	try {
+        ElasticsearchClient client = new ElasticsearchClient(new String[]{"localhost:9300"}, "");
+        // check access
+        client.createIndexIfNotExists("test", 1, 0);
+        System.out.println(client.count("test"));
+        // upload a schema
+        try {
             String mapping = new String(Files.readAllBytes(Paths.get("conf/mappings/web.json")));
             client.setMapping("test", mapping);
         } catch (IOException e) {
             Data.logger.warn("", e);
         }
-    	
-    	client.close();
+
+        client.close();
     }
 }

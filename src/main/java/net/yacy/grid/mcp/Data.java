@@ -20,6 +20,8 @@
 package net.yacy.grid.mcp;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 
 import org.apache.log4j.ConsoleAppender;
@@ -28,6 +30,7 @@ import org.apache.log4j.PatternLayout;
 
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.assets.GridStorage;
+import net.yacy.grid.io.control.GridControl;
 import net.yacy.grid.io.db.JSONDatabase;
 import net.yacy.grid.io.db.PeerDatabase;
 import net.yacy.grid.io.index.BoostsFactory;
@@ -44,6 +47,7 @@ public class Data {
     public static GridBroker gridBroker;
     public static GridStorage gridStorage;
     public static GridIndex gridIndex;
+    public static GridControl gridControl;
     public static Logger logger;
     public static Map<String, String> config;
     public static LogAppender logAppender;
@@ -94,6 +98,16 @@ public class Data {
         // create index
         gridIndex = new GridIndex();
 
+        // create control
+        gridControl = new GridControl();
+
+        // check network situation
+        try {
+            Data.logger.info("Local Host Address: " + InetAddress.getLocalHost().getHostAddress());
+        } catch (UnknownHostException e1) {
+            e1.printStackTrace();
+        }
+
         // connect outside services
         // first try to connect to the configured MCPs.
         // if that fails, try to make all connections self
@@ -106,7 +120,8 @@ public class Data {
             if (    address.length() > 0 &&
                     Data.gridBroker.connectMCP(host, port) &&
                     Data.gridStorage.connectMCP(host, port) &&
-                    Data.gridIndex.connectMCP(host, port)
+                    Data.gridIndex.connectMCP(host, port) && 
+                    Data.gridControl.connectMCP(host, port)
                 ) {
                 Data.logger.info("Connected MCP at " + getHost(address));
                 mcpConnected = true;

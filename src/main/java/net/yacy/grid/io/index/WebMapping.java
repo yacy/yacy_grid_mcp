@@ -317,7 +317,7 @@ public enum WebMapping implements MappingDeclaration {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		System.out.println(Mapping.elasticsearchMapping("web").toString(2));
+		System.out.println(Mapping.elasticsearchMapping(GridIndex.WEB_INDEX_NAME).toString(2));
 	}
 }
 

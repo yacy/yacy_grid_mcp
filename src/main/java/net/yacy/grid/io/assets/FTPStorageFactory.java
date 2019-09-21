@@ -23,7 +23,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+
+import javax.servlet.Servlet;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
@@ -31,6 +36,8 @@ import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 
 import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.MCP;
+import net.yacy.grid.mcp.Service;
 
 public class FTPStorageFactory implements StorageFactory<byte[]> {
 
@@ -39,14 +46,15 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
     private String server, username, password;
     private int port;
     private Storage<byte[]> ftpClient;
-    private boolean deleteafterread;
+    private boolean deleteafterread, active;
     
-    public FTPStorageFactory(String server, int port, String username, String password, boolean deleteafterread) throws IOException {
+    public FTPStorageFactory(String server, int port, String username, String password, boolean deleteafterread, boolean active) throws IOException {
         this.server = server;
         this.username = username == null ? "" : username;
         this.password = password == null ? "" : password;
         this.port = port;
         this.deleteafterread = deleteafterread;
+        this.active = active;
 
         this.ftpClient = new Storage<byte[]>() {
 
@@ -64,7 +72,10 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                 } else {
                     ftp.connect(FTPStorageFactory.this.server, FTPStorageFactory.this.port);
                 }
-                ftp.enterLocalPassiveMode(); // the server opens a data port to which the client conducts data transfers
+                if (FTPStorageFactory.this.active)
+                	ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
+                else 
+                	ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
                 int reply = ftp.getReplyCode();
                 if(!FTPReply.isPositiveCompletion(reply)) {
                     if (ftp != null) try {ftp.disconnect();} catch (Throwable ee) {}
@@ -87,7 +98,10 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                     long t1 = System.currentTimeMillis();
                     String file = cdPath(ftp, path);
                     long t2 = System.currentTimeMillis();
-                    ftp.enterLocalPassiveMode();
+                    if (FTPStorageFactory.this.active)
+                    	ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
+                    else 
+                    	ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
                     boolean success = ftp.storeFile(file, new ByteArrayInputStream(asset));
                     long t3 = System.currentTimeMillis();
                     if (!success) throw new IOException("storage to path " + path + " was not successful (storeFile=false)");
@@ -108,6 +122,10 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                 try {
                     String file = cdPath(ftp, path);
                     baos = new ByteArrayOutputStream();
+                    if (FTPStorageFactory.this.active)
+                    	ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
+                    else 
+                    	ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
                     ftp.retrieveFile(file, baos);
                     b = baos.toByteArray();
                     if (FTPStorageFactory.this.deleteafterread) try {
@@ -197,8 +215,12 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
 
     public static void main(String[] args) {
         try {
-            Data.init(new File("data"), new HashMap<String, String>(), true);
-            FTPStorageFactory ftpc = new FTPStorageFactory("127.0.0.1", 2121, "anonymous", "yacy", true);
+            List<Class<? extends Servlet>> services = new ArrayList<>();
+            services.addAll(Arrays.asList(MCP.MCP_SERVICES));
+            Service.initEnvironment(MCP.MCP_SERVICE, services, MCP.DATA_PATH, true);
+            
+            //Data.init(new File("data"), new HashMap<String, String>(), true);
+            FTPStorageFactory ftpc = new FTPStorageFactory("brain.local", 2121, "admin", "admin", true, true);
             Storage<byte[]> storage = ftpc.getStorage();
             String path = "test/file";
             String data = "123";

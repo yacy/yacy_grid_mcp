@@ -1,7 +1,21 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
+    }
+}
+
+plugins {
+  id 'com.github.johnrengelman.shadow' version '5.1.0'
+}
+
 apply plugin: 'java'
 apply plugin: 'maven'
-apply plugin: 'application'
 apply plugin: 'eclipse'
+apply plugin: 'application'
 
 mainClassName = "net.yacy.grid.mcp.MCP"
 applicationDefaultJvmArgs = ["-Xmx1024m"]
@@ -22,6 +36,21 @@ repositories {
      mavenCentral()
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'net.yacy.grid.mcp.MCP'
+    }
+}
+
+shadowJar {
+    mergeServiceFiles()
+
+    from('conf') {
+        into 'conf'
+    }
+}
+assemble.dependsOn shadowJar
+
 dependencies {
     compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.+'
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.+'
@@ -33,6 +62,6 @@ dependencies {
     compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.+'
     compile group: 'commons-net', name: 'commons-net', version: '3.+'
     compile group: 'jcifs', name: 'jcifs', version: '1.+'
-    compile group: 'org.elasticsearch.client', name: 'transport', version: '5.6.16'
+    compile group: 'org.elasticsearch.client', name: 'transport', version: '6.8.1'
     compile group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '5.3.0.201903130848-r'
 }
