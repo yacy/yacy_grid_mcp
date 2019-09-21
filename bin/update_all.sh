@@ -23,3 +23,9 @@ echo updating `pwd`
 git submodule foreach git pull origin master
 git pull origin master
 gradle assemble
+
+cd ../yacy_grid_search
+echo updating `pwd`
+git submodule foreach git pull origin master
+git pull origin master
+gradle assemble
