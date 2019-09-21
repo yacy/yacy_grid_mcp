@@ -193,8 +193,8 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     if (this.targetQueueThrottling > 0) {
                         long throttlingStart = this.targetQueueThrottling / 10 * 9;
                         long targetQueueAggregator = AbstractBrokerListener.this.targetFill.get();
-                        Data.logger.info("AbstractBrokerListener.QueueListener target queue aggregated size = " + targetQueueAggregator + ", throttling start is " + throttlingStart);
                         if (targetQueueAggregator > throttlingStart) {
+                            Data.logger.info("AbstractBrokerListener.QueueListener target queue aggregated size = " + targetQueueAggregator + ", throttling start is " + throttlingStart);
                             long throttlingTime = Math.min(10000L, (targetQueueAggregator - throttlingStart) / this.targetQueueThrottling * 100000L);
                             if (throttlingTime > 1000L) {
                                 Data.logger.info("AbstractBrokerListener.QueueListener throttling = " + this.targetQueueThrottling + ", sleeping for " + throttlingTime + " milliseconds");
