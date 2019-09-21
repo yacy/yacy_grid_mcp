@@ -10,8 +10,8 @@ LABEL maintainer="Michael Peter Christen <mc@yacy.net>"
 # Run:
 # docker run -v /tmp:/apache-ftpserver-1.1.1/res/home/ -p 2121-2188:2121-2188 -d yacygrid/apache_mina_ftpserver
 
-# Then connect with
-# ftp -p localhost 2121
+# Then connect using active mode (required) with
+# ftp -A localhost 2121
 # and log in with admin:admin
 
 RUN wget https://archive.apache.org/dist/mina/ftpserver/1.1.1/dist/apache-ftpserver-1.1.1.zip
