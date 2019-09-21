@@ -46,7 +46,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
 
     public boolean connectFTP(String host, int port, String username, String password) {
         try {
-            StorageFactory<byte[]> ftp = new FTPStorageFactory(host, port, username, password, this.deleteafterread);
+            StorageFactory<byte[]> ftp = new FTPStorageFactory(host, port, username, password, this.deleteafterread, true);
             ftp.getStorage().checkConnection(); // test the connection
             this.ftp = ftp;
             return true;
@@ -59,7 +59,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
     public boolean connectFTP(String url) {
         try {
             MultiProtocolURL u = new MultiProtocolURL(url);
-            StorageFactory<byte[]> ftp = new FTPStorageFactory(u.getHost(), u.getPort(), u.getUser(), u.getPassword(), this.deleteafterread);
+            StorageFactory<byte[]> ftp = new FTPStorageFactory(u.getHost(), u.getPort(), u.getUser(), u.getPassword(), this.deleteafterread, true);
             ftp.getStorage().checkConnection(); // test the connection
             this.ftp = ftp;
             return true;

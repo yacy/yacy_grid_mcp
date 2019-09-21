@@ -2373,7 +2373,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         if (isFile()) return new BufferedInputStream(new FileInputStream(getFSFile()));
         if (isSMB()) return new BufferedInputStream(new SmbFileInputStream(getSmbFile()));
         if (isFTP()) {
-            FTPStorageFactory client = new FTPStorageFactory(this.host, this.port < 0 ? 21 : this.port, username, pass, false);
+            FTPStorageFactory client = new FTPStorageFactory(this.host, this.port < 0 ? 21 : this.port, username, pass, false, true);
             Asset<byte[]> asset = client.getStorage().load(this.path);
             return new ByteArrayInputStream(asset.getPayload());
         }
@@ -2389,7 +2389,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         if (isFile()) return read(new FileInputStream(getFSFile()));
         if (isSMB()) return read(new SmbFileInputStream(getSmbFile()));
         if (isFTP()) {
-            FTPStorageFactory client = new FTPStorageFactory(this.host, this.port < 0 ? 21 : this.port, username, pass, false);
+            FTPStorageFactory client = new FTPStorageFactory(this.host, this.port < 0 ? 21 : this.port, username, pass, false, true);
             Asset<byte[]> asset = client.getStorage().load(this.path);
             return asset.getPayload();
         }
