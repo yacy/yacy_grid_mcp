@@ -34,6 +34,7 @@ else:
         print('decompressing' + elasticversion)
         os.system('tar xfz ' + path_apphome + '/data/apps/' + elasticversion + '.tar.gz -C ' + path_apphome + '/data/apps/')
         os.rename(path_apphome + '/data/apps/' + elasticversion, elasticpath)
+        os.system('sed -i "s/#network.host: 192.168.0.1/network.host: 0.0.0.0/g" ' + elasticpath + '/config/elasticsearch.yml')
         firstrun = True
     # run elasticsearch
     print('starting elasticsearch...')
