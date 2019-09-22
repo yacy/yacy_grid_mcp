@@ -44,9 +44,9 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         this.ftp = null;
     }
 
-    public boolean connectFTP(String host, int port, String username, String password) {
+    public boolean connectFTP(String host, int port, String username, String password, boolean active) {
         try {
-            StorageFactory<byte[]> ftp = new FTPStorageFactory(host, port, username, password, this.deleteafterread, true);
+            StorageFactory<byte[]> ftp = new FTPStorageFactory(host, port, username, password, this.deleteafterread, active);
             ftp.getStorage().checkConnection(); // test the connection
             this.ftp = ftp;
             return true;
@@ -56,10 +56,10 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         }
     }
     
-    public boolean connectFTP(String url) {
+    public boolean connectFTP(String url, boolean active) {
         try {
             MultiProtocolURL u = new MultiProtocolURL(url);
-            StorageFactory<byte[]> ftp = new FTPStorageFactory(u.getHost(), u.getPort(), u.getUser(), u.getPassword(), this.deleteafterread, true);
+            StorageFactory<byte[]> ftp = new FTPStorageFactory(u.getHost(), u.getPort(), u.getUser(), u.getPassword(), this.deleteafterread, active);
             ftp.getStorage().checkConnection(); // test the connection
             this.ftp = ftp;
             return true;
@@ -73,9 +73,9 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         return this.ftp != null;
     }
     
-    public boolean connectMCP(String host, int port) {
+    public boolean connectMCP(String host, int port, boolean active) {
         try {
-            this.mcp = new MCPStorageFactory(this, host, port);
+            this.mcp = new MCPStorageFactory(this, host, port, active);
             this.mcp.getStorage().checkConnection();
             return true;
         } catch (IOException e) {

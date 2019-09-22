@@ -49,12 +49,14 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
     private String server;
     private int port;
     private String remoteSystem;
+    private boolean active;
     
-    public MCPStorageFactory(GridStorage storage, String server, int port) {
+    public MCPStorageFactory(GridStorage storage, String server, int port, boolean active) {
         this.storage = storage;
         this.server = server;
         this.port = port;
         this.remoteSystem = "?";
+        this.active = active;
     }
 
     @Override
@@ -130,7 +132,7 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
                     int p = server.indexOf("://");
                     if (p > 0) MCPStorageFactory.this.remoteSystem = server.substring(0, p);
                     if (MCPStorageFactory.this.storage != null) {
-                        if (MCPStorageFactory.this.storage.connectFTP(server)) {
+                        if (MCPStorageFactory.this.storage.connectFTP(server, MCPStorageFactory.this.active)) {
                             Data.logger.info("MCPStorageFactory.connectMCP connected MCP storage at " + server);
                         } else {
                             Data.logger.error("MCPStorageFactory.connectMCP failed to connect MCP storage at " + server);
@@ -160,7 +162,7 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
         services.addAll(Arrays.asList(MCP.MCP_SERVICES));
         Service.initEnvironment(MCP.MCP_SERVICE, services, MCP.DATA_PATH, true);
         int threads = 16;
-        final MCPStorageFactory storage = new MCPStorageFactory(null, "127.0.0.1", 8100);
+        final MCPStorageFactory storage = new MCPStorageFactory(null, "127.0.0.1", 8100, true);
         final Random random = new Random(System.currentTimeMillis());
         Thread[] u = new Thread[threads];
         for (int t = 0; t < threads; t++) {

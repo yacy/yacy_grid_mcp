@@ -2369,11 +2369,11 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         return null;
     }
 
-    public InputStream getInputStream(final ClientIdentification.Agent agent, final String username, final String pass) throws IOException {
+    public InputStream getInputStream(final ClientIdentification.Agent agent, final String username, final String pass, boolean active) throws IOException {
         if (isFile()) return new BufferedInputStream(new FileInputStream(getFSFile()));
         if (isSMB()) return new BufferedInputStream(new SmbFileInputStream(getSmbFile()));
         if (isFTP()) {
-            FTPStorageFactory client = new FTPStorageFactory(this.host, this.port < 0 ? 21 : this.port, username, pass, false, true);
+            FTPStorageFactory client = new FTPStorageFactory(this.host, this.port < 0 ? 21 : this.port, username, pass, false, active);
             Asset<byte[]> asset = client.getStorage().load(this.path);
             return new ByteArrayInputStream(asset.getPayload());
         }
@@ -2385,11 +2385,11 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         return null;
     }
 
-    public byte[] get(final ClientIdentification.Agent agent, final String username, final String pass) throws IOException {
+    public byte[] get(final ClientIdentification.Agent agent, final String username, final String pass, boolean active) throws IOException {
         if (isFile()) return read(new FileInputStream(getFSFile()));
         if (isSMB()) return read(new SmbFileInputStream(getSmbFile()));
         if (isFTP()) {
-            FTPStorageFactory client = new FTPStorageFactory(this.host, this.port < 0 ? 21 : this.port, username, pass, false, true);
+            FTPStorageFactory client = new FTPStorageFactory(this.host, this.port < 0 ? 21 : this.port, username, pass, false, active);
             Asset<byte[]> asset = client.getStorage().load(this.path);
             return asset.getPayload();
         }

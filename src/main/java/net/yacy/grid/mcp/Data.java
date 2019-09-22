@@ -120,7 +120,7 @@ public class Data {
             int port = YaCyServices.mcp.getDefaultPort();
             if (    address.length() > 0 &&
                     Data.gridBroker.connectMCP(host, port) &&
-                    Data.gridStorage.connectMCP(host, port) &&
+                    Data.gridStorage.connectMCP(host, port, true) &&
                     Data.gridIndex.connectMCP(host, port) && 
                     Data.gridControl.connectMCP(host, port)
                 ) {
@@ -148,8 +148,9 @@ public class Data {
 
             // connect storage
             String[] gridFtpAddress = (config.containsKey("grid.ftp.address") ? config.get("grid.ftp.address") : "").split(",");
+            boolean  gridFtpActive = config.containsKey("grid.ftp.active") ? "true".equals(config.get("grid.ftp.active")) : true;
             for (String address: gridFtpAddress) {
-                if (address.length() > 0 && Data.gridStorage.connectFTP(getHost(address), getPort(address, "2121"), getUser(address, "anonymous"), getPassword(address, "yacy"))) {
+                if (address.length() > 0 && Data.gridStorage.connectFTP(getHost(address), getPort(address, "2121"), getUser(address, "admin"), getPassword(address, "admin"), gridFtpActive)) {
                     Data.logger.info("Connected Storage at " + getHost(address));
                     break;
                 }
