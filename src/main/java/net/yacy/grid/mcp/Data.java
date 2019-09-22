@@ -115,6 +115,7 @@ public class Data {
         String[] gridMcpAddress = gridMcpAddressl.split(",");
         boolean mcpConnected = false;
         for (String address: gridMcpAddress) {
+        	if (address.length() == 0) continue;
             String host = getHost(address);
             int port = YaCyServices.mcp.getDefaultPort();
             if (    address.length() > 0 &&
