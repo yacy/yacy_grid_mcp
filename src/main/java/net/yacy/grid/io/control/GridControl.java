@@ -112,7 +112,7 @@ public class GridControl {
             // the latest load time was in the past
             loaderAccess.put(host, System.currentTimeMillis());
             long delay = Math.max(0, delta + 500); // in case that delta < -500, we don't need a throttling at all
-            Data.logger.info("GridControl.computeThrottling: past-loaded " + host + ", delay = " + delay + ", url = " + url);
+            if (delay > 0) Data.logger.info("GridControl.computeThrottling: past-loaded " + host + ", delay = " + delay + ", url = " + url);
             return delay; 
         }
         // the latest load time will be loaded by another thread in the future
