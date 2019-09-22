@@ -21,6 +21,7 @@ package net.yacy.grid.io.assets;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.yacy.grid.mcp.Data;
@@ -33,6 +34,11 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
     private boolean deleteafterread;
     private AtomicInteger ftp_fail = new AtomicInteger(0);
 
+    // connector details
+    private String host, username, password;
+    private int port;
+    private boolean active;
+
     /**
      * create a grid storage. 
      * @param deleteafterread if true, an asset is deleted from the asset store after it has beed read
@@ -42,29 +48,46 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         super(deleteafterread, basePath);
         this.deleteafterread = deleteafterread;
         this.ftp = null;
+        this.host = null;
+        this.username = null;
+        this.password = null;
+        this.port = -1;
+        this.active = true;
     }
 
     public boolean connectFTP(String host, int port, String username, String password, boolean active) {
-        try {
-            StorageFactory<byte[]> ftp = new FTPStorageFactory(host, port, username, password, this.deleteafterread, active);
-            ftp.getStorage().checkConnection(); // test the connection
-            this.ftp = ftp;
-            return true;
-        } catch (IOException e) {
-            Data.logger.debug("GridStorage.connectFTP/4 trying to connect to the ftp server at " + host + ":" + port + " failed");
-            return false;
-        }
+        this.host = host;
+        this.port = port;
+        this.username = username;
+        this.password = password;
+        this.active = active;
+        return checkConnectionFTP();
     }
     
     public boolean connectFTP(String url, boolean active) {
+        MultiProtocolURL u = null;
         try {
-            MultiProtocolURL u = new MultiProtocolURL(url);
-            StorageFactory<byte[]> ftp = new FTPStorageFactory(u.getHost(), u.getPort(), u.getUser(), u.getPassword(), this.deleteafterread, active);
+            u = new MultiProtocolURL(url);
+        } catch (MalformedURLException e) {
+            Data.logger.debug("GridStorage.connectFTP trying to connect to the ftp server at " + url + " failed: " + e.getMessage());
+            return false;
+        }
+        this.host = u.getHost();
+        this.port = u.getPort();
+        this.username = u.getUser();
+        this.password = u.getPassword();
+        this.active = active;
+        return checkConnectionFTP();
+    }
+
+    private boolean checkConnectionFTP() {
+        try {
+            StorageFactory<byte[]> ftp = new FTPStorageFactory(this.host, this.port, this.username, this.password, this.deleteafterread, this.active);
             ftp.getStorage().checkConnection(); // test the connection
             this.ftp = ftp;
             return true;
         } catch (IOException e) {
-            Data.logger.debug("GridStorage.connectFTP/1 trying to connect to the ftp server failed", e);
+            Data.logger.debug("GridStorage.connectFTP trying to connect to the ftp server at " + host + ":" + port + " failed");
             return false;
         }
     }
