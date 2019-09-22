@@ -24,6 +24,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.json.JSONObject;
 
 import net.yacy.grid.tools.JSONList;
@@ -38,7 +40,7 @@ public interface Index {
     public IndexFactory checkConnection() throws IOException;
 
     public IndexFactory add(String indexName, String typeName, final String id, JSONObject object) throws IOException;
-    
+
     public IndexFactory addBulk(String indexName, String typeName, final Map<String, JSONObject> objects) throws IOException;
 
     public boolean exist(String indexName, String typeName, String id) throws IOException;
@@ -48,10 +50,12 @@ public interface Index {
     public long count(String indexName, String typeName, QueryLanguage language, String query) throws IOException;
 
     public JSONObject query(String indexName, String typeName, String id) throws IOException;
-    
+
     public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException;
 
     public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException;
+
+    public JSONObject query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException;
 
     public boolean delete(String indexName, String typeName, String id) throws IOException;
 

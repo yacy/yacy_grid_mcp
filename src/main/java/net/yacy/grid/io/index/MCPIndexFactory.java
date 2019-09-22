@@ -26,6 +26,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -48,7 +50,7 @@ public class MCPIndexFactory implements IndexFactory {
     private GridIndex index;
     private String server;
     private int port;
-    
+
     public MCPIndexFactory(GridIndex index, String server, int port) {
         this.index = index;
         this.server = server;
@@ -79,7 +81,7 @@ public class MCPIndexFactory implements IndexFactory {
     @Override
     public Index getIndex() throws IOException {
         final JSONObject params = new JSONObject(true);
-        
+
         return new Index() {
 
             @Override
@@ -90,7 +92,7 @@ public class MCPIndexFactory implements IndexFactory {
                 if (!success(sr.getObject())) throw new IOException("MCP does not respond properly");
                 return MCPIndexFactory.this;
             }
-            
+
             private JSONObject getResponse(APIHandler handler) throws IOException {
                 String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
                 ServiceResponse sr = handler.serviceImpl(protocolhostportstub, params);
@@ -123,7 +125,7 @@ public class MCPIndexFactory implements IndexFactory {
                 params.put("id", id);
                 params.put("object", object.toString());
                 JSONObject response = getResponse(APIServer.getAPI(AddService.NAME));
-                
+
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
@@ -150,7 +152,7 @@ public class MCPIndexFactory implements IndexFactory {
                 params.put("type", typeName);
                 params.put("id", id);
                 JSONObject response = getResponse(APIServer.getAPI(ExistService.NAME));
-                
+
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
@@ -179,7 +181,7 @@ public class MCPIndexFactory implements IndexFactory {
                 params.put("language", language.name());
                 params.put("query", query);
                 JSONObject response = getResponse(APIServer.getAPI(CountService.NAME));
-                
+
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
@@ -195,7 +197,7 @@ public class MCPIndexFactory implements IndexFactory {
                 params.put("type", typeName);
                 params.put("id", id);
                 JSONObject response = getResponse(APIServer.getAPI(QueryService.NAME));
-                
+
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
@@ -207,7 +209,7 @@ public class MCPIndexFactory implements IndexFactory {
                     throw handleError(response);
                 }
             }
-            
+
             @Override
             public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
                 // We do not introduce a new protocol here. Instead we use the query method.
@@ -230,7 +232,7 @@ public class MCPIndexFactory implements IndexFactory {
                 params.put("language", language.name());
                 params.put("query", query);
                 JSONObject response = getResponse(APIServer.getAPI(QueryService.NAME));
-                
+
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
@@ -246,12 +248,17 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
+            public JSONObject query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException {
+                throw new IOException("method not implemented"); // TODO implement this!
+            }
+
+            @Override
             public boolean delete(String indexName, String typeName, String id) throws IOException {
                 params.put("index", indexName);
                 params.put("type", typeName);
                 params.put("id", id);
                 JSONObject response = getResponse(APIServer.getAPI(DeleteService.NAME));
-                
+
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
@@ -268,7 +275,7 @@ public class MCPIndexFactory implements IndexFactory {
                 params.put("language", language.name());
                 params.put("query", query);
                 JSONObject response = getResponse(APIServer.getAPI(DeleteService.NAME));
-                
+
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
@@ -281,7 +288,7 @@ public class MCPIndexFactory implements IndexFactory {
             @Override
             public void close() {
             }
-            
+
         };
     }
 

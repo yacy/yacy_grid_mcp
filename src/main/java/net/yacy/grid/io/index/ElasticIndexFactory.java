@@ -39,6 +39,7 @@ import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -135,7 +136,7 @@ public class ElasticIndexFactory implements IndexFactory {
                 if (map == null) return null;
                 return new JSONObject(map);
             }
-            
+
             @Override
             public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
                 Map<String, Map<String, Object>> bulkresponse = ElasticIndexFactory.this.elasticsearchClient.readMapBulk(indexName, typeName, ids);
@@ -148,13 +149,35 @@ public class ElasticIndexFactory implements IndexFactory {
             public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException {
                 QueryBuilder qb = getQuery(language, query);
                 ElasticsearchClient.Query q = ElasticIndexFactory.this.elasticsearchClient.query(indexName, null, qb, null, Sort.DEFAULT, null, 0, start, count, 0, false);
-                List<Map<String, Object>> result = q.results;
+                List<Map<String, Object>> results = q.results;
                 JSONList list = new JSONList();
-                for (int hitc = 0; hitc < result.size(); hitc++) {
-                    Map<String, Object> map = result.get(hitc);
+                for (int hitc = 0; hitc < results.size(); hitc++) {
+                    Map<String, Object> map = results.get(hitc);
                     list.add(new JSONObject(map));
                 }
                 return list;
+            }
+
+            @Override
+            public JSONObject query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException {
+                ElasticsearchClient.Query q = ElasticIndexFactory.this.elasticsearchClient.query(indexName, typeName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+                JSONObject queryResult = new JSONObject(true);
+
+                int hitCount = q.hitCount;
+                queryResult.put("hitCount", hitCount);
+
+                List<Map<String, Object>> results = q.results;
+                JSONList list = new JSONList();
+                for (int hitc = 0; hitc < results.size(); hitc++) {
+                    Map<String, Object> map = results.get(hitc);
+                    list.add(new JSONObject(map));
+                }
+                queryResult.put("results", list);
+
+                List<String> explanations = q.explanations;
+                queryResult.put("explanations", explanations);
+
+                return queryResult;
             }
 
             @Override
