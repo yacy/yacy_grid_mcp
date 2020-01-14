@@ -84,15 +84,6 @@ public class MCPIndexFactory implements IndexFactory {
 
         return new Index() {
 
-            @Override
-            public IndexFactory checkConnection() throws IOException {
-                String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
-                APIHandler apiHandler = APIServer.getAPI(CheckService.NAME);
-                ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
-                if (!success(sr.getObject())) throw new IOException("MCP does not respond properly");
-                return MCPIndexFactory.this;
-            }
-
             private JSONObject getResponse(APIHandler handler) throws IOException {
                 String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
                 ServiceResponse sr = handler.serviceImpl(protocolhostportstub, params);
@@ -116,6 +107,20 @@ public class MCPIndexFactory implements IndexFactory {
                     return new IOException("cannot connect to MCP: " + response.getString(ObjectAPIHandler.COMMENT_KEY));
                 }
                 return new IOException("bad response from MCP: no success and no comment key");
+            }
+
+            @Override
+            public IndexFactory checkConnection() throws IOException {
+                String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
+                APIHandler apiHandler = APIServer.getAPI(CheckService.NAME);
+                ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
+                JSONObject response = sr.getObject();
+                if (success(response)) {
+                    connectMCP(response);
+                    return MCPIndexFactory.this;
+                } else {
+                    throw new IOException("MCP does not respond properly");
+                }
             }
 
             @Override
