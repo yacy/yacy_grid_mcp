@@ -58,6 +58,10 @@ public class GridIndex implements Index {
         this.mcp_port = -1;
         this.shallRun = true;
     }
+    
+    public boolean isConnected() {
+    	return this.elastic_address != null && this.elasticIndexFactory != null;
+    }
 
     public boolean connectElasticsearch(String address) {
         if (!address.startsWith(ElasticIndexFactory.PROTOCOL_PREFIX)) return false;
@@ -86,6 +90,12 @@ public class GridIndex implements Index {
         return false;
     }
 
+    /**
+     * Getting the elastic client:
+     * this should considered as a low-level function that only MCP-internal classes may call.
+     * All other packages must use a "Index" object.
+     * @return
+     */
     public ElasticsearchClient getElasticClient() {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..

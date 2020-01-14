@@ -174,6 +174,22 @@ public class Data {
             }
         }
 
+        if (!gridIndex.isConnected()) {
+            // try this with a local configuration without MCP
+            String[] elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "").split(",");
+            String elasticsearchClusterName = config.getOrDefault("grid.elasticsearch.clusterName", "");
+            for (String address: elasticsearchAddress) {
+                if (!OS.portIsOpen(address)) continue;
+                try {
+                    gridIndex = new GridIndex();
+                    gridIndex.connectElasticsearch(ElasticIndexFactory.PROTOCOL_PREFIX + address + "/" + elasticsearchClusterName);
+                    break;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         // init boosts from configuration
         Map<String, String> defaultBoosts = Service.readDoubleConfig("boost.properties");
         boostsFactory = new BoostsFactory(defaultBoosts);
