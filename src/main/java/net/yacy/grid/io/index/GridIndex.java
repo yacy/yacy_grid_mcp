@@ -75,6 +75,7 @@ public class GridIndex implements Index {
             try {
                 this.elasticIndexFactory = new ElasticIndexFactory(address, cluster);
                 Data.logger.info("Index/Client: connected to elasticsearch at " + address);
+                this.elastic_address = address;
                 return true;
             } catch (IOException e) {
                 Data.logger.info("Index/Client: trying to connect to elasticsearch at " + address + " failed", e);
