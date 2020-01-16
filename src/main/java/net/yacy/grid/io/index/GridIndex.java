@@ -132,7 +132,10 @@ public class GridIndex implements Index {
                 throw new IOException("Index/Client: FATAL: connection to MCP lost!");
             }
         }
-        if (this.mcpIndexFactory != null) return this.mcpIndexFactory;
+        if (this.mcpIndexFactory != null) {
+            this.mcpIndexFactory.getIndex().checkConnection();
+        	return this.mcpIndexFactory;
+        }
         throw new IOException("Index/Client: add mcp service: no factory found!");
     }
 
