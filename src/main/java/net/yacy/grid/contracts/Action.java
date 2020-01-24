@@ -21,10 +21,8 @@ package net.yacy.grid.contracts;
 
 import org.json.JSONObject;
 
-import net.yacy.grid.http.APIException;
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.APIServer;
-import net.yacy.grid.http.ServiceResponse;
 
 /**
  * An action is the request to a YaCy Grid service to process the Contract with the specific
@@ -35,13 +33,13 @@ public class Action {
 
     private final static String KEY_SERVLET  = "servlet";
     private final static String KEY_QUERY    = "query";
-    
+
     private JSONObject json;
 
     public Action() {
         this.json = new JSONObject();
     }
-    
+
     public Action(JSONObject json) {
         this.json = json;
     }
@@ -51,46 +49,35 @@ public class Action {
         this.json.keySet().forEach(key -> j.put(key, this.json.get(key))); // make a clone
         return j;
     }
-    
+
     public Action setServletName(String name) {
         this.json.put(KEY_SERVLET, name);
         return this;
     }
-    
+
     public String getServletName() {
         if (!this.json.has(KEY_SERVLET)) return null;
         return this.json.getString(KEY_SERVLET);
     }
-    
+
     public APIHandler getServlet() {
         if (!this.json.has(KEY_SERVLET)) return null;
         APIHandler handler = APIServer.getAPI(this.json.getString(KEY_SERVLET));
         return handler;
     }
-    
+
     public Action setQuery(JSONObject query) {
         this.json.put(KEY_QUERY, query);
         return this;
     }
-    
+
     public JSONObject getQuery() {
         if (this.json.has(KEY_QUERY)) return this.json.getJSONObject(KEY_QUERY);
         JSONObject q = new JSONObject(true);
         this.json.put(KEY_QUERY, q);
         return q;
     }
-    
-    /**
-     * the call method activates the servlet as configured in the action definition
-     * @return a service response
-     * @throws APIException
-     */
-    public ServiceResponse call() throws APIException {
-        APIHandler a = this.getServlet();
-        if (a == null) throw new APIException(400, "this application does not handle a servlet " + this.getServletName());
-        return a.serviceImpl(this.getQuery());
-    }
-    
+
     public String toString() {
         return toJSONClone().toString();
     }

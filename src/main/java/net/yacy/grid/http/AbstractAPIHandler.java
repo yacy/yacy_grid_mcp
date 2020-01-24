@@ -28,13 +28,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpResponseFactory;
-import org.apache.http.HttpStatus;
-import org.apache.http.ProtocolVersion;
-import org.apache.http.impl.DefaultHttpResponseFactory;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpCoreContext;
 import org.json.JSONObject;
 
 import net.yacy.grid.mcp.Data;
@@ -45,29 +38,13 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
     public static final Long defaultCookieTime = (long) (60 * 60 * 24 * 7);
     public static final Long defaultAnonymousTime = (long) (60 * 60 * 24);
 
-    private final HttpResponseFactory defaultHttpResponseFactory = new DefaultHttpResponseFactory();
-    private final BasicHttpContext basicHttpContext = new BasicHttpContext();
-    private final HttpCoreContext httpCoreContext = HttpCoreContext.adapt(basicHttpContext);
-    private final ProtocolVersion httpProtocol = new ProtocolVersion("HTTP", 1, 1);
-    private final HttpResponse defaultHttpServletResponse = defaultHttpResponseFactory.newHttpResponse(httpProtocol, HttpStatus.SC_CONTINUE, httpCoreContext);
-    
     public AbstractAPIHandler() {
     }
 
     public abstract ServiceResponse serviceImpl(final String protocolhostportstub, JSONObject params) throws IOException;
     public abstract ServiceResponse serviceImpl(final String protocolhostportstub, Map<String, byte[]> params) throws IOException;
     public abstract ServiceResponse serviceImpl(Query call, HttpServletResponse response) throws APIException;
-    
-    public ServiceResponse serviceImpl(JSONObject params) throws APIException {
-        Query call = new Query(null).initGET(params);
-        return serviceImpl(call, (HttpServletResponse) defaultHttpServletResponse);
-    }
 
-    public ServiceResponse serviceImpl(Map<String, byte[]> params) throws APIException {
-        Query call = new Query(null).initPOST(params);
-        return serviceImpl(call, (HttpServletResponse) defaultHttpServletResponse);
-    }
-    
     public String getAPIName() {
         String path = this.getAPIPath();
         int p = path.lastIndexOf('/');
@@ -76,24 +53,24 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
         if (p >= 0) path = path.substring(0, p);
         return path;
     }
-    
+
     private void setCORS(HttpServletResponse response) {
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "POST");
         response.setHeader("Access-Control-Allow-Headers", "accept, content-type");
     }
-    
+
     @Override
     protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         super.doOptions(request, response);
         setCORS(response); // required by angular framework; detailed CORS can be set within the servlet
     }
-    
+
     @Override
     protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         super.doHead(request, response);
     }
-    
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         Query post = RemoteAccess.evaluate(request);
@@ -106,16 +83,16 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
         query.initPOST(RemoteAccess.getPostMap(request));
         process(request, response, query);
     }
-    
+
     private void process(HttpServletRequest request, HttpServletResponse response, Query query) throws ServletException, IOException {
 
         long startTime = System.currentTimeMillis();
-        
+
         // extract standard query attributes
         String callback = query.get("callback", "");
         boolean jsonp = callback.length() > 0;
         boolean minified = query.get("minified", false);
-        
+
         try {
             ServiceResponse serviceResponse = serviceImpl(query, response);
             if  (serviceResponse == null) {
@@ -127,7 +104,7 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
             if (serviceResponse.allowCORS()) {
                 setCORS(response);
             }
-            
+
             // write json
             query.setResponse(response, serviceResponse.getMimeType());
             response.setCharacterEncoding("UTF-8");
@@ -156,7 +133,7 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
             return;
         }
     }
-    
+
     public void logClient(
             long startTime,
             Query query,

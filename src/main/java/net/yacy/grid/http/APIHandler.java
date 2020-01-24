@@ -36,29 +36,13 @@ public interface APIHandler {
      * @return the url path of the servlet
      */
     public String getAPIPath();
-    
+
     /**
      * get a name of the servlet (which can be used in the Action object to use servlets for contract actions)
      * @return the name element from getAPIPath()
      */
     public String getAPIName();
-    
-    /**
-     * call the servlet with a query locally without a network connection
-     * @param params a json object with a set of key/values where each value is of type String
-     * @return a Service Response
-     * @throws IOException
-     */
-    public ServiceResponse serviceImpl(JSONObject params) throws APIException;
 
-    /**
-     * call the servlet with a query locally without a network connection
-     * @param params a map object with a set of key/values where each value is of type byte[]
-     * @return a Service Response
-     * @throws IOException
-     */
-    public ServiceResponse serviceImpl(Map<String, byte[]> params) throws APIException;
-    
     /**
      * call the servlet with a query locally without a network connection
      * @param call a query object
@@ -67,7 +51,7 @@ public interface APIHandler {
      * @throws APIException
      */
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) throws APIException;
-    
+
     /**
      * call a remote servlet with given params
      * @param protocolhostportstub the url stub string
@@ -76,7 +60,7 @@ public interface APIHandler {
      * @throws IOException
      */
     public ServiceResponse serviceImpl(final String protocolhostportstub, JSONObject params) throws IOException;
-    
+
     /**
      * call a remote servlet with given params
      * @param protocolhostportstub the url stub string
@@ -85,6 +69,5 @@ public interface APIHandler {
      * @throws IOException
      */
     public ServiceResponse serviceImpl(final String protocolhostportstub, Map<String, byte[]> params) throws IOException;
-    
-    
+
 }
