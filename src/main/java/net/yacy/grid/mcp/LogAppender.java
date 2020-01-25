@@ -21,6 +21,7 @@ package net.yacy.grid.mcp;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Layout;
@@ -30,6 +31,7 @@ public class LogAppender extends AppenderSkeleton {
 
     private int maxlines;
     private ConcurrentLinkedQueue<String> lines;
+    private AtomicInteger a;
 
     public LogAppender(Layout layout, int maxlines) {
         this.layout = layout;
@@ -37,6 +39,7 @@ public class LogAppender extends AppenderSkeleton {
         this.lines = new ConcurrentLinkedQueue<>();
         String line = layout.getHeader();
         if (line != null) this.lines.add(line);
+        this.a = new AtomicInteger(0);
     }
 
     @Override
@@ -47,7 +50,10 @@ public class LogAppender extends AppenderSkeleton {
         if (event.getThrowableInformation() != null) {
             for (String t: event.getThrowableStrRep()) if (t != null)  this.lines.add(t + "\n");
         }
-        clean(this.maxlines);
+        if (this.a.incrementAndGet() % 100 == 0) {
+            clean(this.maxlines);
+            this.a.set(0);
+        }
     }
 
     @Override
@@ -70,7 +76,8 @@ public class LogAppender extends AppenderSkeleton {
     }
 
     public void clean(int remaining) {
-    	int c = this.lines.size() - remaining;
+        int c = this.lines.size() - remaining;
         while (c-- > 0) this.lines.poll();
     }
+
 }
