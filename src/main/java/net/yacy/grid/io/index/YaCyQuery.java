@@ -131,7 +131,8 @@ public class YaCyQuery {
         }
         
         // ready
-        Data.logger.info("YaCyQuery: " + this.queryBuilder.toString());
+        //Data.logger.info("YaCyQuery: " + this.queryBuilder.toString());
+        Data.logger.info("YaCyQuery: " + q);
     }
     
     private static List<String> splitIntoORGroups(String q) {
