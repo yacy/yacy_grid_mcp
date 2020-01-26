@@ -270,14 +270,9 @@ public class ElasticsearchClient {
      *            the query
      * @return the count of all documents in the index which matches with the query
      */
-    private long count(final QueryBuilder q, final String indexName) {
-        SearchResponse response = elasticsearchClient.prepareSearch(indexName).setQuery(q).setSize(0).execute().actionGet();
-        return response.getHits().getTotalHits();
-    }
-
-    public long count(final QueryBuilder q, final String indexName, final String typeName) {
+    public long count(final QueryBuilder q, final String indexName) {
         while (true) try {
-            return countInternal(q, indexName, typeName);
+            return countInternal(q, indexName);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
             Data.logger.info("ElasticsearchClient count failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
@@ -285,38 +280,20 @@ public class ElasticsearchClient {
         }
     }
 
-    public long countInternal(final QueryBuilder q, final String indexName, final String typeName) {
-        SearchResponse response = elasticsearchClient.prepareSearch(indexName).setTypes(typeName).setQuery(q).setSize(0).execute().actionGet();
+    public long countInternal(final QueryBuilder q, final String indexName) {
+        SearchResponse response = elasticsearchClient.prepareSearch(indexName).setQuery(q).setSize(0).execute().actionGet();
         return response.getHits().getTotalHits();
     }
 
     /**
-     * Get the document for a given id. If you don't know the typeName of the index, then it is not recommended
-     * to use this method. You can set typeName to null and get the correct answer, but you still need the information
-     * in which type the document was found if you want to call this API with the type afterwards. In such a case,
-     * use the method getType() which returns null if the document does not exist and the type name if the document exist.
-     * DO NOT USE THIS METHOD if you call getType anyway. I.e. replace a code like
-     * if (exist(id()) {
-     *   String type = getType(id);
-     *   ...
-     * }
-     * with
-     * String type = getType(id);
-     * if (type != null) {
-     *   ...
-     * }
-     * 
-     * @param indexName
-     *            the name of the index
-     * @param typeName
-     *            the type name, can be set to NULL for all types (see also: getType())
-     * @param id
-     *            the unique identifier of a document
+     * Get the document for a given id.
+     * @param indexName the name of the index
+     * @param id the unique identifier of a document
      * @return the document, if it exists or null otherwise;
      */
-    public boolean exist(String indexName, String typeName, final String id) {
+    public boolean exist(String indexName, final String id) {
         while (true) try {
-            return existInternal(indexName, typeName, id);
+            return existInternal(indexName, id);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
             Data.logger.info("ElasticsearchClient exist failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
@@ -324,9 +301,9 @@ public class ElasticsearchClient {
         }
     }
 
-    public boolean existInternal(String indexName, String typeName, final String id) {
+    public boolean existInternal(String indexName, final String id) {
         GetResponse getResponse = elasticsearchClient
-                .prepareGet(indexName, typeName, id)
+                .prepareGet(indexName, null, id)
                 .setFetchSource(false)
                 //.setOperationThreaded(false)
                 .execute()
@@ -334,9 +311,9 @@ public class ElasticsearchClient {
         return getResponse.isExists();
     }
 
-    public Set<String> existBulk(String indexName, String typeName, final Collection<String> ids) {
+    public Set<String> existBulk(String indexName, final Collection<String> ids) {
         while (true) try {
-            return existBulkInternal(indexName, typeName, ids);
+            return existBulkInternal(indexName, ids);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
             Data.logger.info("ElasticsearchClient existBulk failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
@@ -345,10 +322,10 @@ public class ElasticsearchClient {
         }
     }
 
-    private Set<String> existBulkInternal(String indexName, String typeName, final Collection<String> ids) {
+    private Set<String> existBulkInternal(String indexName, final Collection<String> ids) {
         if (ids == null || ids.size() == 0) return new HashSet<>();
         MultiGetResponse multiGetItemResponses = elasticsearchClient.prepareMultiGet()
-                .add(indexName, typeName, ids)
+                .add(indexName, null, ids)
                 .get();
         Set<String> er = new HashSet<>();
         for (MultiGetItemResponse itemResponse : multiGetItemResponses) { 
@@ -415,9 +392,9 @@ public class ElasticsearchClient {
      * @param q
      * @return delete document count
      */
-    public int deleteByQuery(String indexName, String typeName, final QueryBuilder q) {
+    public int deleteByQuery(String indexName, final QueryBuilder q) {
         while (true) try {
-            return deleteByQueryInternal(indexName, typeName, q);
+            return deleteByQueryInternal(indexName, q);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
             Data.logger.info("ElasticsearchClient deleteByQuery failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
@@ -426,10 +403,9 @@ public class ElasticsearchClient {
         }
     }
 
-    private int deleteByQueryInternal(String indexName, String typeName, final QueryBuilder q) {
+    private int deleteByQueryInternal(String indexName, final QueryBuilder q) {
         Map<String, String> ids = new TreeMap<>();
         SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName);
-        if (typeName != null) request.setTypes(typeName);
         request
             .setSearchType(SearchType.QUERY_THEN_FETCH)
             .setScroll(new TimeValue(60000))
@@ -494,9 +470,9 @@ public class ElasticsearchClient {
      *            the unique identifier of a document
      * @return the document as json, matched on a Map<String, Object> object instance
      */
-    public Map<String, Object> readMap(final String indexName, final String typeName, final String id) {
+    public Map<String, Object> readMap(final String indexName, final String id) {
         while (true) try {
-            return readMapInternal(indexName, typeName, id);
+            return readMapInternal(indexName, id);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
             Data.logger.info("ElasticsearchClient readMap failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
@@ -505,15 +481,15 @@ public class ElasticsearchClient {
         }
     }
 
-    private Map<String, Object> readMapInternal(final String indexName, final String typeName, final String id) {
-        GetResponse response = elasticsearchClient.prepareGet(indexName, typeName, id).execute().actionGet();
+    private Map<String, Object> readMapInternal(final String indexName, final String id) {
+        GetResponse response = elasticsearchClient.prepareGet(indexName, null, id).execute().actionGet();
         Map<String, Object> map = getMap(response);
         return map;
     }
 
-    public Map<String, Map<String, Object>> readMapBulk(final String indexName, final String typeName, final Collection<String> ids) {
+    public Map<String, Map<String, Object>> readMapBulk(final String indexName, final Collection<String> ids) {
         while (true) try {
-            return readMapBulkInternal(indexName, typeName, ids);
+            return readMapBulkInternal(indexName, ids);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
             Data.logger.info("ElasticsearchClient readMapBulk failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
@@ -522,9 +498,9 @@ public class ElasticsearchClient {
         }
     }
 
-    private Map<String, Map<String, Object>> readMapBulkInternal(final String indexName, final String typeName, final Collection<String> ids) {
+    private Map<String, Map<String, Object>> readMapBulkInternal(final String indexName, final Collection<String> ids) {
         MultiGetRequestBuilder mgrb = elasticsearchClient.prepareMultiGet();
-        ids.forEach(id -> mgrb.add(indexName, typeName, id).execute().actionGet());
+        ids.forEach(id -> mgrb.add(indexName, null, id).execute().actionGet());
         MultiGetResponse response = mgrb.execute().actionGet();
         Map<String, Map<String, Object>> bulkresponse = new HashMap<>();
         for (MultiGetItemResponse r: response.getResponses()) {
@@ -692,11 +668,11 @@ public class ElasticsearchClient {
         }
     }
 
-    public Query query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
+    public Query query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
         Exception ee = null;
         while (true) {
             for (int t = 0; t < 10; t++) try {
-                return new Query(indexName, typeName,  queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+                return new Query(indexName,  queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
             } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
                 ee = e;
                 Data.logger.info("ElasticsearchClient query failed with " + e.getMessage() + ", retrying attempt " + t + " ...");
@@ -728,10 +704,9 @@ public class ElasticsearchClient {
          * @param aggregationLimit - the maximum count of facet entities, not search results
          * @param aggregationFields - names of the aggregation fields. If no aggregation is wanted, pass no (zero) field(s)
          */
-        private Query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
+        private Query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
             // prepare request
             SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName);
-            if (typeName != null) request.setTypes(typeName);
             request
                     .setExplain(explain)
                     .setSearchType(SearchType.QUERY_THEN_FETCH)

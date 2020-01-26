@@ -51,14 +51,13 @@ public class ExistService extends ObjectAPIHandler implements APIHandler {
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
         //String indexName, String typeName, final String id, JSONObject object
         String indexName = call.get("index", "");
-        String typeName = call.get("type", ""); if (typeName.length() == 0) typeName = null;
         String id = call.get("id", "");
         JSONObject json = new JSONObject(true);
         if (indexName.length() > 0 && id.length() > 0) {
             try {
                 Index index = Data.gridIndex.getElasticIndex();
                 String url = index.checkConnection().getConnectionURL();
-                boolean exists = index.exist(indexName, typeName, id);
+                boolean exists = index.exist(indexName, id);
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 json.put("exists", exists);
                 if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);

@@ -43,23 +43,23 @@ public interface Index {
 
     public IndexFactory addBulk(String indexName, String typeName, final Map<String, JSONObject> objects) throws IOException;
 
-    public boolean exist(String indexName, String typeName, String id) throws IOException;
+    public boolean exist(String indexName, String id) throws IOException;
 
-    public Set<String> existBulk(String indexName, String typeName, Collection<String> ids) throws IOException;
+    public Set<String> existBulk(String indexName, Collection<String> ids) throws IOException;
 
-    public long count(String indexName, String typeName, QueryLanguage language, String query) throws IOException;
+    public long count(String indexName, QueryLanguage language, String query) throws IOException;
 
-    public JSONObject query(String indexName, String typeName, String id) throws IOException;
+    public JSONObject query(String indexName, String id) throws IOException;
 
-    public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException;
+    public Map<String, JSONObject> queryBulk(String indexName, Collection<String> ids) throws IOException;
 
-    public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException;
+    public JSONList query(String indexName, QueryLanguage language, String query, int start, int count) throws IOException;
 
-    public JSONObject query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException;
+    public JSONObject query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException;
 
     public boolean delete(String indexName, String typeName, String id) throws IOException;
 
-    public long delete(String indexName, String typeName, QueryLanguage language, String query) throws IOException;
+    public long delete(String indexName, QueryLanguage language, String query) throws IOException;
 
     public void close();
 

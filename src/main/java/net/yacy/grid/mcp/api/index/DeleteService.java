@@ -52,7 +52,7 @@ public class DeleteService extends ObjectAPIHandler implements APIHandler {
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
         //String indexName, String typeName, final String id, JSONObject object
         String indexName = call.get("index", "");
-        String typeName = call.get("type", ""); // should not be null
+        String typeName = call.get("type", "_doc"); // should not be null
         String id = call.get("id", "");
         QueryLanguage language = QueryLanguage.valueOf(call.get("language", "yacy"));
         String query = call.get("query", "");
@@ -74,7 +74,7 @@ public class DeleteService extends ObjectAPIHandler implements APIHandler {
             try {
                 Index index = Data.gridIndex.getElasticIndex();
                 String url = index.checkConnection().getConnectionURL();
-                long count = index.delete(indexName, typeName, language, query);
+                long count = index.delete(indexName, language, query);
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 json.put("count", count);
                 if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
