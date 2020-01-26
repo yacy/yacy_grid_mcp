@@ -83,6 +83,7 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
+import net.yacy.grid.io.index.ElasticsearchClient.Query;
 import net.yacy.grid.mcp.Data;
 
 /**
@@ -692,11 +693,18 @@ public class ElasticsearchClient {
     }
 
     public Query query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
-        while (true) try {
-            return new Query(indexName, typeName,  queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
-        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.info("ElasticsearchClient query failed with " + e.getMessage() + ", retrying to connect node...");
-            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+        Exception ee = null;
+        while (true) {
+            for (int t = 0; t < 10; t++) try {
+                return new Query(indexName, typeName,  queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+            } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
+                ee = e;
+                Data.logger.info("ElasticsearchClient query failed with " + e.getMessage() + ", retrying attempt " + t + " ...");
+                try {Thread.sleep(100);} catch (InterruptedException eee) {}
+                continue;
+            }
+            Data.logger.info("ElasticsearchClient query failed with " + ee.getMessage() + ", retrying to connect node...");
+            try {Thread.sleep(1000);} catch (InterruptedException eee) {}
             connect();
             continue;
         }
