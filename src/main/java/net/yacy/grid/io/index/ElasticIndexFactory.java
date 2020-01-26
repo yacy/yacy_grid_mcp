@@ -115,40 +115,40 @@ public class ElasticIndexFactory implements IndexFactory {
             }
 
             @Override
-            public boolean exist(String indexName, String typeName, String id) throws IOException {
-                return ElasticIndexFactory.this.elasticsearchClient.exist(indexName, typeName, id);
+            public boolean exist(String indexName, String id) throws IOException {
+                return ElasticIndexFactory.this.elasticsearchClient.exist(indexName, id);
             }
 
             @Override
-            public Set<String> existBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
-                return ElasticIndexFactory.this.elasticsearchClient.existBulk(indexName, typeName, ids);
+            public Set<String> existBulk(String indexName, Collection<String> ids) throws IOException {
+                return ElasticIndexFactory.this.elasticsearchClient.existBulk(indexName, ids);
             }
 
             @Override
-            public long count(String indexName, String typeName, QueryLanguage language, String query) throws IOException {
+            public long count(String indexName, QueryLanguage language, String query) throws IOException {
                 QueryBuilder qb = getQuery(language, query);
-                return ElasticIndexFactory.this.elasticsearchClient.count(qb, indexName, typeName);
+                return ElasticIndexFactory.this.elasticsearchClient.count(qb, indexName);
             }
 
             @Override
-            public JSONObject query(String indexName, String typeName, String id) throws IOException {
-                Map<String, Object> map = ElasticIndexFactory.this.elasticsearchClient.readMap(indexName, typeName, id);
+            public JSONObject query(String indexName, String id) throws IOException {
+                Map<String, Object> map = ElasticIndexFactory.this.elasticsearchClient.readMap(indexName, id);
                 if (map == null) return null;
                 return new JSONObject(map);
             }
 
             @Override
-            public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
-                Map<String, Map<String, Object>> bulkresponse = ElasticIndexFactory.this.elasticsearchClient.readMapBulk(indexName, typeName, ids);
+            public Map<String, JSONObject> queryBulk(String indexName, Collection<String> ids) throws IOException {
+                Map<String, Map<String, Object>> bulkresponse = ElasticIndexFactory.this.elasticsearchClient.readMapBulk(indexName, ids);
                 Map<String, JSONObject> response = new HashMap<>();
                 bulkresponse.forEach((id, obj) -> response.put(id, new JSONObject(obj)));
                 return response;
             }
 
             @Override
-            public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException {
+            public JSONList query(String indexName, QueryLanguage language, String query, int start, int count) throws IOException {
                 QueryBuilder qb = getQuery(language, query);
-                ElasticsearchClient.Query q = ElasticIndexFactory.this.elasticsearchClient.query(indexName, null, qb, null, Sort.DEFAULT, null, 0, start, count, 0, false);
+                ElasticsearchClient.Query q = ElasticIndexFactory.this.elasticsearchClient.query(indexName, qb, null, Sort.DEFAULT, null, 0, start, count, 0, false);
                 List<Map<String, Object>> results = q.results;
                 JSONList list = new JSONList();
                 for (int hitc = 0; hitc < results.size(); hitc++) {
@@ -159,8 +159,8 @@ public class ElasticIndexFactory implements IndexFactory {
             }
 
             @Override
-            public JSONObject query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException {
-                ElasticsearchClient.Query q = ElasticIndexFactory.this.elasticsearchClient.query(indexName, typeName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+            public JSONObject query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException {
+                ElasticsearchClient.Query q = ElasticIndexFactory.this.elasticsearchClient.query(indexName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
                 JSONObject queryResult = new JSONObject(true);
 
                 int hitCount = q.hitCount;
@@ -186,9 +186,9 @@ public class ElasticIndexFactory implements IndexFactory {
             }
 
             @Override
-            public long delete(String indexName, String typeName, QueryLanguage language, String query) throws IOException {
+            public long delete(String indexName, QueryLanguage language, String query) throws IOException {
                 QueryBuilder qb = getQuery(language, query);
-                return ElasticIndexFactory.this.elasticsearchClient.deleteByQuery(indexName, typeName, qb);
+                return ElasticIndexFactory.this.elasticsearchClient.deleteByQuery(indexName, qb);
             }
 
             @Override

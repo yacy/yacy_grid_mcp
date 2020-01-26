@@ -55,7 +55,7 @@ public class CrawlerDocument extends Document {
     }
     
     public static Map<String, CrawlerDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
-        Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, ids);
+        Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.CRAWLER_INDEX_NAME, ids);
         Map<String, CrawlerDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> {
             if (doc != null) docmap.put(id, new CrawlerDocument(doc)); 
@@ -64,7 +64,7 @@ public class CrawlerDocument extends Document {
     }
 
     public static CrawlerDocument load(Index index, String id) throws IOException {
-        JSONObject json = index.query(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id);
+        JSONObject json = index.query(GridIndex.CRAWLER_INDEX_NAME, id);
         if (json == null) throw new IOException("no document with id " + id + " in index");
         return new CrawlerDocument(json);
     }

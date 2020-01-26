@@ -51,7 +51,7 @@ public class AddService extends ObjectAPIHandler implements APIHandler {
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
         //String indexName, String typeName, final String id, JSONObject object
         String indexName = call.get("index", "");
-        String typeName = call.get("type", "");
+        String typeName = call.get("type", "_doc");
         String id = call.get("id", "");
         byte[] object = call.get("object", EMPTY_OBJECT); // this contains the JSON object
         JSONObject json = new JSONObject(true);

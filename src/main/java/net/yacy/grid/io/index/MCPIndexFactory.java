@@ -84,15 +84,6 @@ public class MCPIndexFactory implements IndexFactory {
 
         return new Index() {
 
-            @Override
-            public IndexFactory checkConnection() throws IOException {
-                String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
-                APIHandler apiHandler = APIServer.getAPI(CheckService.NAME);
-                ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
-                if (!success(sr.getObject())) throw new IOException("MCP does not respond properly");
-                return MCPIndexFactory.this;
-            }
-
             private JSONObject getResponse(APIHandler handler) throws IOException {
                 String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
                 ServiceResponse sr = handler.serviceImpl(protocolhostportstub, params);
@@ -116,6 +107,20 @@ public class MCPIndexFactory implements IndexFactory {
                     return new IOException("cannot connect to MCP: " + response.getString(ObjectAPIHandler.COMMENT_KEY));
                 }
                 return new IOException("bad response from MCP: no success and no comment key");
+            }
+
+            @Override
+            public IndexFactory checkConnection() throws IOException {
+                String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
+                APIHandler apiHandler = APIServer.getAPI(CheckService.NAME);
+                ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
+                JSONObject response = sr.getObject();
+                if (success(response)) {
+                    connectMCP(response);
+                    return MCPIndexFactory.this;
+                } else {
+                    throw new IOException("MCP does not respond properly");
+                }
             }
 
             @Override
@@ -147,9 +152,8 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public boolean exist(String indexName, String typeName, String id) throws IOException {
+            public boolean exist(String indexName, String id) throws IOException {
                 params.put("index", indexName);
-                params.put("type", typeName);
                 params.put("id", id);
                 JSONObject response = getResponse(APIServer.getAPI(ExistService.NAME));
 
@@ -163,21 +167,20 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public Set<String> existBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
+            public Set<String> existBulk(String indexName, Collection<String> ids) throws IOException {
                 // We do not introduce a new protocol here. Instead we use the exist method.
                 // This is not a bad design because grid clients will learn how to use
                 // the native elasticsearch interface to do this in a better way.
                 Set<String> exists = new HashSet<>();
                 for (String id: ids) {
-                    if (exist(indexName, typeName, id)) exists.add(id);
+                    if (exist(indexName, id)) exists.add(id);
                 }
                 return exists;
             }
 
             @Override
-            public long count(String indexName, String typeName, QueryLanguage language, String query) throws IOException {
+            public long count(String indexName, QueryLanguage language, String query) throws IOException {
                 params.put("index", indexName);
-                params.put("type", typeName);
                 params.put("language", language.name());
                 params.put("query", query);
                 JSONObject response = getResponse(APIServer.getAPI(CountService.NAME));
@@ -192,9 +195,8 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public JSONObject query(String indexName, String typeName, String id) throws IOException {
+            public JSONObject query(String indexName, String id) throws IOException {
                 params.put("index", indexName);
-                params.put("type", typeName);
                 params.put("id", id);
                 JSONObject response = getResponse(APIServer.getAPI(QueryService.NAME));
 
@@ -211,14 +213,14 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
+            public Map<String, JSONObject> queryBulk(String indexName, Collection<String> ids) throws IOException {
                 // We do not introduce a new protocol here. Instead we use the query method.
                 // This is not a bad design because grid clients will learn how to use
                 // the native elasticsearch interface to do this in a better way.
                 Map<String, JSONObject> result = new HashMap<>();
                 for (String id: ids) {
                     try {
-                        JSONObject j = query(indexName, typeName, id);
+                        JSONObject j = query(indexName, id);
                         result.put(id, j);
                     } catch (IOException e) {}
                 }
@@ -226,9 +228,8 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException {
+            public JSONList query(String indexName, QueryLanguage language, String query, int start, int count) throws IOException {
                 params.put("index", indexName);
-                params.put("type", typeName);
                 params.put("language", language.name());
                 params.put("query", query);
                 JSONObject response = getResponse(APIServer.getAPI(QueryService.NAME));
@@ -248,7 +249,7 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public JSONObject query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException {
+            public JSONObject query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException {
                 throw new IOException("method not implemented"); // TODO implement this!
             }
 
@@ -269,9 +270,8 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public long delete(String indexName, String typeName, QueryLanguage language, String query) throws IOException {
+            public long delete(String indexName, QueryLanguage language, String query) throws IOException {
                 params.put("index", indexName);
-                params.put("type", typeName);
                 params.put("language", language.name());
                 params.put("query", query);
                 JSONObject response = getResponse(APIServer.getAPI(DeleteService.NAME));

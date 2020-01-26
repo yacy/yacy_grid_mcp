@@ -91,7 +91,7 @@ public class APIServer {
     private static void open(int port, String htmlPath) throws IOException {
         try {
             QueuedThreadPool pool = new QueuedThreadPool();
-            pool.setMaxThreads(500);
+            pool.setMaxThreads(100);
             server = new Server(pool);
     
             ServerConnector connector = new ServerConnector(server);

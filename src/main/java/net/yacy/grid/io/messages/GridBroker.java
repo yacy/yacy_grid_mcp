@@ -126,7 +126,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             Data.logger.info("Broker/Client: connected to a Queue over MCP at " + host + ":" + port);
             return true;
         } catch (IOException e) {
-            /*if (firsttry)*/ Data.logger.info("Broker/Client: trying to connect to a Queue over MCP at " + host + ":" + port + " failed");
+            /*if (firsttry)*/ Data.logger.info("Broker/Client: trying to connect to a Queue over MCP at " + host + ":" + port + " failed: " + e.getMessage());
             return false;
         }
     }

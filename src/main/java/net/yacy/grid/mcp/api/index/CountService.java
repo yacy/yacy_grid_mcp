@@ -47,7 +47,6 @@ public class CountService extends ObjectAPIHandler implements APIHandler {
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
         //String indexName, String typeName, final String id, JSONObject object
         String indexName = call.get("index", "");
-        String typeName = call.get("type", ""); if (typeName.length() == 0) typeName = null;
         QueryLanguage language = QueryLanguage.valueOf(call.get("language", "yacy"));
         String query = call.get("query", "");
         JSONObject json = new JSONObject(true);
@@ -55,7 +54,7 @@ public class CountService extends ObjectAPIHandler implements APIHandler {
             try {
                 Index index = Data.gridIndex.getElasticIndex();
                 String url = index.checkConnection().getConnectionURL();
-                long count = index.count(indexName, typeName, language, query);
+                long count = index.count(indexName, language, query);
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 json.put("count", count);
                 if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);

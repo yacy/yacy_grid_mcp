@@ -40,7 +40,7 @@ public class GridIndex implements Index {
 
     // in elastic 6.x only one type is allowed for indexes! The type concept shall be removed in 8.x
     public final static String WEB_TYPE_NAME         = "web"; // for historical reasons we use that type for "web" indexes.
-    public final static String EVENT_TYPE_NAME       = "event"; // "event" shall be used for all other indexes
+    public final static String EVENT_TYPE_NAME       = "web"; // "event" shall be used for all other indexes
 
     private ElasticIndexFactory elasticIndexFactory;
     private MCPIndexFactory mcpIndexFactory;
@@ -57,6 +57,10 @@ public class GridIndex implements Index {
         this.mcp_host = null;
         this.mcp_port = -1;
         this.shallRun = true;
+    }
+    
+    public boolean isConnected() {
+    	return this.elastic_address != null && this.elasticIndexFactory != null;
     }
 
     public boolean connectElasticsearch(String address) {
@@ -75,6 +79,7 @@ public class GridIndex implements Index {
             try {
                 this.elasticIndexFactory = new ElasticIndexFactory(address, cluster);
                 Data.logger.info("Index/Client: connected to elasticsearch at " + address);
+                this.elastic_address = address;
                 return true;
             } catch (IOException e) {
                 Data.logger.info("Index/Client: trying to connect to elasticsearch at " + address + " failed", e);
@@ -85,6 +90,12 @@ public class GridIndex implements Index {
         return false;
     }
 
+    /**
+     * Getting the elastic client:
+     * this should considered as a low-level function that only MCP-internal classes may call.
+     * All other packages must use a "Index" object.
+     * @return
+     */
     public ElasticsearchClient getElasticClient() {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
@@ -121,7 +132,10 @@ public class GridIndex implements Index {
                 throw new IOException("Index/Client: FATAL: connection to MCP lost!");
             }
         }
-        if (this.mcpIndexFactory != null) return this.mcpIndexFactory;
+        if (this.mcpIndexFactory != null) {
+            this.mcpIndexFactory.getIndex().checkConnection();
+        	return this.mcpIndexFactory;
+        }
         throw new IOException("Index/Client: add mcp service: no factory found!");
     }
 
@@ -182,12 +196,12 @@ public class GridIndex implements Index {
     }
 
     @Override
-    public boolean exist(String indexName, String typeName, String id) throws IOException {
+    public boolean exist(String indexName, String id) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            boolean exist = this.elasticIndexFactory.getIndex().exist(indexName, typeName, id);
+            boolean exist = this.elasticIndexFactory.getIndex().exist(indexName, id);
             //Data.logger.info("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
@@ -200,7 +214,7 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            boolean exist = this.mcpIndexFactory.getIndex().exist(indexName, typeName, id);
+            boolean exist = this.mcpIndexFactory.getIndex().exist(indexName, id);
             //Data.logger.info("Index/Client: exist mcp service '" + mcp_host + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
@@ -210,12 +224,12 @@ public class GridIndex implements Index {
     }
 
     @Override
-    public Set<String> existBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
+    public Set<String> existBulk(String indexName, Collection<String> ids) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            Set<String> exist = this.elasticIndexFactory.getIndex().existBulk(indexName, typeName, ids);
+            Set<String> exist = this.elasticIndexFactory.getIndex().existBulk(indexName, ids);
             //Data.logger.info("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
@@ -228,7 +242,7 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            Set<String> exist = this.mcpIndexFactory.getIndex().existBulk(indexName, typeName, ids);
+            Set<String> exist = this.mcpIndexFactory.getIndex().existBulk(indexName, ids);
             //Data.logger.info("Index/Client: exist mcp service '" + mcp_host + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
@@ -238,12 +252,12 @@ public class GridIndex implements Index {
     }
 
     @Override
-    public long count(String indexName, String typeName, QueryLanguage language, String query) throws IOException {
+    public long count(String indexName, QueryLanguage language, String query) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            long count = this.elasticIndexFactory.getIndex().count(indexName, typeName, language, query);
+            long count = this.elasticIndexFactory.getIndex().count(indexName, language, query);
             //Data.logger.info("Index/Client: count elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return count;
         } catch (IOException e) {
@@ -256,7 +270,7 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            long count = this.mcpIndexFactory.getIndex().count(indexName, typeName, language, query);
+            long count = this.mcpIndexFactory.getIndex().count(indexName, language, query);
             //Data.logger.info("Index/Client: count mcp service '" + mcp_host + "', object with query:" + query);
             return count;
         } catch (IOException e) {
@@ -266,12 +280,12 @@ public class GridIndex implements Index {
     }
 
     @Override
-    public JSONObject query(String indexName, String typeName, String id) throws IOException {
+    public JSONObject query(String indexName, String id) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            JSONObject json = this.elasticIndexFactory.getIndex().query(indexName, typeName, id);
+            JSONObject json = this.elasticIndexFactory.getIndex().query(indexName, id);
             //Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return json;
         } catch (IOException e) {
@@ -284,7 +298,7 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            JSONObject json = this.mcpIndexFactory.getIndex().query(indexName, typeName, id);
+            JSONObject json = this.mcpIndexFactory.getIndex().query(indexName, id);
             //Data.logger.info("Index/Client: query mcp service '" + mcp_host + "', object with id:" + id);
             return json;
         } catch (IOException e) {
@@ -294,12 +308,12 @@ public class GridIndex implements Index {
     }
 
     @Override
-    public Map<String, JSONObject> queryBulk(String indexName, String typeName, Collection<String> ids) throws IOException {
+    public Map<String, JSONObject> queryBulk(String indexName, Collection<String> ids) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            Map<String, JSONObject> map = this.elasticIndexFactory.getIndex().queryBulk(indexName, typeName, ids);
+            Map<String, JSONObject> map = this.elasticIndexFactory.getIndex().queryBulk(indexName, ids);
             //Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return map;
         } catch (IOException e) {
@@ -312,7 +326,7 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            Map<String, JSONObject> map = this.mcpIndexFactory.getIndex().queryBulk(indexName, typeName, ids);
+            Map<String, JSONObject> map = this.mcpIndexFactory.getIndex().queryBulk(indexName, ids);
             //Data.logger.info("Index/Client: query mcp service '" + mcp_host + "', object with id:" + id);
             return map;
         } catch (IOException e) {
@@ -322,12 +336,12 @@ public class GridIndex implements Index {
     }
 
     @Override
-    public JSONList query(String indexName, String typeName, QueryLanguage language, String query, int start, int count) throws IOException {
+    public JSONList query(String indexName, QueryLanguage language, String query, int start, int count) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            JSONList list = this.elasticIndexFactory.getIndex().query(indexName, typeName, language, query, start, count);
+            JSONList list = this.elasticIndexFactory.getIndex().query(indexName, language, query, start, count);
             //Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return list;
         } catch (IOException e) {
@@ -340,7 +354,7 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            JSONList list = this.mcpIndexFactory.getIndex().query(indexName, typeName, language, query, start, count);
+            JSONList list = this.mcpIndexFactory.getIndex().query(indexName, language, query, start, count);
             //Data.logger.info("Index/Client: query mcp service '" + mcp_host + "', object with query:" + query);
             return list;
         } catch (IOException e) {
@@ -350,12 +364,12 @@ public class GridIndex implements Index {
     }
 
     @Override
-    public JSONObject query(final String indexName, String typeName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException {
+    public JSONObject query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-        	JSONObject queryResult = this.elasticIndexFactory.getIndex().query(indexName, typeName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+        	JSONObject queryResult = this.elasticIndexFactory.getIndex().query(indexName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
             //Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return queryResult;
         } catch (IOException e) {
@@ -368,7 +382,7 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-        	JSONObject queryResult = this.mcpIndexFactory.getIndex().query(indexName, typeName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+        	JSONObject queryResult = this.mcpIndexFactory.getIndex().query(indexName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
             //Data.logger.info("Index/Client: query mcp service '" + mcp_host + "', object with query:" + query);
             return queryResult;
         } catch (IOException e) {
@@ -406,12 +420,12 @@ public class GridIndex implements Index {
     }
 
     @Override
-    public long delete(String indexName, String typeName, QueryLanguage language, String query) throws IOException {
+    public long delete(String indexName, QueryLanguage language, String query) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            long deleted = this.elasticIndexFactory.getIndex().delete(indexName, typeName, language, query);
+            long deleted = this.elasticIndexFactory.getIndex().delete(indexName, language, query);
             //Data.logger.info("Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return deleted;
         } catch (IOException e) {
@@ -424,7 +438,7 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            long deleted = this.mcpIndexFactory.getIndex().delete(indexName, typeName, language, query);
+            long deleted = this.mcpIndexFactory.getIndex().delete(indexName, language, query);
             //Data.logger.info("Index/Client: delete mcp service '" + mcp_host + "', object with query:" + query);
             return deleted;
         } catch (IOException e) {

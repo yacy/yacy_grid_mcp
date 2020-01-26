@@ -52,7 +52,6 @@ public class QueryService extends ObjectAPIHandler implements APIHandler {
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
         //String indexName, String typeName, final String id, JSONObject object
         String indexName = call.get("index", "");
-        String typeName = call.get("type", ""); if (typeName.length() == 0) typeName = null;
         String id = call.get("id", "");
         QueryLanguage language = QueryLanguage.valueOf(call.get("language", "yacy"));
         String query = call.get("query", "");
@@ -63,7 +62,7 @@ public class QueryService extends ObjectAPIHandler implements APIHandler {
             try {
                 Index index = Data.gridIndex.getElasticIndex();
                 String url = index.checkConnection().getConnectionURL();
-                JSONObject object = index.query(indexName, typeName, id);
+                JSONObject object = index.query(indexName, id);
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 JSONList list = new JSONList();
                 if (object != null) list.add(object);
@@ -78,7 +77,7 @@ public class QueryService extends ObjectAPIHandler implements APIHandler {
             try {
                 Index index = Data.gridIndex.getElasticIndex();
                 String url = index.checkConnection().getConnectionURL();
-                JSONList list = index.query(indexName, typeName, language, query, startRecord, maximumRecords);
+                JSONList list = index.query(indexName, language, query, startRecord, maximumRecords);
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 json.put("count", list.length());
                 json.put("list", list.toArray());

@@ -89,7 +89,7 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         ElasticsearchClient ec = Data.gridIndex.getElasticClient();
         HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getMapping().name()).preTags("").postTags("").fragmentSize(140);
         ElasticsearchClient.Query query = ec.query(
-                GridIndex.WEB_INDEX_NAME, null, yq.queryBuilder, null, sort, hb, timezoneOffset, startRecord, maximumRecords, facetLimit, explain,
+                GridIndex.WEB_INDEX_NAME, yq.queryBuilder, null, sort, hb, timezoneOffset, startRecord, maximumRecords, facetLimit, explain,
                 facetFieldMapping.toArray(new WebMapping[facetFieldMapping.size()]));
 
         JSONObject json = new JSONObject(true);
