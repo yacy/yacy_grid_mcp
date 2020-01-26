@@ -20,6 +20,7 @@
 package net.yacy.grid.mcp;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -175,6 +176,9 @@ public class Data {
                 }
             }
         }
+
+        // find connections first here before concurrent threads try to make their own connection concurrently
+        try { Data.gridIndex.checkConnection(); } catch (IOException e) { Data.logger.fatal("no connection to MCP", e); }
 
         // init boosts from configuration
         Map<String, String> defaultBoosts = Service.readDoubleConfig("boost.properties");
