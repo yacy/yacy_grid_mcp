@@ -118,10 +118,10 @@ public class ElasticsearchClient {
         Settings.Builder settings = Settings.builder()
                 .put("cluster.routing.allocation.enable", "all")
                 .put("cluster.routing.allocation.allow_rebalance", "always");
-        if (clusterName != null) settings.put("cluster.name", clusterName);
+        if (clusterName != null) settings.put("cluster.name", this.clusterName);
 
-        // create a client
-        TransportClient tc = new PreBuiltTransportClient(settings.build());
+        // create a new client
+        TransportClient newClient = new PreBuiltTransportClient(settings.build());
 
         for (String address: addresses) {
             String a = address.trim();
@@ -130,15 +130,24 @@ public class ElasticsearchClient {
                 InetAddress i = InetAddress.getByName(a.substring(0, p));
                 int port = Integer.parseInt(a.substring(p + 1));
                 //tc.addTransportAddress(new InetSocketTransportAddress(i, port));
-                tc.addTransportAddress(new TransportAddress(i, port));
+                newClient.addTransportAddress(new TransportAddress(i, port));
             } catch (UnknownHostException e) {
                 Data.logger.warn("", e);
             }
         }
-        if (this.elasticsearchClient != null) try {
-            this.elasticsearchClient.close();
-        } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {}
-        this.elasticsearchClient = tc;
+
+        // replace old client with new client
+        final Client oldClient = this.elasticsearchClient;
+        this.elasticsearchClient = newClient; // just switch out without closeing the old one first
+        // because closing may cause blocking, we close this concurrently
+        new Thread() {
+            public void run() {
+                this.setName("temporary client close job " + clusterName);
+                if (oldClient != null) try {
+                    oldClient.close();
+                } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {}
+            }
+        }.start();
     }
 
     @SuppressWarnings("unused")
