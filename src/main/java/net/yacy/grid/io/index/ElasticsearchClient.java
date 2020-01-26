@@ -140,10 +140,10 @@ public class ElasticsearchClient {
         final Client oldClient = this.elasticsearchClient;
         this.elasticsearchClient = newClient; // just switch out without closeing the old one first
         // because closing may cause blocking, we close this concurrently
-        new Thread() {
+        if (oldClient != null) new Thread() {
             public void run() {
                 this.setName("temporary client close job " + clusterName);
-                if (oldClient != null) try {
+                try {
                     oldClient.close();
                 } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {}
             }
