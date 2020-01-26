@@ -121,7 +121,15 @@ public class ElasticsearchClient {
         if (clusterName != null) settings.put("cluster.name", clusterName);
 
         // create a client
-        TransportClient tc = new PreBuiltTransportClient(settings.build());
+        System.setProperty("es.set.netty.runtime.available.processors", "false"); // patch which prevents io.netty.util.NettyRuntime$AvailableProcessorsHolder.setAvailableProcessors from failing
+        TransportClient tc = null;
+        while (true) try {
+            tc = new PreBuiltTransportClient(settings.build());
+            break;
+        } catch (Exception e) {
+            Data.logger.warn("failed to create an elastic client, retrying...", e);
+            try { Thread.sleep(10000); } catch (InterruptedException e1) {}
+        }
 
         for (String address: addresses) {
             String a = address.trim();
