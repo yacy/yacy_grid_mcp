@@ -69,18 +69,12 @@ public class CrawlerDocument extends Document {
         return new CrawlerDocument(json);
     }
 
-    public static void storeBulk(Index index, Collection<CrawlerDocument> documents) throws IOException {
+    public static void storeBulk(Index index, Map<String, CrawlerDocument> documents) throws IOException {
         if (index == null) return;
         Map<String, JSONObject> map = new HashMap<>();
-        documents.forEach(crawlerDocument -> {
+        documents.forEach((id, crawlerDocument) -> {
             if (crawlerDocument != null) {
-                String url = crawlerDocument.getURL();
-                if (url != null && url.length() > 0) {
-                    String id = Digest.encodeMD5Hex(url);
-                    map.put(id, crawlerDocument);
-                } else {
-                    assert false : "url not set / storeBulk";
-                }
+                map.put(id, crawlerDocument);
             } else {
                 assert false : "document is null";
             }
