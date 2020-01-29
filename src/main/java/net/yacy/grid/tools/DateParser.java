@@ -45,7 +45,7 @@ public class DateParser {
     public final static String PATTERN_MONTHDAY = "yyyy-MM-dd"; // the twitter search modifier format
     public final static String PATTERN_MONTHDAYHOURMINUTE = "yyyy-MM-dd HH:mm"; // this is the format which morris.js understands for date-histogram graphs
     public final static String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss Z"; // with numeric time zone indicator as defined in RFC5322
-    
+
     /** Date formatter/non-sloppy parser for W3C datetime (ISO8601) in GMT/UTC */
     public final static SimpleDateFormat iso8601Format = new SimpleDateFormat(PATTERN_ISO8601, Locale.US);
     public final static SimpleDateFormat iso8601MillisFormat = new SimpleDateFormat(PATTERN_ISO8601MILLIS, Locale.US);
@@ -53,10 +53,9 @@ public class DateParser {
     public final static DateFormat minuteDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US);
     public final static DateFormat secondDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
     public final static SimpleDateFormat FORMAT_RFC1123 = new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
-    
+
     public final static DateTimeFormatter utcFormatter = ISODateTimeFormat.dateTime().withZoneUTC();
-    
-    
+
     public final static Calendar UTCCalendar = Calendar.getInstance();
     public final static TimeZone UTCtimeZone = TimeZone.getTimeZone("UTC");
     static {
@@ -76,7 +75,7 @@ public class DateParser {
      * @return a calender object representing the parsed date
      * @throws ParseException if the format of the date string is not well-formed
      */
-    public static Calendar parse(String dateString, final int timezoneOffset) throws ParseException {
+    public static Calendar parse(String dateString, final int timezoneOffset) throws ParseException, NumberFormatException {
         Calendar cal = Calendar.getInstance(UTCtimeZone);
         if ("now".equals(dateString)) return cal;
         if ("hour".equals(dateString)) {cal.setTime(oneHourAgo()); return cal;}
@@ -97,19 +96,19 @@ public class DateParser {
         cal.add(Calendar.MINUTE, timezoneOffset); // add a correction; i.e. for UTC+1 -60 minutes is added to patch a time given in UTC+1 to the actual time at UTC
         return cal;
     }
-    
+
     public static Date iso8601MillisParser(String date) {
-    	try {
-			return iso8601MillisFormat.parse(date);
-		} catch (ParseException e) {
-			return new Date();
-		}
+        try {
+            return iso8601MillisFormat.parse(date);
+        } catch (ParseException | NumberFormatException e) {
+            return new Date();
+        }
     }
-    
+
     public static String toPostDate(Date d) {
         return secondDateFormat.format(d).replace(' ', '_');
     }
-    
+
     public static int getTimezoneOffset() {
         Calendar calendar = new GregorianCalendar();
         TimeZone timeZone = calendar.getTimeZone();
@@ -119,7 +118,7 @@ public class DateParser {
     public static Date oneHourAgo() {
         return new Date(System.currentTimeMillis() - HOUR_MILLIS);
     }
-    
+
     public static Date oneDayAgo() {
         return new Date(System.currentTimeMillis() - DAY_MILLIS);
     }
@@ -127,7 +126,7 @@ public class DateParser {
     public static Date oneWeekAgo() {
         return new Date(System.currentTimeMillis() - WEEK_MILLIS);
     }
-    
+
     private static long lastRFC1123long = 0;
     private static String lastRFC1123string = "";
 
@@ -158,7 +157,7 @@ public class DateParser {
             return s;
         }
     }
-    
+
     /**
      * Parse GSA date string (short form of ISO8601 date format)
      * @param datestring
@@ -168,11 +167,11 @@ public class DateParser {
     public static final Date parseGSAFS(final String datestring) {
         synchronized (dayDateFormat) { try {
             return dayDateFormat.parse(datestring);
-        } catch (final ParseException e) {
+        } catch (final ParseException | NumberFormatException e) {
             return null;
         }}
     }
-    
+
     public static void main(String[] args) {
         Calendar calendar = new GregorianCalendar();
         System.out.println("the date is           : " + calendar.getTime().getTime());
@@ -181,7 +180,7 @@ public class DateParser {
         System.out.println("the post date is      : " + postDate);
         try {
             System.out.println("post date to date     : " + parse(postDate, getTimezoneOffset()).getTime().getTime());
-        } catch (ParseException e) {
+        } catch (ParseException | NumberFormatException e) {
             Data.logger.warn("", e);
         }
     }
