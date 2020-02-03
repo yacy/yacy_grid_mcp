@@ -231,6 +231,24 @@ To install yacy_grid_mcp with Docker please refer to the [yacy Docker installati
 ### How do I deploy yacy_grid_mcp on Cloud Providers?
 To install yacy_grid_mcp on Cloud Providers please look documentations at [yacy_grid_mcp Cloud installation readme](/docs/).
 
+### Useful debugging URLs
+
+#### RabbitMQ
+- http://localhost:15672/
+
+#### Elasticsearch
+- http://localhost:9200/_cat/indices
+- http://localhost:9200/crawlstart/_search?q=*:*
+- http://localhost:9200/crawler/_search?q=*:*
+- http://localhost:9200/web/_search?q=url_s:*tagesschau*
+
+#### MCP
+- http://localhost:8100/yacy/grid/mcp/info/threaddump.txt
+
+#### Loader
+- http://localhost:8200/yacy/grid/mcp/info/threaddump.txt
+
+
 
 ## Contribute
 
