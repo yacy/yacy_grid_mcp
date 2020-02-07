@@ -64,7 +64,6 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -95,7 +94,6 @@ public class ElasticsearchClient {
 
     private static long throttling_time_threshold = 2000L; // update time high limit
     private static long throttling_ops_threshold = 1000L; // messages per second low limit
-    private static final TimeValue scrollKeepAlive = TimeValue.timeValueSeconds(60);
     private static double throttling_factor = 1.0d; // factor applied on update duration if both thresholds are passed
 
     private String[] addresses;
@@ -254,8 +252,7 @@ public class ElasticsearchClient {
     @SuppressWarnings("unused")
     private ClusterStatsNodes getStats() {
         final ClusterStatsRequest clusterStatsRequest =
-            new ClusterStatsRequestBuilder(elasticsearchClient.admin().cluster(), ClusterStatsAction.INSTANCE)
-                .request();
+            new ClusterStatsRequestBuilder(elasticsearchClient.admin().cluster(), ClusterStatsAction.INSTANCE).request();
         final ClusterStatsResponse clusterStatsResponse =
             elasticsearchClient.admin().cluster().clusterStats(clusterStatsRequest).actionGet();
         final ClusterStatsNodes clusterStatsNodes = clusterStatsResponse.getNodesStats();
@@ -289,7 +286,7 @@ public class ElasticsearchClient {
     }
 
     public long countInternal(final QueryBuilder q, final String indexName) {
-        SearchResponse response = elasticsearchClient.prepareSearch(indexName).setQuery(q).setSize(0).setScroll(scrollKeepAlive).execute().actionGet();
+        SearchResponse response = elasticsearchClient.prepareSearch(indexName).setQuery(q).setSize(0).execute().actionGet();
         return response.getHits().getTotalHits();
     }
 
@@ -416,7 +413,6 @@ public class ElasticsearchClient {
         SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName);
         request
             .setSearchType(SearchType.QUERY_THEN_FETCH)
-            .setScroll(scrollKeepAlive)
             .setQuery(q)
             .setSize(100);
         SearchResponse response = request.execute().actionGet();
@@ -429,7 +425,7 @@ public class ElasticsearchClient {
             // termination
             if (response.getHits().getHits().length == 0) break;
             // scroll
-            response = elasticsearchClient.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000)).execute().actionGet();
+            response = elasticsearchClient.prepareSearchScroll(response.getScrollId()).execute().actionGet();
         }
         return deleteBulk(indexName, ids);
     }
@@ -720,7 +716,6 @@ public class ElasticsearchClient {
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
                     .setQuery(queryBuilder)
                     .setSearchType(SearchType.DFS_QUERY_THEN_FETCH) // DFS_QUERY_THEN_FETCH is slower but provides stability of search results
-                    .setScroll(scrollKeepAlive) // prevents storage of large number of results in ES
                     .setFrom(from)
                     .setSize(resultCount);
             if (hb != null) request.highlighter(hb);
@@ -794,7 +789,6 @@ public class ElasticsearchClient {
     private List<Map<String, Object>> queryWithConstraints(final String indexName, final String fieldName, final String fieldValue, final Map<String, String> constraints, boolean latest) throws IOException {
         SearchRequestBuilder request = this.elasticsearchClient.prepareSearch(indexName)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
-                .setScroll(scrollKeepAlive) // prevents storage of large number of results in ES
                 .setFrom(0);
 
         BoolQueryBuilder bFilter = QueryBuilders.boolQuery();
