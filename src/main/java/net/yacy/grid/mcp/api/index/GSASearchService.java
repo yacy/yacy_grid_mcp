@@ -46,7 +46,7 @@ import net.yacy.grid.tools.Digest;
 
 /**
  * This is a implementation of the GSA Google Search Appliance API as documented in
- * https://www.google.com/support/enterprise/static/gsa/docs/admin/74/gsa_doc_set/xml_reference/index.html
+ * https://www.google.com/support/enterprise/static/gsa/docs/admin/current/gsa_doc_set/xml_reference/index.html
  * 
  * We re-implement here functionality as given in the YaCy/1 implementation from
  * https://github.com/yacy/yacy_search_server/blob/master/source/net/yacy/http/servlets/GSAsearchServlet.java
@@ -116,7 +116,7 @@ public class GSASearchService extends ObjectAPIHandler implements APIHandler {
         
         // GSP
         sb.append("<GSP VER=\"3.2\">\n");
-        sb.append("<!-- This is a Google Search Appliance API result, provided by YaCy Grid (see: https://github.com/yacy/yacy_grid_mcp). For the GSA protocol, see https://www.google.com/support/enterprise/static/gsa/docs/admin/74/gsa_doc_set/xml_reference/index.html -->\n");
+        sb.append("<!-- This is a Google Search Appliance API result, provided by YaCy Grid (see: https://github.com/yacy/yacy_grid_mcp). For the GSA protocol, see https://www.google.com/support/enterprise/static/gsa/docs/admin/current/gsa_doc_set/xml_reference/index.html -->\n");
         sb.append("<TM>0</TM>\n");
         sb.append("<Q>").append(queryXML).append("</Q>\n");
         sb.append("<PARAM name=\"output\" value=\"xml_no_dtd\" original_value=\"xml_no_dtd\"/>\n");
