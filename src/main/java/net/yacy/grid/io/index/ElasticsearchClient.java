@@ -64,6 +64,7 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -92,6 +93,7 @@ import net.yacy.grid.mcp.Data;
  */
 public class ElasticsearchClient {
 
+    private static final TimeValue scrollKeepAlive = TimeValue.timeValueSeconds(60);
     private static long throttling_time_threshold = 2000L; // update time high limit
     private static long throttling_ops_threshold = 1000L; // messages per second low limit
     private static double throttling_factor = 1.0d; // factor applied on update duration if both thresholds are passed
@@ -413,6 +415,7 @@ public class ElasticsearchClient {
         SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName);
         request
             .setSearchType(SearchType.QUERY_THEN_FETCH)
+            .setScroll(scrollKeepAlive)
             .setQuery(q)
             .setSize(100);
         SearchResponse response = request.execute().actionGet();
@@ -425,7 +428,7 @@ public class ElasticsearchClient {
             // termination
             if (response.getHits().getHits().length == 0) break;
             // scroll
-            response = elasticsearchClient.prepareSearchScroll(response.getScrollId()).execute().actionGet();
+            response = elasticsearchClient.prepareSearchScroll(response.getScrollId()).setScroll(scrollKeepAlive).execute().actionGet();
         }
         return deleteBulk(indexName, ids);
     }
