@@ -235,23 +235,47 @@ To install yacy_grid_mcp on Cloud Providers please look documentations at [yacy_
 
 #### RabbitMQ
 - http://localhost:15672/
+- use user 'anonymous' with password 'yacy'
 
 #### Elasticsearch
 - http://localhost:9200/_cat/indices
 - http://localhost:9200/crawlstart/_search?q=*:*
 - http://localhost:9200/crawler/_search?q=*:*
 - http://localhost:9200/web/_search?q=url_s:*tagesschau*
+- http://localhost:9200/web/_search?q=_id:d5452c253d5eb541135394f42bfa655f
+- http://localhost:9200/web/_doc/d5452c253d5eb541135394f42bfa655f
+- http://localhost:9200/crawler/_doc/d5452c253d5eb541135394f42bfa655f
 
 #### MCP
 - http://localhost:8100/yacy/grid/mcp/info/threaddump.txt
+- http://localhost:8100/yacy/grid/mcp/control/loaderThrottling.json?url=klg.de
+- http://localhost:8100/yacy/grid/mcp/index/count.json?index=web&query=tagesthemen
+- http://127.0.0.1:8100/yacy/grid/mcp/index/exist.json?index=web&id=31bf58014628ee9e28b5ffb8b91ddf3e
+- http://127.0.0.1:8100/yacy/grid/mcp/index/gsasearch.xml?q=*
+- http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=*
+
+#### Crawler
+- http://localhost:8300/yacy/grid/mcp/info/threaddump.txt
+- http://localhost:8300/yacy/grid/crawler/crawlStart.json?crawlingURL=yacy.net&indexmustnotmatch=.*Mitmachen.*&mustmatch=.*yacy.net.*
 
 #### Loader
 - http://localhost:8200/yacy/grid/mcp/info/threaddump.txt
+- http://localhost:8200/yacy/grid/loader/warcloader.warc.gz?url=http://yacy.net
+- curl "http://localhost:8200/yacy/grid/loader/warcprocess.json?collection=test&targetasset=test/yacy.net.warc.gz&url=http://yacy.net"
+- ...places the warc file on the asset store
 
+#### Parser
+- http://localhost:8500/yacy/grid/mcp/info/threaddump.txt
+- http://127.0.0.1:8500/yacy/grid/parser/jsonldvalidator.json?etherpad=05cc1575f55de2dc82f20f9010d71358
+- http://127.0.0.1:8500/yacy/grid/parser/jsonldvalidator.json?url=http://ebay.de
+- http://127.0.0.1:8500/yacy/grid/parser/jsonldvalidator.json?url=https://release-8-0-x-dev-224m2by-lj6ob4e22x2mc.eu.platform.sh/test
+- Flatfile Example: save the json result as flat file to land.nrw.flatjson
+  1. produce a WARC file with `wget https://www.land.nrw/ --warc-file=land.nrw`
+  2. compress the WARC file `gzip -9 land.nrw`
+  3. parse the warc file and write a flat json with `curl -X POST -F "sourcebytes=@land.nrw.warc.gz;type=application/octet-stream" -F "flatfile=true" -o land.nrw.flatjson http://127.0.0.1:8500/yacy/grid/parser/parser.json`
 
 
 ## Contribute
-
 This is a community project and your contribution is welcome!
 
 1. Check for [open issues](https://github.com/yacy/yacy_grid_mcp/issues)
@@ -262,9 +286,7 @@ This is a community project and your contribution is welcome!
 4. Send a pull request and bug us on Gitter until it gets merged and published. :)
 
 ## What is the software license?
-LGPL 2.1
-
+LGPL 2.1 (C) by Michael Peter Christen
 
 Have fun!
-
 @0rb1t3r

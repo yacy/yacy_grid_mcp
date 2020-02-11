@@ -48,19 +48,18 @@ import net.yacy.grid.tools.DateParser;
  * test: call
  * http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=*
  * compare with
- * http://localhost:9200/web/crawler/_search?q=*:*
+ * http://localhost:9200/web/_search?q=*:*
  */
 public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578478303031749975L;
     public static final String NAME = "yacysearch";
-    
+
     @Override
     public String getAPIPath() {
         return "/yacy/grid/mcp/index/" + NAME + ".json";
-    }    
+    }
 
-    
     @Override
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
         String callback = call.get("callback", "");

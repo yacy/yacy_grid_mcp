@@ -33,6 +33,7 @@ import net.yacy.grid.io.index.Index;
 import net.yacy.grid.io.index.Index.QueryLanguage;
 import net.yacy.grid.mcp.Data;
 
+// http://localhost:8100/yacy/grid/mcp/index/count.json?index=web&query=tagesthemen
 public class CountService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 85743262349879L;
@@ -64,7 +65,7 @@ public class CountService extends ObjectAPIHandler implements APIHandler {
             }
         } else {
             json.put(ObjectAPIHandler.SUCCESS_KEY, false);
-            json.put(ObjectAPIHandler.COMMENT_KEY, "the request must contain an index, type, and a query");
+            json.put(ObjectAPIHandler.COMMENT_KEY, "the request must contain an index and a query");
         }
         return new ServiceResponse(json);
     }
