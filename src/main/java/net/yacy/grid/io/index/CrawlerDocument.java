@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
 
+import net.yacy.grid.mcp.Data;
 import net.yacy.grid.tools.Digest;
 
 public class CrawlerDocument extends Document {
@@ -80,6 +81,21 @@ public class CrawlerDocument extends Document {
             }
         });
         index.addBulk(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, map);
+    }
+
+    public static void update(Index index, String objectid, JSONObject changes) throws IOException {
+        try {
+            updateInternal(index, objectid, changes);
+        } catch (IOException e) {
+            index.refresh(GridIndex.CRAWLER_INDEX_NAME);
+            updateInternal(index, objectid, changes);
+        }
+    }
+
+    private static void updateInternal(Index index, String objectid, JSONObject changes) throws IOException {
+        CrawlerDocument crawlerDocument = CrawlerDocument.load(index, objectid);
+        for (String key: changes.keySet()) crawlerDocument.put(key, changes.get(key));
+        crawlerDocument.store(index);
     }
 
     public CrawlerDocument store(Index index) throws IOException {
