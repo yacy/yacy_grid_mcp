@@ -192,6 +192,11 @@ public class ElasticIndexFactory implements IndexFactory {
             }
 
             @Override
+            public void refresh(String indexName) {
+                ElasticIndexFactory.this.elasticsearchClient.refresh(indexName);
+            }
+
+            @Override
             public void close() {
             }
 

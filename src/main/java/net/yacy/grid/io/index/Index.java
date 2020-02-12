@@ -61,6 +61,8 @@ public interface Index {
 
     public long delete(String indexName, QueryLanguage language, String query) throws IOException;
 
+    public void refresh(String indexName);
+
     public void close();
 
     public static enum QueryLanguage {

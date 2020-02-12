@@ -286,6 +286,10 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
+            public void refresh(String indexName) {
+            }
+
+            @Override
             public void close() {
             }
 

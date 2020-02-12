@@ -44,6 +44,7 @@ import org.elasticsearch.action.admin.cluster.stats.ClusterStatsNodes;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequest;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsResponse;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -191,6 +192,10 @@ public class ElasticsearchClient {
             if (!is_ready && System.currentTimeMillis() - start > maxtimemillis) return false; 
         } while (!is_ready);
         return is_ready;
+    }
+
+    public void refresh(String indexName) {
+        new RefreshRequest(indexName);
     }
 
     /**
