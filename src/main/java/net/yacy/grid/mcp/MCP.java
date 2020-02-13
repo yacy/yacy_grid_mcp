@@ -36,6 +36,7 @@ import ai.susi.mind.SusiAction;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.io.index.CrawlerDocument;
+import net.yacy.grid.io.index.CrawlerMapping;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.io.index.CrawlerDocument.Status;
 import net.yacy.grid.io.index.GridIndex;
@@ -62,6 +63,7 @@ import net.yacy.grid.mcp.api.messages.PeekService;
 import net.yacy.grid.mcp.api.messages.ReceiveService;
 import net.yacy.grid.mcp.api.messages.RecoverService;
 import net.yacy.grid.mcp.api.messages.SendService;
+import net.yacy.grid.tools.DateParser;
 import net.yacy.grid.tools.GitTool;
 import net.yacy.grid.tools.JSONList;
 import net.yacy.grid.tools.MultiProtocolURL;
@@ -136,7 +138,7 @@ public class MCP {
                if (action.hasAsset(sourceasset_path)) {
                    jsonlist = action.getJSONListAsset(sourceasset_path);
                   }
-               if (jsonlist == null) try {
+               if (jsonlist == null || jsonlist.length() == 0) try {
                    Asset<byte[]> asset = Data.gridStorage.load(sourceasset_path);
                    byte[] source = asset.getPayload();
                    jsonlist = new JSONList(new ByteArrayInputStream(source));
@@ -164,9 +166,10 @@ public class MCP {
 
                    // write crawler index
                    try {
-                       CrawlerDocument crawlerDocument = CrawlerDocument.load(Data.gridIndex, urlid);
-                       crawlerDocument.setStatus(Status.indexed).setStatusDate(new Date());
-                       crawlerDocument.store(Data.gridIndex);
+                       JSONObject updater = new JSONObject()
+                               .put(CrawlerMapping.status_s.getMapping().name(), Status.indexed.name())
+                               .put(CrawlerMapping.status_date_dt.getMapping().name(), DateParser.iso8601MillisFormat.format(new Date()));
+                       CrawlerDocument.update(Data.gridIndex, urlid, updater);
                        // check with http://localhost:9200/crawler/_search?q=status_s:indexed
                    } catch (IOException e) {
                        // well that should not happen

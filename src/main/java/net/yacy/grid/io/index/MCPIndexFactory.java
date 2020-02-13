@@ -287,6 +287,9 @@ public class MCPIndexFactory implements IndexFactory {
 
             @Override
             public void refresh(String indexName) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {}
             }
 
             @Override

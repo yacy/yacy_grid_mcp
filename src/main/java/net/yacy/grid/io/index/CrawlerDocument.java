@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Data;
 import net.yacy.grid.tools.Digest;
 
 public class CrawlerDocument extends Document {
@@ -54,7 +53,7 @@ public class CrawlerDocument extends Document {
     public CrawlerDocument(JSONObject obj) {
         super(obj);
     }
-    
+
     public static Map<String, CrawlerDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
         Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.CRAWLER_INDEX_NAME, ids);
         Map<String, CrawlerDocument> docmap = new HashMap<>();
@@ -65,7 +64,22 @@ public class CrawlerDocument extends Document {
     }
 
     public static CrawlerDocument load(Index index, String id) throws IOException {
-        JSONObject json = index.query(GridIndex.CRAWLER_INDEX_NAME, id);
+        JSONObject json = null;
+        try {
+            // first try
+            json = index.query(GridIndex.CRAWLER_INDEX_NAME, id);
+        } catch (IOException e) {
+            // this might fail because the object was not yet present in the index
+            // we try to fix this with a refresh
+            index.refresh(GridIndex.CRAWLER_INDEX_NAME);
+            try {
+                // second try
+                json = index.query(GridIndex.CRAWLER_INDEX_NAME, id);
+            } catch (IOException ee) {
+                // fail
+                throw ee;
+            }
+        }
         if (json == null) throw new IOException("no document with id " + id + " in index");
         return new CrawlerDocument(json);
     }
@@ -84,26 +98,21 @@ public class CrawlerDocument extends Document {
     }
 
     public static void update(Index index, String objectid, JSONObject changes) throws IOException {
-        try {
-            updateInternal(index, objectid, changes);
-        } catch (IOException e) {
-            index.refresh(GridIndex.CRAWLER_INDEX_NAME);
-            updateInternal(index, objectid, changes);
-        }
+        CrawlerDocument crawlerDocument = load(index, objectid);
+        for (String key: changes.keySet()) crawlerDocument.put(key, changes.get(key));
+        crawlerDocument.store(index, objectid);
     }
 
-    private static void updateInternal(Index index, String objectid, JSONObject changes) throws IOException {
-        CrawlerDocument crawlerDocument = CrawlerDocument.load(index, objectid);
-        for (String key: changes.keySet()) crawlerDocument.put(key, changes.get(key));
-        crawlerDocument.store(index);
+    public CrawlerDocument store(Index index, String objectid) throws IOException {
+        if (index != null) index.add(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, objectid, this);
+        return this;
     }
 
     public CrawlerDocument store(Index index) throws IOException {
-        if (index == null) return this;
         String url = getURL();
         if (url != null && url.length() > 0) {
             String id = Digest.encodeMD5Hex(url);
-            index.add(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
+            store(index, id);
         } else {
             assert false : "url not set / store";
         }

@@ -44,7 +44,9 @@ import org.elasticsearch.action.admin.cluster.stats.ClusterStatsNodes;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequest;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsResponse;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -198,6 +200,18 @@ public class ElasticsearchClient {
         new RefreshRequest(indexName);
     }
 
+    public void settings(String indexName) {
+        UpdateSettingsRequest request = new UpdateSettingsRequest(indexName);
+        String settingKey = "index.mapping.total_fields.limit";
+        int settingValue = 10000;
+        Settings.Builder settingsBuilder =
+                Settings.builder()
+                .put(settingKey, settingValue);
+        request.settings(settingsBuilder); 
+        CreateIndexRequest updateSettingsResponse =
+                this.elasticsearchClient.admin().indices().prepareCreate(indexName).setSettings(settingsBuilder).request();
+    }
+    
     /**
      * create a new index. This method must be called to ensure that an elasticsearch index is available and can be used.
      * @param indexName

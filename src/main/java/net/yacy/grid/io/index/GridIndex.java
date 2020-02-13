@@ -449,7 +449,10 @@ public class GridIndex implements Index {
 
     @Override
     public void refresh(String indexName) {
-        if (this.elasticIndexFactory != null) try {
+        if (this.elasticIndexFactory == null) try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {}
+        else try {
             this.elasticIndexFactory.getIndex().refresh(indexName);
         } catch (IOException e) {}
     }
