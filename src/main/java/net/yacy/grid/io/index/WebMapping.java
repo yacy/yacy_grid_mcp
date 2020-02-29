@@ -229,8 +229,10 @@ public enum WebMapping implements MappingDeclaration {
     ext_title_txt(MappingType.text_general, true, true, true, false, false, "names matching title expressions"),
     ext_title_val(MappingType.num_integer, true, true, true, false, false, "number of matching title expressions"),
     vocabularies_sxt(MappingType.string, true, true, true, false, false, "collection of all vocabulary names that have a matcher in the document - use this to boost with vocabularies"),
-    ld_o(MappingType.object, false, true, false, false, false, "JSON-LD object with node object");
-   
+    ld_o(MappingType.object, false, true, false, false, false, "JSON-LD object with node object"),
+    ld_s(MappingType.string, false, true, false, false, false, "JSON-LD object with node object as string"),
+    ld_context_sxt(MappingType.string, false, true, true, false, false, "all context indentifiers of ld_s");
+
     public final static String CORE_NAME = "collection1"; // this was the default core name up to Solr 4.4.0. This default name was stored in CoreContainer.DEFAULT_DEFAULT_CORE_NAME but was removed in Solr 4.5.0
 
     public final static String VOCABULARY_PREFIX = "vocabulary_"; // collects all terms that appear for each vocabulary
