@@ -25,6 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import net.yacy.grid.mcp.Data;
+
 public enum WebMapping implements MappingDeclaration {
  
     // mandatory
@@ -273,11 +275,11 @@ public enum WebMapping implements MappingDeclaration {
         }
         return cm;
     }
-    
-	/**
-	 * Graph attributes are used by the parser to create a copy of a document which contains only links and references
-	 * to the indexed document identification. That graph document is used by the crawler to move on with crawling.
-	 */
+
+    /**
+     * Graph attributes are used by the parser to create a copy of a document which contains only links and references
+     * to the indexed document identification. That graph document is used by the crawler to move on with crawling.
+     */
     public final static WebMapping[] GRAPH_ATTRIBUTES = new WebMapping[]{
         WebMapping.url_s,
         WebMapping.url_protocol_s,
@@ -304,11 +306,11 @@ public enum WebMapping implements MappingDeclaration {
         WebMapping.iframes_sxt,
         WebMapping.iframesscount_i
     };
-    
-	/**
-	 * helper main method to generate a mapping in elasticsearch.
-	 * To test this, upload the result of this main method to elasticsearch with the following line:
-	 * curl -XDELETE 'http://elastic:changeme@localhost:9200/web'
+
+    /**
+     * helper main method to generate a mapping in elasticsearch.
+     * To test this, upload the result of this main method to elasticsearch with the following line:
+     * curl -XDELETE 'http://elastic:changeme@localhost:9200/web'
      * curl -XPUT http://elastic:changeme@localhost:9200/web --data-binary "@mapping.json"
      * that prepares the index to take a json index file which can be generated with i.e.
      * curl -X POST -F "sourcebytes=@publicplan.de.warc.gz;type=application/octet-stream" -F "flatfile=true" -F "elastic=true" -o "publicplan.de.elastic"  http://127.0.0.1:8500/yacy/grid/parser/parser.json
@@ -316,10 +318,10 @@ public enum WebMapping implements MappingDeclaration {
      * curl -s -XPOST http://elastic:changeme@localhost:9200/web/index/_bulk --data-binary "@publicplan.de.elastic"
      * the number of documents in the index is then
      * curl http://elastic:changeme@localhost:9200/web/_count
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		System.out.println(Mapping.elasticsearchMapping(GridIndex.WEB_INDEX_NAME).toString(2));
-	}
+     * @param args
+     */
+    public static void main(String[] args) {
+        System.out.println(Mapping.elasticsearchMapping(Data.config.get("grid.elasticsearch.indexName.web")).toString(2));
+    }
 }
 

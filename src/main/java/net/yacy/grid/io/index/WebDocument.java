@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.json.JSONObject;
 
+import net.yacy.grid.mcp.Data;
 import net.yacy.grid.tools.MultiProtocolURL;
 
 public class WebDocument extends Document {
@@ -48,14 +49,14 @@ public class WebDocument extends Document {
     }
     
     public static Map<String, WebDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
-        Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.WEB_INDEX_NAME, ids);
+        Map<String, JSONObject> jsonmap = index.queryBulk(Data.config.get("grid.elasticsearch.indexName.web"), ids);
         Map<String, WebDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> docmap.put(id, new WebDocument(doc)));
         return docmap;
     }
 
     public static WebDocument load(Index index, String id) throws IOException {
-        JSONObject json = index.query(GridIndex.WEB_INDEX_NAME, id);
+        JSONObject json = index.query(Data.config.get("grid.elasticsearch.indexName.web"), id);
         if (json == null) throw new IOException("no document with id " + id + " in index");
         return new WebDocument(json);
     }
@@ -66,12 +67,12 @@ public class WebDocument extends Document {
         documents.forEach(webDocument -> {
             map.put(webDocument.getId(), webDocument);
         });
-        index.addBulk(GridIndex.WEB_INDEX_NAME, GridIndex.WEB_TYPE_NAME, map);
+        index.addBulk(Data.config.get("grid.elasticsearch.indexName.web"), Data.config.get("grid.elasticsearch.typeName"), map);
     }
 
     public WebDocument store(Index index) throws IOException {
         if (index == null) return this;
-        index.add(GridIndex.WEB_INDEX_NAME, GridIndex.WEB_TYPE_NAME, getId(), this);
+        index.add(Data.config.get("grid.elasticsearch.indexName.web"), Data.config.get("grid.elasticsearch.typeName"), getId(), this);
         return this;
     }
     

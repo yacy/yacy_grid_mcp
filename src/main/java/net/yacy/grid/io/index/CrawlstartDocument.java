@@ -28,6 +28,8 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
+import net.yacy.grid.mcp.Data;
+
 public class CrawlstartDocument extends Document {
 
     public CrawlstartDocument() {
@@ -43,14 +45,14 @@ public class CrawlstartDocument extends Document {
     }
 
     public static Map<String, CrawlstartDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
-        Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.CRAWLSTART_INDEX_NAME, ids);
+        Map<String, JSONObject> jsonmap = index.queryBulk(Data.config.get("grid.elasticsearch.indexName.crawlstart"), ids);
         Map<String, CrawlstartDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> docmap.put(id, new CrawlstartDocument(doc)));
         return docmap;
     }
 
     public static CrawlstartDocument load(Index index, String crawlid) throws IOException {
-        JSONObject json = index.query(GridIndex.CRAWLSTART_INDEX_NAME, crawlid);
+        JSONObject json = index.query(Data.config.get("grid.elasticsearch.indexName.crawlstart"), crawlid);
         if (json == null) throw new IOException("no crawl start with id " + crawlid + " in index");
         return new CrawlstartDocument(json);
     }
@@ -62,12 +64,12 @@ public class CrawlstartDocument extends Document {
             String id = crawlstartDocument.getCrawlID();
             map.put(id, crawlstartDocument);
         });
-        index.addBulk(GridIndex.CRAWLSTART_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, map);
+        index.addBulk(Data.config.get("grid.elasticsearch.indexName.crawlstart"), Data.config.get("grid.elasticsearch.typeName"), map);
     }
 
     public CrawlstartDocument store(Index index) throws IOException {
         String crawlid = getCrawlID();
-        index.add(GridIndex.CRAWLSTART_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, crawlid, this);
+        index.add(Data.config.get("grid.elasticsearch.indexName.crawlstart"), Data.config.get("grid.elasticsearch.typeName"), crawlid, this);
         return this;
     }
 

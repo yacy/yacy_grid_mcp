@@ -33,15 +33,6 @@ import net.yacy.grid.tools.JSONList;
 
 public class GridIndex implements Index {
 
-    public final static String CRAWLSTART_INDEX_NAME = "crawlstart";
-    public final static String CRAWLER_INDEX_NAME    = "crawler";
-    public final static String QUERY_INDEX_NAME      = "query";
-    public final static String WEB_INDEX_NAME        = "web";
-
-    // in elastic 6.x only one type is allowed for indexes! The type concept shall be removed in 8.x
-    public final static String WEB_TYPE_NAME         = "web"; // for historical reasons we use that type for "web" indexes.
-    public final static String EVENT_TYPE_NAME       = "web"; // "event" shall be used for all other indexes
-
     private ElasticIndexFactory elasticIndexFactory;
     private MCPIndexFactory mcpIndexFactory;
 

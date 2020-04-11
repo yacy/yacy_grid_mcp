@@ -165,6 +165,7 @@ public class Data {
             // connect index
             String[] elasticsearchAddress = config.getOrDefault("grid.elasticsearch.address", "").split(",");
             String elasticsearchClusterName = config.getOrDefault("grid.elasticsearch.clusterName", "");
+            String elasticsearchTypeName = config.getOrDefault("grid.elasticsearch.typeName", "_doc");
             for (String address: elasticsearchAddress) {
                 if (!OS.portIsOpen(address)) continue;
                 try {

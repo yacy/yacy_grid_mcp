@@ -27,16 +27,18 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
+import net.yacy.grid.mcp.Data;
+
 public class QueryDocument extends Document {
 
     public QueryDocument() {
         super();
     }
-    
+
     public QueryDocument(Map<String, Object> map) {
         super(map);
     }
-    
+
     public QueryDocument(JSONObject obj) {
         super(obj);
     }
@@ -48,12 +50,12 @@ public class QueryDocument extends Document {
             String id = Long.toString(System.currentTimeMillis());
             map.put(id, queryDocument);
         });
-        index.addBulk(GridIndex.QUERY_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, map);
+        index.addBulk(Data.config.get("grid.elasticsearch.indexName.query"), Data.config.get("grid.elasticsearch.typeName"), map);
     }
-    
+
     public QueryDocument store(Index index) throws IOException {
         String id = Long.toString(System.currentTimeMillis());
-        index.add(GridIndex.QUERY_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, id, this);
+        index.add(Data.config.get("grid.elasticsearch.indexName.query"), Data.config.get("grid.elasticsearch.typeName"), id, this);
         return this;
     }
     /*

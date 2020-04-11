@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
 
+import net.yacy.grid.mcp.Data;
 import net.yacy.grid.tools.Digest;
 
 public class CrawlerDocument extends Document {
@@ -55,7 +56,7 @@ public class CrawlerDocument extends Document {
     }
 
     public static Map<String, CrawlerDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
-        Map<String, JSONObject> jsonmap = index.queryBulk(GridIndex.CRAWLER_INDEX_NAME, ids);
+        Map<String, JSONObject> jsonmap = index.queryBulk(Data.config.get("grid.elasticsearch.indexName.crawler"), ids);
         Map<String, CrawlerDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> {
             if (doc != null) docmap.put(id, new CrawlerDocument(doc)); 
@@ -67,14 +68,14 @@ public class CrawlerDocument extends Document {
         JSONObject json = null;
         try {
             // first try
-            json = index.query(GridIndex.CRAWLER_INDEX_NAME, id);
+            json = index.query(Data.config.get("grid.elasticsearch.indexName.crawler"), id);
         } catch (IOException e) {
             // this might fail because the object was not yet present in the index
             // we try to fix this with a refresh
-            index.refresh(GridIndex.CRAWLER_INDEX_NAME);
+            index.refresh(Data.config.get("grid.elasticsearch.indexName.crawler"));
             try {
                 // second try
-                json = index.query(GridIndex.CRAWLER_INDEX_NAME, id);
+                json = index.query(Data.config.get("grid.elasticsearch.indexName.crawler"), id);
             } catch (IOException ee) {
                 // fail
                 throw ee;
@@ -94,7 +95,7 @@ public class CrawlerDocument extends Document {
                 assert false : "document is null";
             }
         });
-        index.addBulk(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, map);
+        index.addBulk(Data.config.get("grid.elasticsearch.indexName.crawler"), Data.config.get("grid.elasticsearch.typeName"), map);
     }
 
     public static void update(Index index, String objectid, JSONObject changes) throws IOException {
@@ -104,7 +105,7 @@ public class CrawlerDocument extends Document {
     }
 
     public CrawlerDocument store(Index index, String objectid) throws IOException {
-        if (index != null) index.add(GridIndex.CRAWLER_INDEX_NAME, GridIndex.EVENT_TYPE_NAME, objectid, this);
+        if (index != null) index.add(Data.config.get("grid.elasticsearch.indexName.crawler"), Data.config.get("grid.elasticsearch.typeName"), objectid, this);
         return this;
     }
 
