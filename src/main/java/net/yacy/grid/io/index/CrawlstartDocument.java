@@ -45,14 +45,18 @@ public class CrawlstartDocument extends Document {
     }
 
     public static Map<String, CrawlstartDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
-        Map<String, JSONObject> jsonmap = index.queryBulk(Data.config.get("grid.elasticsearch.indexName.crawlstart"), ids);
+        Map<String, JSONObject> jsonmap = index.queryBulk(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+                ids);
         Map<String, CrawlstartDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> docmap.put(id, new CrawlstartDocument(doc)));
         return docmap;
     }
 
     public static CrawlstartDocument load(Index index, String crawlid) throws IOException {
-        JSONObject json = index.query(Data.config.get("grid.elasticsearch.indexName.crawlstart"), crawlid);
+        JSONObject json = index.query(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+                crawlid);
         if (json == null) throw new IOException("no crawl start with id " + crawlid + " in index");
         return new CrawlstartDocument(json);
     }
@@ -64,12 +68,16 @@ public class CrawlstartDocument extends Document {
             String id = crawlstartDocument.getCrawlID();
             map.put(id, crawlstartDocument);
         });
-        index.addBulk(Data.config.get("grid.elasticsearch.indexName.crawlstart"), Data.config.get("grid.elasticsearch.typeName"), map);
+        index.addBulk(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), map);
     }
 
     public CrawlstartDocument store(Index index) throws IOException {
         String crawlid = getCrawlID();
-        index.add(Data.config.get("grid.elasticsearch.indexName.crawlstart"), Data.config.get("grid.elasticsearch.typeName"), crawlid, this);
+        index.add(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), crawlid, this);
         return this;
     }
 

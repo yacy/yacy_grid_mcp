@@ -160,8 +160,8 @@ public class MCP {
                    String url = json.getString(WebMapping.url_s.getMapping().name());
                    String urlid = MultiProtocolURL.getDigest(url);
                    boolean created = Data.gridIndex.getElasticClient().writeMap(
-                                       Data.config.get("grid.elasticsearch.indexName.web"),
-                                       Data.config.get("grid.elasticsearch.typeName"),
+                                       Data.config.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+                                       Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
                                        urlid, json.toMap());
                    Data.logger.info("MCP.processAction indexed " + ((line + 1)/2)  + "/" + jsonlist.length()/2 + "(" + (created ? "created" : "updated")+ "): " + url);
                    //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());

@@ -50,12 +50,18 @@ public class QueryDocument extends Document {
             String id = Long.toString(System.currentTimeMillis());
             map.put(id, queryDocument);
         });
-        index.addBulk(Data.config.get("grid.elasticsearch.indexName.query"), Data.config.get("grid.elasticsearch.typeName"), map);
+        index.addBulk(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.query", GridIndex.DEFAULT_INDEXNAME_QUERY),
+                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                map);
     }
 
     public QueryDocument store(Index index) throws IOException {
         String id = Long.toString(System.currentTimeMillis());
-        index.add(Data.config.get("grid.elasticsearch.indexName.query"), Data.config.get("grid.elasticsearch.typeName"), id, this);
+        index.add(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.query", GridIndex.DEFAULT_INDEXNAME_QUERY),
+                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                id, this);
         return this;
     }
     /*

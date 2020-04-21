@@ -321,7 +321,9 @@ public enum WebMapping implements MappingDeclaration {
      * @param args
      */
     public static void main(String[] args) {
-        System.out.println(Mapping.elasticsearchMapping(Data.config.get("grid.elasticsearch.indexName.web")).toString(2));
+        System.out.println(Mapping.elasticsearchMapping(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB)
+        ).toString(2));
     }
 }
 

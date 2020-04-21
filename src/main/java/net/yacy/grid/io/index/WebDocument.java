@@ -49,14 +49,18 @@ public class WebDocument extends Document {
     }
     
     public static Map<String, WebDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
-        Map<String, JSONObject> jsonmap = index.queryBulk(Data.config.get("grid.elasticsearch.indexName.web"), ids);
+        Map<String, JSONObject> jsonmap = index.queryBulk(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+                ids);
         Map<String, WebDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> docmap.put(id, new WebDocument(doc)));
         return docmap;
     }
 
     public static WebDocument load(Index index, String id) throws IOException {
-        JSONObject json = index.query(Data.config.get("grid.elasticsearch.indexName.web"), id);
+        JSONObject json = index.query(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+                id);
         if (json == null) throw new IOException("no document with id " + id + " in index");
         return new WebDocument(json);
     }
@@ -67,12 +71,18 @@ public class WebDocument extends Document {
         documents.forEach(webDocument -> {
             map.put(webDocument.getId(), webDocument);
         });
-        index.addBulk(Data.config.get("grid.elasticsearch.indexName.web"), Data.config.get("grid.elasticsearch.typeName"), map);
+        index.addBulk(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                map);
     }
 
     public WebDocument store(Index index) throws IOException {
         if (index == null) return this;
-        index.add(Data.config.get("grid.elasticsearch.indexName.web"), Data.config.get("grid.elasticsearch.typeName"), getId(), this);
+        index.add(
+                Data.config.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                getId(), this);
         return this;
     }
     
@@ -109,7 +119,7 @@ public class WebDocument extends Document {
             }
             return info.toString();
         }
-        List<String> description = super.getStrings(WebMapping.description_txt);        
+        List<String> description = super.getStrings(WebMapping.description_txt);
         String snippetDescription = description == null || description.isEmpty() ? "" : description.iterator().next().toString();
         String snippetHighlight = highlights == null || highlights.isEmpty() ? "" : highlights.values().iterator().next().fragments()[0].toString();
         String snippet = snippetDescription.length() > snippetHighlight.length() ? snippetDescription : snippetHighlight;

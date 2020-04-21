@@ -33,6 +33,25 @@ import net.yacy.grid.tools.JSONList;
 
 public class GridIndex implements Index {
 
+    // Default index names that are (possibly) overwritten using the attributes
+    //     grid.elasticsearch.indexName.crawlstart,
+    //     grid.elasticsearch.indexName.crawler,
+    //     grid.elasticsearch.indexName.query,
+    //     grid.elasticsearch.indexName.web
+    // in conf/config.properties. Please ensure that the configuration is present in all grid components.
+
+    public final static String DEFAULT_INDEXNAME_CRAWLSTART = "crawlstart";
+    public final static String DEFAULT_INDEXNAME_CRAWLER    = "crawler";
+    public final static String DEFAULT_INDEXNAME_QUERY      = "query";
+    public final static String DEFAULT_INDEXNAME_WEB        = "web";
+
+    // Default index names that are (possibly) overwritten using the attribute
+    //     grid.elasticsearch.typeName
+    // in conf/config.properties.
+    // THIS IS A TEMPORARY ATTRIBUTE AND WILL BE REPLACED WITH "_doc" IN FUTURE ELASTIC VERSIONS
+    // STARTING WITH ELASTICSEARCH 8.x
+    public final static String DEFAULT_TYPENAME             = "web";
+
     private ElasticIndexFactory elasticIndexFactory;
     private MCPIndexFactory mcpIndexFactory;
 
