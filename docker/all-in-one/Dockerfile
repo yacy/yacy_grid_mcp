@@ -5,6 +5,8 @@ MAINTAINER Harshit Prasad
 RUN apt-get update
 RUN apt-get upgrade -y
 
+RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
+
 # add packages
 RUN apt-get install -y git openjdk-8-jdk
 
