@@ -31,8 +31,13 @@ import javax.servlet.Servlet;
 
 import org.apache.log4j.BasicConfigurator;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIServer;
+import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.tools.MapUtil;
 
 /**
@@ -58,6 +63,7 @@ public enum Service {
     public static File conf_dir;
     public static File data_dir;
     private static int port = 0;
+    public  static HazelcastInstance hazelcast = null;
 
     Service(final String[] fields) {
         this.fields = new LinkedHashSet<String>();
@@ -144,6 +150,12 @@ public enum Service {
             // give positive feedback
             Data.logger.info("Service started at port " + port);
 
+            // start hazelcast service
+            Config config = new Config().setClusterName("YaCyGrid").setInstanceName(Service.type.name());
+            hazelcast = Hazelcast.newHazelcastInstance(config);
+            String uuid = hazelcast.getCluster().getLocalMember().getUuid().toString();
+            hazelcast.getMap("status").put(uuid, StatusService.status());
+
             // prepare shutdown signal
             boolean pidkillfileCreated = false;
             // we use two files: one kill file which can be used to stop the process and one pid file which exists until the process runs
@@ -182,11 +194,13 @@ public enum Service {
             Data.logger.info("server nominal termination requested");
         } catch (IOException e) {
             Data.logger.error("Main fail", e);
+        } finally {
+            APIServer.stop();
+            if (hazelcast != null) hazelcast.shutdown();
+            Data.logger.info("closing data.");
+            Data.close();
+            Data.logger.info("server terminated.");
         }
-
-        Data.logger.info("closing data.");
-        Data.close();
-        Data.logger.info("server terminated.");
     }
 
 }

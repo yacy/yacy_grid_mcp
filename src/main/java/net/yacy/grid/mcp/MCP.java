@@ -213,6 +213,7 @@ public class MCP {
         Service.runService(null);
 
         // this line is reached if the server was shut down
+        Data.logger.info("terminating MCP");
         brokerListener.terminate();
     }
 

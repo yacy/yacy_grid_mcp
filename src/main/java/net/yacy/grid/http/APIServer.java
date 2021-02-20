@@ -49,14 +49,14 @@ import net.yacy.grid.mcp.Data;
  */
 public class APIServer {
 
-   private static List<Class<? extends Servlet>> services = new ArrayList<>();
-   private static Map<String, APIHandler> serviceMap = new ConcurrentHashMap<>();
-   private static Server server = null;
-    
+    private static List<Class<? extends Servlet>> services = new ArrayList<>();
+    private static Map<String, APIHandler> serviceMap = new ConcurrentHashMap<>();
+    private static Server server = null;
+
     public static int getServerThreads() {
-        return server.getThreadPool().getThreads() - server.getThreadPool().getIdleThreads();
+        return server == null ? 0 : server.getThreadPool().getThreads() - server.getThreadPool().getIdleThreads();
     }
-    
+
     public static void addService(Class<? extends Servlet> service) {
         try {
             APIHandler handler = (APIHandler) service.newInstance();
@@ -66,7 +66,7 @@ public class APIServer {
             Data.logger.warn("", e);
         }
     }
-    
+
     public static APIHandler getAPI(String name) {
         return serviceMap.get(name);
     }
@@ -87,13 +87,13 @@ public class APIServer {
             }
         }
     }
-    
+
     private static void open(int port, String htmlPath) throws IOException {
         try {
             QueuedThreadPool pool = new QueuedThreadPool();
             pool.setMaxThreads(100);
             server = new Server(pool);
-    
+
             ServerConnector connector = new ServerConnector(server);
             HttpConfiguration http_config = new HttpConfiguration();
             http_config.setRequestHeaderSize(65536);
@@ -104,7 +104,7 @@ public class APIServer {
             connector.setIdleTimeout(20000); // timout in ms when no bytes send / received
             server.addConnector(connector);
             server.setStopAtShutdown(true);
-    
+
             // add services
             ServletContextHandler servletHandler = new ServletContextHandler();
             for (Class<? extends Servlet> service: services)
@@ -113,7 +113,7 @@ public class APIServer {
                 } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                     Data.logger.warn(service.getName() + " instantiation error", e);
                 }
-    
+
             ErrorHandler errorHandler = new ErrorHandler();
             errorHandler.setShowStacks(true);
             servletHandler.setErrorHandler(errorHandler);
@@ -138,16 +138,16 @@ public class APIServer {
     public static boolean isAlive() {
         return server.isRunning() || server.isStarted() || server.isStarting();
     }
-    
+
     public static void stop() {
         try {
-            server.stop();
+            if (!server.isStopped()) server.stop();
             server.destroy();
         } catch (Exception e) {
             Data.logger.warn("", e);
         }
     }
-    
+
     public static void join() {
         try {
             server.getThreadPool().join();
@@ -155,5 +155,5 @@ public class APIServer {
             Data.logger.warn("", e);
         }
     }
-    
+
 }

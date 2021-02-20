@@ -19,9 +19,17 @@
 
 package net.yacy.grid.mcp.api.info;
 
+import java.net.UnknownHostException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.hazelcast.cluster.Member;
 
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.APIServer;
@@ -36,38 +44,63 @@ public class StatusService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578478303032749479L;
     public static final String NAME = "status";
-    
+
     @Override
     public String getAPIPath() {
         return "/yacy/grid/mcp/info/" + NAME + ".json";
     }
-    
+
     @Override
     public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
-        
+
         // generate json
-        Runtime runtime = Runtime.getRuntime();
         JSONObject json = new JSONObject(true);
-        JSONObject system = new JSONObject(true);
-        system.put("service", Service.type.name());
-        system.put("assigned_memory", runtime.maxMemory());
-        system.put("used_memory", runtime.totalMemory() - runtime.freeMemory());
-        system.put("available_memory", runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory());
-        system.put("cores", runtime.availableProcessors());
-        system.put("threads", Thread.activeCount());
-        system.put("load_system_average", OS.getSystemLoadAverage());
-        //system.put("load_system_cpu", OS.getSystemCpuLoad());
-        system.put("load_process_cpu", OS.getProcessCpuLoad());
-        system.put("server_threads", APIServer.getServerThreads());
-        
+        JSONObject systemStatus = new JSONObject(true);
+        systemStatus.putAll(new JSONObject(status()));
+        JSONArray members = new JSONArray();
+        for (Member member: Service.hazelcast.getCluster().getMembers()) {
+            JSONObject m = new JSONObject(true);
+            String uuid = member.getUuid().toString();
+            m.put("uuid", uuid);
+            m.put("host", member.getAddress().getHost());
+            try {m.put("ip", member.getAddress().getInetAddress().getHostAddress());} catch (JSONException | UnknownHostException e) {}
+            m.put("port", member.getAddress().getPort());
+            m.put("isLite", member.isLiteMember());
+            m.put("isLocal", member.localMember());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> status = (Map<String, Object>) Service.hazelcast.getMap("status").get(uuid);
+            m.put("status", status);
+            members.put(m);
+        }
+        systemStatus.put("hazelcast_cluster_name", Service.hazelcast.getConfig().getClusterName());
+        systemStatus.put("hazelcast_instance_name", Service.hazelcast.getConfig().getInstanceName());
+        systemStatus.put("hazelcast_members", members);
+        systemStatus.put("hazelcast_members_count", members.length());
+
         JSONObject client_info = new JSONObject(true);
         JSONObject request_header = new JSONObject(true);
         client_info.put("request_header", request_header);
-        
-        json.put("system", system);
+
+        json.put("status", systemStatus);
         json.put("client_info", client_info);
 
         return new ServiceResponse(json);
     }
-    
+
+    public static Map<String, Object> status() {
+        Runtime runtime = Runtime.getRuntime();
+        Map<String, Object> status = new LinkedHashMap<>();
+        status.put("service", Service.type.name());
+        status.put("assigned_memory", runtime.maxMemory());
+        status.put("used_memory", runtime.totalMemory() - runtime.freeMemory());
+        status.put("available_memory", runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory());
+        status.put("cores", runtime.availableProcessors());
+        status.put("threads", Thread.activeCount());
+        status.put("load_system_average", OS.getSystemLoadAverage());
+        //system.put("load_system_cpu", OS.getSystemCpuLoad());
+        status.put("load_process_cpu", OS.getProcessCpuLoad());
+        status.put("server_threads", APIServer.getServerThreads());
+        return status;
+    }
+
 }

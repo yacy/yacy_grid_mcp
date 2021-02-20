@@ -53,7 +53,7 @@ assemble.dependsOn shadowJar
 
 dependencies {
     compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.+'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.+'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.14.+'
     compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.+'
     compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.+'
     compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '9.4.+'
@@ -63,5 +63,6 @@ dependencies {
     compile group: 'commons-net', name: 'commons-net', version: '3.+'
     compile group: 'jcifs', name: 'jcifs', version: '1.+'
     compile group: 'org.elasticsearch.client', name: 'transport', version: '6.8.+'
-    compile group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '5.6.0.201912101111-r'
+    compile group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '5.+'
+    compile group: 'com.hazelcast', name: 'hazelcast', version: '4.1.+'
 }
