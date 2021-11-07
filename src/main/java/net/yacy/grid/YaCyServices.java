@@ -1,17 +1,17 @@
 /**
  *  Services
- *  Copyright 16.01.2017 by Michael Peter Christen, @0rb1t3r
+ *  Copyright 16.01.2017 by Michael Peter Christen, @orbiterlab
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -28,7 +28,7 @@ import net.yacy.grid.io.messages.GridQueue;
  * more services must be able to acquire much more port numbers as given here.
  * We consider that alternative/additional port numbers are successive numbers
  * starting with the default numbers as given here.
- * 
+ *
  * Non-YaCy services may be able to connect to the mcp as well. These services
  * may consider other data types different from web documents as input for
  * an indexing grid. Therefore we prefer the prefix 'yacy' for JSON documents
@@ -68,6 +68,7 @@ public enum YaCyServices implements Services {
     moderation(8900),               // a search front-end which for content moderation, i.e. search index account management
     successmessages(10100),         // a service which handles the successful operation messages
     errormessages(10200),           // a service which handles failure messages and broken action chains
+    s3(9000),                       // a S3 server to be used for mass data / file storage
     ftp(2121),                      // a FTP server to be used for mass data / file storage
     samba(445),                     // a SMB server to be used for mass data / file storage
     rabbitmq(5672),                 // a rabbitmq message queue server to be used for global messages, queues and stacks
@@ -81,7 +82,7 @@ public enum YaCyServices implements Services {
         this.default_port = default_port;
         this.sourceQueues = null;
     }
-    
+
     private YaCyServices(int default_port, GridQueue[] sourceQueues, String[] targetServices) {
         this.default_port = default_port;
         this.sourceQueues = sourceQueues;

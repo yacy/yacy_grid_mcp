@@ -1,6 +1,6 @@
 /**
  *  MultiProtocolURI
- *  Copyright 2010 by Michael Peter Christen
+ *  Copyright 2010 by Michael Peter Christen @orbiterlab
  *  First released 25.5.2010 at http://yacy.net
  *
  *  This library is free software; you can redistribute it and/or
@@ -48,12 +48,13 @@ import net.yacy.grid.http.ClientConnection;
 import net.yacy.grid.http.ClientIdentification;
 import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.io.assets.FTPStorageFactory;
+import net.yacy.grid.io.assets.S3StorageFactory;
 import net.yacy.grid.mcp.Data;
 import net.yacy.grid.tools.Classification.ContentDomain;
 import net.yacy.grid.tools.Punycode.PunycodeException;
 
 /**
- * MultiProtocolURI provides a URL object for multiple protocols like http, https, ftp, smb and file
+ * MultiProtocolURI provides a URL object for multiple protocols like http, https, s3, ftp, smb and file
  *
  */
 public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolURL> {
@@ -173,7 +174,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
 
         // identify protocol
         url = url.trim();
-        
+
         if (url.startsWith("//")) {
             // patch for urls starting with "//" which can be found in the wild
             url = "http:" + url;
@@ -204,7 +205,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         this.protocol = url.substring(0, p).toLowerCase().trim().intern();
         if (url.length() < p + 4) throw new MalformedURLException("URL not parseable: '" + url + "'");
         if (!this.protocol.equals("file") && url.substring(p + 1, p + 3).equals("//")) {
-            // identify host, userInfo and file for http and ftp protocol
+            // identify host, userInfo and file for http, s3 and ftp protocol
             int q = url.indexOf('/', p + 3);
             if (q < 0) { // check for www.test.com?searchpart
                 q = url.indexOf("?", p + 3);
@@ -236,7 +237,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
             if (this.host.length() < 4 && !this.protocol.equals("file")) throw new MalformedURLException("host too short: '" + this.host + "', url = " + url);
             if (this.host.indexOf('&') >= 0) throw new MalformedURLException("invalid '&' in host");
             this.path = resolveBackpath(this.path); // adds "/" if missing
-            identPort(url, (isHTTP() ? 80 : (isHTTPS() ? 443 : (isFTP() ? 21 : (isSMB() ? 445 : -1)))));
+            identPort(url, (isHTTP() ? 80 : (isHTTPS() ? 443 : (isS3() ? 9000 : (isFTP() ? 21 : (isSMB() ? 445 : -1))))));
             if (this.port < 0) { // none of known protocols (above) = unknown
                 throw new MalformedURLException("unknown protocol: " + url);
             }
@@ -280,11 +281,11 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
                     int q = h.indexOf('/', 2);
                     if (q < 0 || h.length() > 3 && h.charAt(3) == ':') {
                         // Missing root slash such as "path" or "c:/path" accepted, but the path attribute must by after all start with it
-                        this.path = "/" + h.substring(2); 
+                        this.path = "/" + h.substring(2);
                     } else {
                         this.host = h.substring(2, q ); // TODO: handle "c:"  ?
                         if (this.host.equalsIgnoreCase(Domains.LOCALHOST)) this.host = null;
-                        this.path = h.substring(q ); // "/path" 
+                        this.path = h.substring(q ); // "/path"
                     }
                 } else if (h.startsWith("/")) { // "/host/path" or "/host/c:/path"
                     this.path = h;
@@ -368,7 +369,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
 
         return (needToChange? sb.toString() : s);
     }
-    
+
     public static String toPunycode(final String host) throws PunycodeException {
         final String[] domainParts = CommonPattern.DOT.split(host, 0);
         final StringBuilder buffer = new StringBuilder(80);
@@ -392,12 +393,14 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
     public static final boolean isFTP(final String s) { return s.startsWith("ftp://"); }
     public static final boolean isFile(final String s) { return s.startsWith("file://"); }
     public static final boolean isSMB(final String s) { return s.startsWith("smb://") || s.startsWith("\\\\"); }
+    public static final boolean isS3(final String s) { return s.startsWith("s3://"); }
 
     public final boolean isHTTP()  { return this.protocol.equals("http"); }
     public final boolean isHTTPS() { return this.protocol.equals("https"); }
     public final boolean isFTP()   { return this.protocol.equals("ftp"); }
     public final boolean isFile()  { return this.protocol.equals("file"); }
     public final boolean isSMB()   { return this.protocol.equals("smb"); }
+    public final boolean isS3()   { return this.protocol.equals("s3"); } // s3 URI like s3://bucket/key or s3://bucket.host/key, see https://docs.aws.amazon.com/cli/latest/reference/s3/
 
     /**
      * Get the content domain of a document according to the extension.
@@ -424,6 +427,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         if ((baseURL == null) ||
             isHTTP(relPath) ||
             isHTTPS(relPath) ||
+            isS3(relPath) ||
             isFTP(relPath) ||
             isFile(relPath) ||
             isSMB(relPath)/*||
@@ -432,7 +436,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         }
         return new MultiProtocolURL(new MultiProtocolURL(baseURL), relPath);
     }
-    
+
     public MultiProtocolURL(final MultiProtocolURL baseURL, String relPath) throws MalformedURLException {
         if (baseURL == null) throw new MalformedURLException("base URL is null");
         if (relPath == null) throw new MalformedURLException("relPath is null");
@@ -451,6 +455,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         } else if (
                 isHTTP(relPath) ||
                 isHTTPS(relPath) ||
+                isS3(relPath) ||
                 isFTP(relPath) ||
                 isFile(relPath) ||
                 isSMB(relPath)) {
@@ -460,12 +465,12 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         } else if (relPath.length() > 0 && relPath.charAt(0) == '/') {
             this.path = relPath;
         } else if (baseURL.path.endsWith("/")) {
-            /* According to RFC 3986 example in Appendix B. (https://tools.ietf.org/html/rfc3986) 
+            /* According to RFC 3986 example in Appendix B. (https://tools.ietf.org/html/rfc3986)
                such an URL is valid : http://www.ics.uci.edu/pub/ietf/uri/#Related
-               
-               We also find similar usages in the 2016 URL living standard (https://url.spec.whatwg.org/),  
-               for example : https://url.spec.whatwg.org/#syntax-url-absolute-with-fragment 
-               
+
+               We also find similar usages in the 2016 URL living standard (https://url.spec.whatwg.org/),
+               for example : https://url.spec.whatwg.org/#syntax-url-absolute-with-fragment
+
                java.lang.URL constructor also accepts this form.*/
             if (relPath.startsWith("/")) this.path = baseURL.path + relPath.substring(1); else this.path = baseURL.path + relPath;
         } else {
@@ -531,7 +536,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
             p = matcher.replaceAll("");
             matcher.reset(p);
         }
-        /* Let's remove any eventual remaining but inappropriate '..' segments at the beginning. 
+        /* Let's remove any eventual remaining but inappropriate '..' segments at the beginning.
          * See https://tools.ietf.org/html/rfc3986#section-5.2.4 -> parts 2.C and 2.D */
         while(p.startsWith("/../")) {
             p = p.substring(3);
@@ -646,7 +651,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
      *
      * <li>The unreserved characters & : - _ . ! ~ * ' ( ) ; , = remain the same.
      *     see RFC 1738 2.2  and  RFC 3986 2.2
-     * 
+     *
      * <li>All other ASCII characters are converted into the
      *     3-character string "%xy", where xy is
      *     the two-digit hexadecimal representation of the character
@@ -668,24 +673,24 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
             final int ch = s.charAt(i);
             if (ch == ' ') {                 // space
                 sbuf.append("%20");
-            } else if (ch == '%') {  
+            } else if (ch == '%') {
                 if (i < len - 2 && s.charAt(i + 1) >= '0' && s.charAt(i + 1) <= '9' && s.charAt(i + 2) >= '0' && s.charAt(i + 2) <= '9') {
                     // TODO: actually 0..9 A..F a..f is allowed (or any of hex[] sequence)
                     sbuf.append((char)ch);   // lets consider this is used for encoding, leave it that way
                 } else {
                     sbuf.append("%25");      // '%' RFC 1738 2.2 unsafe char shall be encoded
                 }
-            } else if (ch == '&') { 
+            } else if (ch == '&') {
                 if (i < len - 6 && "amp;".equals(s.substring(i + 1, i + 5).toLowerCase())) {
                     sbuf.append((char)ch);   // leave it that way, it is used the right way
                 } else {
                     sbuf.append("%26");    // this must be urlencoded
                 }
-            } else if (ch == '#') {          // RFC 1738 2.2 unsafe char is _not_ encoded because it may already be used for encoding 
+            } else if (ch == '#') {          // RFC 1738 2.2 unsafe char is _not_ encoded because it may already be used for encoding
                 sbuf.append((char)ch);
             } else if (ch == '!' || ch == ':'   // unreserved
                     || ch == '-' || ch == '_'
-                    || ch == '.' || ch == '~' 
+                    || ch == '.' || ch == '~'
                     || ch == '*' || ch == '\''
                     || ch == '(' || ch == ')'
                     || ch == '{' || ch == '}'
@@ -957,7 +962,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         char c = this.path.charAt(1);
         if (c == ':') return new File(this.path);
         if (c == '|') return new File(this.path.charAt(0) + ":" + this.path.substring(2));
-        
+
         if (this.path.length() > 1) { // prevent StringIndexOutOfBoundsException
             c = this.path.charAt(2);
             if (c == ':' || c == '|') return new File(this.path.charAt(1) + ":" + this.path.substring(3));
@@ -980,10 +985,10 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         */
         return this.host;
     }
-    
+
     public String getOrganization() {
-        String dnc = Domains.getDNC(host);
-        String subdomOrga = host.length() - dnc.length() <= 0 ? "" : host.substring(0, host.length() - dnc.length() - 1);
+        String dnc = Domains.getDNC(this.host);
+        String subdomOrga = this.host.length() - dnc.length() <= 0 ? "" : this.host.substring(0, this.host.length() - dnc.length() - 1);
         int p = subdomOrga.lastIndexOf('.');
         String orga = (p < 0) ? subdomOrga : subdomOrga.substring(p + 1);
         return orga;
@@ -1026,13 +1031,13 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
     public String getUserInfo() {
         return this.userInfo;
     }
-    
+
     public String getUser() {
         if (this.userInfo == null) return "";
         int p = this.userInfo.indexOf(':');
         return p < 0 ? this.userInfo : this.userInfo.substring(0,  p);
     }
-    
+
     public String getPassword() {
         if (this.userInfo == null) return "";
         int p = this.userInfo.indexOf(':');
@@ -1131,7 +1136,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
     /**
      * Evaluates url search part and returns attribute '=' value pairs
      * the returned values are in clear text (without urlencoding).
-     * 
+     *
      * To get the parameter map as (url-encoded key and values)
      * @see getSearchpartMap()
      *
@@ -1151,13 +1156,13 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         }
         return map;
     }
-    
+
     private static CharType charType(final char c) {
         if (c >= 'a' && c <= 'z') return CharType.low;
         if (c >= '0' && c <= '9') return CharType.number;
         return CharType.high;
     }
-    
+
     public String toNormalform(final boolean excludeAnchor) {
         return toNormalform(excludeAnchor, false);
     }
@@ -1177,6 +1182,8 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
             if (this.port < 0 || this.port == 80)  { defaultPort = true; }
         } else if (isHTTPS()) {
             if (this.port < 0 || this.port == 443) { defaultPort = true; }
+        } else if (isS3()) {
+            if (this.port < 0 || this.port == 9000)  { defaultPort = true; }
         } else if (isFTP()) {
             if (this.port < 0 || this.port == 21)  { defaultPort = true; }
         } else if (isSMB()) {
@@ -1205,7 +1212,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         }
         u.append(urlPath);
         String result = u.toString();
-        
+
         return result;
     }
 
@@ -1227,6 +1234,8 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
             if (this.port < 0 || this.port == 80)  { defaultPort = true; }
         } else if (isHTTPS()) {
             if (this.port < 0 || this.port == 443) { defaultPort = true; }
+        } else if (isS3()) {
+            if (this.port < 0 || this.port == 9000)  { defaultPort = true; }
         } else if (isFTP()) {
             if (this.port < 0 || this.port == 21)  { defaultPort = true; }
         } else if (isSMB()) {
@@ -1250,7 +1259,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         }
         u.append(urlPath);
         String result = u.toString();
-        
+
         return result;
     }
 
@@ -2218,7 +2227,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
      * Please call isHTTP(), isHTTPS() and isFTP() before using this class
      */
     public java.net.URL getURL() throws MalformedURLException {
-        if (!(isHTTP() || isHTTPS() || isFTP())) throw new MalformedURLException();
+        if (!(isHTTP() || isHTTPS() || isS3() || isFTP())) throw new MalformedURLException();
         return new java.net.URL(this.toNormalform(false));
     }
 
@@ -2340,7 +2349,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         } catch (final MalformedURLException e) {
             throw new IOException("SMB.getName MalformedURLException (" + e.getMessage() + ") for " + toNormalform(false) );
         }
-        if (isFTP()) {
+        if (isFTP() || isS3()) {
             return this.getFileName();
         }
         return null;
@@ -2349,7 +2358,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
     /**
      * Get directory listing of file or smb url
      * respects the hidden attribute of a directory (return null if hidden)
-     * 
+     *
      * @return names of files and directories or null
      * @throws IOException
      */
@@ -2372,6 +2381,11 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
     public InputStream getInputStream(final ClientIdentification.Agent agent, final String username, final String pass, boolean active) throws IOException {
         if (isFile()) return new BufferedInputStream(new FileInputStream(getFSFile()));
         if (isSMB()) return new BufferedInputStream(new SmbFileInputStream(getSmbFile()));
+        if (isS3()) {
+            S3StorageFactory client = new S3StorageFactory(this.host, this.port < 0 ? 9000 : this.port, username, pass, false);
+            Asset<byte[]> asset = client.getStorage().load(this.path);
+            return new ByteArrayInputStream(asset.getPayload());
+        }
         if (isFTP()) {
             FTPStorageFactory client = new FTPStorageFactory(this.host, this.port < 0 ? 21 : this.port, username, pass, false, active);
             Asset<byte[]> asset = client.getStorage().load(this.path);
@@ -2388,6 +2402,11 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
     public byte[] get(final ClientIdentification.Agent agent, final String username, final String pass, boolean active) throws IOException {
         if (isFile()) return read(new FileInputStream(getFSFile()));
         if (isSMB()) return read(new SmbFileInputStream(getSmbFile()));
+        if (isS3()) {
+            S3StorageFactory client = new S3StorageFactory(this.host, this.port < 0 ? 9000 : this.port, username, pass, false);
+            Asset<byte[]> asset = client.getStorage().load(this.path);
+            return asset.getPayload();
+        }
         if (isFTP()) {
             FTPStorageFactory client = new FTPStorageFactory(this.host, this.port < 0 ? 21 : this.port, username, pass, false, active);
             Asset<byte[]> asset = client.getStorage().load(this.path);
@@ -2427,11 +2446,11 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
     public static String getDigest(String url) {
         return Digest.encodeMD5Hex(url);
     }
-    
+
     public String getDigest() {
         return getDigest(this.toNormalform(true));
     }
-    
+
     //---------------------
 
     private static final String splitrex = " |/|\\(|\\)|-|\\:|_|\\.|,|\\?|!|'|" + '"';
@@ -2441,7 +2460,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
         if (p > 0) normalizedURL = normalizedURL.substring(p + 2);
         return splitpattern.split(normalizedURL.toLowerCase()); // word components of the url
     }
-    
+
     public static void main(final String[] args) {
         final String[][] test = new String[][]{
           new String[]{null, "file://y:/"},

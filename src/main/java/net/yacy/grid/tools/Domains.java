@@ -1,6 +1,6 @@
 /**
  *  Domains
- *  Copyright 2007 by Michael Peter Christen, mc@yacy.net, Frankfurt a. M., Germany
+ *  Copyright 2007 by Michael Peter Christen, mc@yacy.net, Frankfurt a. M., Germany, @orbiterlab
  *  First released 23.7.2007 at http://yacy.net
  *
  *  This library is free software; you can redistribute it and/or
@@ -50,7 +50,7 @@ import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 
 public class Domains {
-    
+
     public  static final String LOCALHOST = "localhost"; // replace with IPv6 0:0:0:0:0:0:0:1 ?
     private static       String LOCALHOST_NAME = LOCALHOST; // this will be replaced with the actual name of the local host
 
@@ -165,7 +165,7 @@ public class Domains {
             }
         }.start();
     }
-    
+
     private static final String[] ccSLD_TLD_list = new String[] { "com.ac", "net.ac", "gov.ac", "org.ac", "mil.ac", "co.ae",
                      "net.ae", "gov.ae", "ac.ae", "sch.ae", "org.ae", "mil.ae", "pro.ae", "name.ae", "com.af", "edu.af", "gov.af", "net.af", "org.af",
                      "com.al", "edu.al", "gov.al", "mil.al", "net.al", "org.al", "ed.ao", "gv.ao", "og.ao", "co.ao", "pb.ao", "it.ao", "com.ar", "edu.ar",
@@ -424,26 +424,26 @@ public class Domains {
         // normalize
         if (target == null || target.isEmpty()) return null;
         target = target.toLowerCase().trim(); // we can lowercase this because host names are case-insensitive
-        
+
         // extract the address (host:port) part (applies if this is an url)
         int p = target.indexOf("://");
         if (p > 0) target = target.substring(p + 3);
         p = target.indexOf('/');
         if (p > 0) target = target.substring(0, p);
-        
+
         // IPv4 / host heuristics
-        p = target.lastIndexOf(':');        
+        p = target.lastIndexOf(':');
         if ( p < 0 ) {
             p = target.lastIndexOf('%');
             if (p > 0) target = target.substring(0, p);
             return target;
         }
-        
+
         // the ':' at pos p may be either a port divider or a part of an IPv6 address
         if ( p > target.lastIndexOf(']')) { // if after ] it's a port divider (not IPv6 part)
             target = target.substring(0, p );
         }
-        
+
         // may be IPv4 or IPv6, we chop off brackets if exist
         if (target.charAt(0) == '[') target = target.substring(1);
         if (target.charAt(target.length() - 1) == ']') target = target.substring(0, target.length() - 1);
@@ -457,29 +457,30 @@ public class Domains {
      * like http:// to return correct default port). If no port is given, default
      * ports are returned. On missing protocol, port=80 is assumed.
      * @param target url (must start with protocol)
-     * @return port number 
+     * @return port number
      */
     public static int stripToPort(String target) {
         int port = 80; // default port
-        
+
         // normalize
         if (target == null || target.isEmpty()) return port;
         target = target.toLowerCase().trim(); // we can lowercase this because host names are case-insensitive
-        
+
         // extract the address (host:port) part (applies if this is an url)
         int p = target.indexOf("://");
         if (p > 0) {
             String protocol = target.substring(0, p);
             target = target.substring(p + 3);
             if ("https".equals(protocol)) port = 443;
+            if ("s3".equals(protocol)) port = 9000;
             if ("ftp".equals(protocol)) port = 21;
             if ("smb".equals(protocol)) port = 445;
         }
         p = target.indexOf('/');
         if (p > 0) target = target.substring(0, p);
-        
+
         // IPv4 / host heuristics
-        p = target.lastIndexOf(':');        
+        p = target.lastIndexOf(':');
         if ( p < 0 ) return port;
 
         // the ':' must be a port divider or part of ipv6
@@ -488,7 +489,7 @@ public class Domains {
         }
         return port;
     }
-    
+
     /**
      * resolve a host address using a local DNS cache and a DNS lookup if necessary
      * @param clienthost
@@ -498,7 +499,7 @@ public class Domains {
         // consider to call stripToHostName() before calling this
         if (host0 == null || host0.isEmpty()) return null;
         final String host = host0.toLowerCase().trim();
-        
+
         if (host0.endsWith(".yacyh")) {
             // that should not happen here
             return null;
@@ -647,7 +648,7 @@ public class Domains {
         for (InetAddress i: publicIPv6HostAddresses) h.add(i.getHostAddress());
         return h;
     }
-    
+
     /**
      * Get all IPv4 addresses which are assigned to the local host but are public IP addresses.
      * These should be the possible addresses which can be used to access this peer.
@@ -656,7 +657,7 @@ public class Domains {
     public static Set<InetAddress> myPublicIPv4() {
         return publicIPv4HostAddresses;
     }
-    
+
     /**
      * Get all IPv6 addresses which are assigned to the local host but are public IP addresses.
      * These should be the possible addresses which can be used to access this peer.
@@ -712,7 +713,7 @@ public class Domains {
         int i = ip.indexOf('%');
         return i < 0 ? ip : ip.substring(0, i);
     }
-    
+
     /**
      * check the host ip string against localhost names
      * @param host
@@ -739,7 +740,7 @@ public class Domains {
                 INTRANET_PATTERNS.matcher(host).matches()) ||
                 localHostNames.contains(host);
     }
-    
+
     /**
      * check if the given host is a local address.
      * the hostaddress is optional and shall be given if the address is already known
@@ -861,7 +862,7 @@ public class Domains {
      * @param host
      * @return the SLD or the Third Level Domain, if the SLD is a ccSLD
      */
-    public static String getSmartSLD(String host) {        
+    public static String getSmartSLD(String host) {
         if (host == null || host.length() == 0) return "";
         int p0 = host.lastIndexOf('.');
         if (p0 < 0) return host.toLowerCase(); // no subdomain present

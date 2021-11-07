@@ -1,18 +1,18 @@
 /**
  *  AnchorURL
- *  Copyright 2013 by Michael Peter Christen
+ *  Copyright 2013 by Michael Peter Christen @orbiterlab
  *  first published 15.09.2013 on http://yacy.net
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -31,7 +31,7 @@ public class AnchorURL extends MultiProtocolURL {
      * class, but depends on MultiProtocolURL rather than DigestURL, which is removed for
      * YaCy Grid.
      */
-    
+
     private static final long serialVersionUID = 1586579902179962086L;
 
     private String nameProperty, relProperty, textBody; // may contain additional url properties, such as given in html a href-links
@@ -73,7 +73,7 @@ public class AnchorURL extends MultiProtocolURL {
         this.imageURL = null;
         this.imageAlt = null;
     }
-    
+
     public AnchorURL(final String protocol, final String host, final int port, final String path, final MultiProtocolURL imageURL, final String imageAlt) throws MalformedURLException {
         super(protocol, host, port, path);
         this.textBody = "";
@@ -91,6 +91,7 @@ public class AnchorURL extends MultiProtocolURL {
         if ((baseURL == null) ||
             isHTTP(relPath) ||
             isHTTPS(relPath) ||
+            isS3(relPath) ||
             isFTP(relPath) ||
             isFile(relPath) ||
             isSMB(relPath) ||
@@ -101,7 +102,7 @@ public class AnchorURL extends MultiProtocolURL {
     }
 
     public String getNameProperty() {
-        return nameProperty;
+        return this.nameProperty;
     }
 
     public void setNameProperty(String name) {
@@ -109,7 +110,7 @@ public class AnchorURL extends MultiProtocolURL {
     }
 
     public String getTextProperty() {
-        return textBody;
+        return this.textBody;
     }
 
     public void setTextProperty(String text) {
@@ -117,7 +118,7 @@ public class AnchorURL extends MultiProtocolURL {
     }
 
     public String getRelProperty() {
-        return relProperty;
+        return this.relProperty;
     }
 
     public void setRelProperty(String rel) {
@@ -125,7 +126,7 @@ public class AnchorURL extends MultiProtocolURL {
     }
 
     public MultiProtocolURL getImageURL() {
-        return imageURL;
+        return this.imageURL;
     }
 
     public void setImageURL(MultiProtocolURL imageURL) {
@@ -133,7 +134,7 @@ public class AnchorURL extends MultiProtocolURL {
     }
 
     public String getImageAlt() {
-        return imageAlt;
+        return this.imageAlt;
     }
 
     public void setImageAlt(String imageAlt) {
@@ -153,16 +154,16 @@ public class AnchorURL extends MultiProtocolURL {
         tagopts.setProperty("rel", this.relProperty);
         return tagopts;
     }
-    
+
     public boolean attachedNofollow() {
         return this.relProperty.indexOf("nofollow") >= 0;
     }
-    
+
     public String toHTML() {
         return "<a href=\"" + this.toNormalform(false) + "\"" +
                 (this.nameProperty.length() > 0 ? (" name=\"" + this.nameProperty + "\"") : "") +
                 (this.relProperty.length() > 0 ? (" rel=\"" + this.relProperty + "\"") : "") +
                 ">" + this.textBody + "</a>";
     }
-    
+
 }

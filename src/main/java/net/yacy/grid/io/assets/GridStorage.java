@@ -1,17 +1,17 @@
 /**
  *  GridStorage
- *  Copyright 28.1.2017 by Michael Peter Christen, @0rb1t3r
+ *  Copyright 28.1.2017 by Michael Peter Christen, @orbiterlab
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -29,9 +29,11 @@ import net.yacy.grid.tools.MultiProtocolURL;
 
 public class GridStorage extends PeerStorage implements Storage<byte[]> {
 
+    private StorageFactory<byte[]> s3 = null;
     private StorageFactory<byte[]> ftp = null;
     private StorageFactory<byte[]> mcp = null;
     private boolean deleteafterread;
+    private AtomicInteger s3_fail = new AtomicInteger(0);
     private AtomicInteger ftp_fail = new AtomicInteger(0);
 
     // connector details
@@ -40,7 +42,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
     private boolean active;
 
     /**
-     * create a grid storage. 
+     * create a grid storage.
      * @param deleteafterread if true, an asset is deleted from the asset store after it has beed read
      * @param basePath a local path; can be NULL which means that no local storage is wanted
      */
@@ -55,6 +57,43 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         this.active = true;
     }
 
+    public boolean connectS3(String host, int port, String username, String password, boolean active) {
+        this.host = host;
+        this.port = port;
+        this.username = username;
+        this.password = password;
+        this.active = active;
+        return checkConnectionS3();
+    }
+
+    public boolean connectS3(String url, boolean active) {
+        MultiProtocolURL u = null;
+        try {
+            u = new MultiProtocolURL(url);
+        } catch (MalformedURLException e) {
+            Data.logger.debug("GridStorage.connectS3 trying to connect to the s3 server at " + url + " failed: " + e.getMessage());
+            return false;
+        }
+        this.host = u.getHost();
+        this.port = u.getPort();
+        this.username = u.getUser();
+        this.password = u.getPassword();
+        this.active = active;
+        return checkConnectionS3();
+    }
+
+    private boolean checkConnectionS3() {
+        try {
+            StorageFactory<byte[]> s3 = new S3StorageFactory(this.host, this.port, this.username, this.password, this.deleteafterread);
+            s3.getStorage().checkConnection(); // test the connection
+            this.s3 = s3;
+            return true;
+        } catch (IOException e) {
+            Data.logger.debug("GridStorage.connectS3 trying to connect to the ftp server at " + this.host + ":" + this.port + " failed");
+            return false;
+        }
+    }
+
     public boolean connectFTP(String host, int port, String username, String password, boolean active) {
         this.host = host;
         this.port = port;
@@ -63,7 +102,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         this.active = active;
         return checkConnectionFTP();
     }
-    
+
     public boolean connectFTP(String url, boolean active) {
         MultiProtocolURL u = null;
         try {
@@ -87,15 +126,19 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
             this.ftp = ftp;
             return true;
         } catch (IOException e) {
-            Data.logger.debug("GridStorage.connectFTP trying to connect to the ftp server at " + host + ":" + port + " failed");
+            Data.logger.debug("GridStorage.connectFTP trying to connect to the ftp server at " + this.host + ":" + this.port + " failed");
             return false;
         }
     }
-    
+
+    public boolean isS3Connected() {
+        return this.s3 != null;
+    }
+
     public boolean isFTPConnected() {
         return this.ftp != null;
     }
-    
+
     public boolean connectMCP(String host, int port, boolean active) {
         try {
             this.mcp = new MCPStorageFactory(this, host, port, active);
@@ -106,9 +149,19 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
             return false;
         }
     }
-    
+
     @Override
     public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
+        if (this.s3 != null && this.s3_fail.get() < 10) {
+            try {
+                StorageFactory<byte[]> sf = this.s3.getStorage().store(path, asset);
+                this.s3_fail.set(0);
+                return sf;
+            } catch (IOException e) {
+                Data.logger.debug("GridStorage.store trying to connect to the ftp server failed", e);
+            }
+            this.s3_fail.incrementAndGet();
+        }
         if (this.ftp != null && this.ftp_fail.get() < 10) {
             retryloop: for (int retry = 0; retry < 40; retry++) {
                 try {
@@ -131,6 +184,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         } catch (IOException e) {
             Data.logger.debug("GridStorage.store trying to connect to the mcp failed: " + e.getMessage(), e);
         }
+        // failback to local storage
         return super.store(path, asset);
     }
 
@@ -143,6 +197,16 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
             return super.load(path);
         } catch (IOException e) {
             // do nothing, we will try again with alternative methods
+        }
+        if (this.s3 != null && this.s3_fail.get() < 10) {
+                try {
+                    Asset<byte[]> asset = this.s3.getStorage().load(path);
+                    this.s3_fail.set(0);
+                    return asset;
+                } catch (IOException e) {
+                    Data.logger.debug("GridStorage.load trying to connect to the s3 server failed", e);
+                }
+            this.s3_fail.incrementAndGet();
         }
         if (this.ftp != null && this.ftp_fail.get() < 10) {
             retryloop: for (int retry = 0; retry < 40; retry++) {
@@ -172,6 +236,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
 
     @Override
     public void close() {
+        if (this.s3 != null) try {this.s3.close();} catch (Throwable e) {}
         if (this.ftp != null) try {this.ftp.close();} catch (Throwable e) {}
         try {super.close();} catch (Throwable e) {}
     }

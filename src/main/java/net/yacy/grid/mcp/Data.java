@@ -1,17 +1,17 @@
 /**
  *  Data
- *  Copyright 14.01.2017 by Michael Peter Christen, @0rb1t3r
+ *  Copyright 14.01.2017 by Michael Peter Christen, @orbiterlab
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -90,7 +90,7 @@ public class Data {
         boolean lazy = config.containsKey("grid.broker.lazy") && config.get("grid.broker.lazy").equals("true");
         boolean autoAck = config.containsKey("grid.broker.autoAck") && config.get("grid.broker.autoAck").equals("true");
         int queueLimit = config.containsKey("grid.broker.queue.limit") ? Integer.parseInt(config.get("grid.broker.queue.limit")) : 0;
-        int queueThrottling = config.containsKey("grid.broker.queue.throttling") ? Integer.parseInt(config.get("grid.broker.queue.throttling")) : 0;        
+        int queueThrottling = config.containsKey("grid.broker.queue.throttling") ? Integer.parseInt(config.get("grid.broker.queue.throttling")) : 0;
         gridBroker = new GridBroker(localStorage ? messagesPath : null, lazy, autoAck, queueLimit, queueThrottling);
 
         // create storage
@@ -124,7 +124,7 @@ public class Data {
             if (    address.length() > 0 &&
                     Data.gridBroker.connectMCP(host, port) &&
                     Data.gridStorage.connectMCP(host, port, true) &&
-                    Data.gridIndex.connectMCP(host, port) && 
+                    Data.gridIndex.connectMCP(host, port) &&
                     Data.gridControl.connectMCP(host, port)
                 ) {
                 Data.logger.info("Connected MCP at " + getHost(address));
@@ -150,15 +150,28 @@ public class Data {
             }
 
             // connect storage
+            // s3
+            String[] gridS3Address = (config.containsKey("grid.s3.address") ? config.get("grid.s3.address") : "").split(",");
+            boolean  gridS3Active = config.containsKey("grid.s3.active") ? "true".equals(config.get("grid.s3.active")) : true;
+            for (String address: gridS3Address) {
+                if (address.length() > 0 && Data.gridStorage.connectS3(getHost(address), getPort(address, "9000"), getUser(address, "admin"), getPassword(address, "12345678"), gridS3Active)) {
+                    Data.logger.info("Connected S3 Storage at " + getHost(address));
+                    break;
+                }
+            }
+
+            // ftp
             String[] gridFtpAddress = (config.containsKey("grid.ftp.address") ? config.get("grid.ftp.address") : "").split(",");
             boolean  gridFtpActive = config.containsKey("grid.ftp.active") ? "true".equals(config.get("grid.ftp.active")) : true;
             for (String address: gridFtpAddress) {
                 if (address.length() > 0 && Data.gridStorage.connectFTP(getHost(address), getPort(address, "2121"), getUser(address, "admin"), getPassword(address, "admin"), gridFtpActive)) {
-                    Data.logger.info("Connected Storage at " + getHost(address));
+                    Data.logger.info("Connected FTP Storage at " + getHost(address));
                     break;
                 }
             }
-            if (!Data.gridStorage.isFTPConnected()) {
+
+            // if there is no ftp and no s3 connection, we use a local asset storage
+            if (!Data.gridStorage.isFTPConnected() && !Data.gridStorage.isS3Connected()) {
                 Data.logger.info("Connected to the embedded Asset Storage");
             }
 
@@ -199,7 +212,7 @@ public class Data {
     public static String getPassword(String address, String defaultPassword) {
         return t(h(address, '@', ""), ':', defaultPassword);
     }
-    
+
     private static String h(String a, char s, String d) {
         int p = a.indexOf(s);
         return p < 0 ? d : a.substring(0,  p);
@@ -209,13 +222,13 @@ public class Data {
         int p = a.indexOf(s);
         return p < 0 ? d : a.substring(p + 1);
     }
-    
+
     public static void clearCaches() {
         // should i.e. be called in case of short memory status
         logAppender.clean(5000);
-        
+
     }
-    
+
     public static void close() {
         peerJsonDB.close();
         peerDB.close();
@@ -223,5 +236,5 @@ public class Data {
         gridStorage.close();
         gridIndex.close();
     }
-    
+
 }
