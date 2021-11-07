@@ -96,6 +96,7 @@ public class StatusService extends ObjectAPIHandler implements APIHandler {
         status.put("available_memory", runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory());
         status.put("cores", runtime.availableProcessors());
         status.put("threads", Thread.activeCount());
+        status.put("deadlocks", OS.deadlocks());
         status.put("load_system_average", OS.getSystemLoadAverage());
         //system.put("load_system_cpu", OS.getSystemCpuLoad());
         status.put("load_process_cpu", OS.getProcessCpuLoad());

@@ -287,6 +287,16 @@ public final class OS {
   }
 
   /**
+   * find out the number of thread deadlocks. WARNING: this is a time-consuming task
+   * @return the number of deadlocked threads
+   */
+  public static long deadlocks() {
+      long[] deadlockIDs = ManagementFactory.getThreadMXBean().findDeadlockedThreads();
+      if (deadlockIDs == null) return 0;
+      return deadlockIDs.length;
+  }
+
+  /**
    * Check if port is in use. This is checked by opening a connection at the given address
    * @param addr the inet address of the server. To test a localhost address, pass null here
    * @param port the port to be tested
