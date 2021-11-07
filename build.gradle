@@ -64,6 +64,6 @@ dependencies {
     compile group: 'jcifs', name: 'jcifs', version: '1.+'
     compile group: 'org.elasticsearch.client', name: 'transport', version: '6.8.+'
     compile group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '5.+'
-    compile group: 'com.hazelcast', name: 'hazelcast', version: '4.1.+'
+    compile group: 'com.hazelcast', name: 'hazelcast', version: '5.+'
     compile group: 'io.minio', name: 'minio', version: '8.3.+'
 }
