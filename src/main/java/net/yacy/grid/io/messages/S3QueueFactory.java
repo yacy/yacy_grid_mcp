@@ -36,14 +36,14 @@ import eu.searchlab.storage.io.IOPath;
 import eu.searchlab.storage.io.S3IO;
 import eu.searchlab.storage.json.PersistentCord;
 
-public class CordQueueFactory extends PersistentCord implements QueueFactory<byte[]> {
+public class S3QueueFactory extends PersistentCord implements QueueFactory<byte[]> {
 
     private URL url;
     private String endpointURL;
     private IOPath iop;
     private GenericIO io;
 
-    public CordQueueFactory(GenericIO io, IOPath iop) {
+    public S3QueueFactory(GenericIO io, IOPath iop) {
         super(io, iop);
         this.endpointURL = (io instanceof S3IO) ? ((S3IO) io).getEndpointURL() : null;
         try {
@@ -107,20 +107,20 @@ public class CordQueueFactory extends PersistentCord implements QueueFactory<byt
 
             @Override
             public void checkConnection() throws IOException {
-                if (!CordQueueFactory.this.io.bucketExists(CordQueueFactory.this.iop.getBucket()))
-                    throw new IOException("bucket " + CordQueueFactory.this.iop.getBucket() + " does not exist");
+                if (!S3QueueFactory.this.io.bucketExists(S3QueueFactory.this.iop.getBucket()))
+                    throw new IOException("bucket " + S3QueueFactory.this.iop.getBucket() + " does not exist");
             }
 
             @Override
             public Queue<byte[]> send(byte[] message) throws IOException {
-                CordQueueFactory.this.append(message2json(message));
+                S3QueueFactory.this.append(message2json(message));
                 return this;
             }
 
             @Override
             public MessageContainer<byte[]> receive(long timeout, boolean autoAck) throws IOException {
-                JSONObject json = CordQueueFactory.this.getFirst();
-                return new MessageContainer<byte[]>(CordQueueFactory.this, json2message(json), 0 /* delivery tag */);
+                JSONObject json = S3QueueFactory.this.getFirst();
+                return new MessageContainer<byte[]>(S3QueueFactory.this, json2message(json), 0 /* delivery tag */);
             }
 
             @Override
@@ -140,7 +140,7 @@ public class CordQueueFactory extends PersistentCord implements QueueFactory<byt
 
             @Override
             public long available() throws IOException {
-                return CordQueueFactory.this.size();
+                return S3QueueFactory.this.size();
             }
 
             @Override
