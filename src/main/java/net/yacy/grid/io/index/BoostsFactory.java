@@ -23,8 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class BoostsFactory {
-	
-	private final static Map<WebMapping, Float> QUERY_DEFAULT_FIELDS = new LinkedHashMap<>();
+
+    private final static Map<WebMapping, Float> QUERY_DEFAULT_FIELDS = new LinkedHashMap<>();
     static {
         QUERY_DEFAULT_FIELDS.put(WebMapping.url_s, 1000.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.host_organization_s, 1000.0f);
@@ -38,7 +38,7 @@ public class BoostsFactory {
         QUERY_DEFAULT_FIELDS.put(WebMapping.h4_txt, 3.0f);
         QUERY_DEFAULT_FIELDS.put(WebMapping.text_t, 1.0f);
     }
-	
+
     public BoostsFactory(final Map<String, String> defaultBoosts) {
         super();
         for (Map.Entry<String, String> entry: defaultBoosts.entrySet()) {
@@ -46,20 +46,20 @@ public class BoostsFactory {
             QUERY_DEFAULT_FIELDS.put(webMapping, Float.parseFloat(entry.getValue()));
         }
     }
-    
-    public Boosts getBoosts() {
+
+    public static Boosts getBoosts() {
         return new Boosts(QUERY_DEFAULT_FIELDS);
     }
-    
-    public class Boosts extends LinkedHashMap<WebMapping, Float> {
+
+    public static class Boosts extends LinkedHashMap<WebMapping, Float> {
 
         private static final long serialVersionUID = -8298697781874655425L;
-        
+
         private Boosts(Map<WebMapping, Float> defaultMapping) {
             super();
             defaultMapping.forEach((key, boost) -> this.put(key, boost));
         }
-        
+
         public void patchWithModifier(String modifier) {
             String[] customBoosts = modifier.split(",");
             for (String customBoost: customBoosts) {
@@ -69,6 +69,6 @@ public class BoostsFactory {
                 } catch (Throwable /*many things can go wrong here*/ e) {}
             }
         }
-        
+
     }
 }

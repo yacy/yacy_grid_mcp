@@ -33,13 +33,13 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
     private final Storage<byte[]> s3client;
     private boolean deleteafterread;
 
-    public S3StorageFactory(String server, int port, final String accessKey, final String secretKey, boolean deleteafterread) throws IOException {
+    public S3StorageFactory(String bucket_endpoint, int port, final String accessKey, final String secretKey, boolean deleteafterread) throws IOException {
         // we expect that the server is constructed as <bucket>.<endpointHost>
         // so we deconstruct the bucket and endpoint information from the given server
-        int p = server.indexOf('.');
+        int p = bucket_endpoint.indexOf('.');
         if (p < 0) throw new IOException("server must be <bucket>.<endpointHost>");
-        this.bucket = server.substring(0, p);
-        this.endpoint = server.substring(p + 1);
+        this.bucket = bucket_endpoint.substring(0, p);
+        this.endpoint = bucket_endpoint.substring(p + 1);
         this.port = port;
 
         this.accessKey = accessKey == null ? "" : accessKey;

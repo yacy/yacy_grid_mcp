@@ -37,7 +37,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
     private AtomicInteger ftp_fail = new AtomicInteger(0);
 
     // connector details
-    private String host, username, password;
+    private String host, username, password; // host has the shape of <bucket>.<endpoint-host> in case of a s3 host
     private int port;
     private boolean active;
 
@@ -57,8 +57,8 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         this.active = true;
     }
 
-    public boolean connectS3(String host, int port, String username, String password, boolean active) {
-        this.host = host;
+    public boolean connectS3(String bucket_endpoint, int port, String username, String password, boolean active) {
+        this.host = bucket_endpoint;
         this.port = port;
         this.username = username;
         this.password = password;

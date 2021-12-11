@@ -154,7 +154,7 @@ public class Data {
             String[] gridS3Address = (config.containsKey("grid.s3.address") ? config.get("grid.s3.address") : "").split(",");
             boolean  gridS3Active = config.containsKey("grid.s3.active") ? "true".equals(config.get("grid.s3.active")) : true;
             for (String address: gridS3Address) {
-                if (address.length() > 0 && Data.gridStorage.connectS3(getHost(address), getPort(address, "9000"), getUser(address, "admin"), getPassword(address, "12345678"), gridS3Active)) {
+                if (address.length() > 0 && Data.gridStorage.connectS3(getHost(address) /*bucket.endpoint*/, getPort(address, "9000"), getUser(address, "admin"), getPassword(address, "12345678"), gridS3Active)) {
                     Data.logger.info("Connected S3 Storage at " + getHost(address));
                     break;
                 }
