@@ -25,7 +25,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 
-import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 
@@ -59,13 +58,9 @@ public class Data {
     public static void init(File serviceData, Map<String, String> cc, boolean localStorage) {
         PatternLayout layout = new PatternLayout("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %p %c %x - %m%n");
         logger = Logger.getRootLogger();
-        logger.removeAllAppenders();
-        logAppender = new LogAppender(layout, 100000);
+        logAppender = new LogAppender(layout, 10000);
         logger.addAppender(logAppender);
-        ConsoleAppender ca = new ConsoleAppender(layout);
-        ca.setImmediateFlush(false);
-        logger.addAppender(ca);
-
+        //final LogManager logManager = LogManager.getLogManager();
         config = cc;
         /*
         try {
