@@ -1,1 +1,1 @@
-docker run -d --hostname yacy-grid-rabbitmq --name yacy-grid-rabbitmq -e RABBITMQ_DEFAULT_USER=anonymous -e RABBITMQ_DEFAULT_PASS=yacy -p 15672:15672 -v yacy-grid-rabbitmq:/var/lib/rabbitmq rabbitmq:3.9-management-alpine
+docker run -d --hostname yacy-grid-rabbitmq --name yacy-grid-rabbitmq -p 15672:15672 -e RABBITMQ_CONFIG_FILE=/etc/rabbitmq/rabbitmq.conf -v `pwd`/../conf/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf -v yacy-grid-rabbitmq:/var/lib/rabbitmq rabbitmq:3.9-management-alpine

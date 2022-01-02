@@ -8,7 +8,8 @@ if [ ${containerRuns} -gt 0 ]; then
 elif [ ${containerExists} -gt 0 ]; then
   docker start yacy-grid-elasticsearch
 else
-  docker run -d --name yacy-grid-elasticsearch -p 9200:9200 -p 9300:9300 -v yacy-grid-elasticsearch-data:/usr/share/elasticsearch/data -e "discovery.type=single-node" elasticsearch:6.8.20
+  docker run -d --name yacy-grid-elasticsearch -p 9200:9200 -p 9300:9300 -v `pwd`/../conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v yacy-grid-elasticsearch-data:/usr/share/elasticsearch/data elasticsearch:6.8.20
 fi
 
-
+# check health of node with
+# curl http://127.0.0.1:9200/_cat/health

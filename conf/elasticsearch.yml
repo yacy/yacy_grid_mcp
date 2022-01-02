@@ -1,0 +1,17 @@
+# development settings, probably not good for production
+
+
+# cluser name must be same as in config-properties grid.elasticsearch.clusterName
+cluster.name: elasticsearch
+node.name: "yacygrid-node"
+
+node.master: true
+node.data: true
+
+# network bin addresses are complex in the context of a docker image with port forwarding
+# so we here allow access from all hosts
+network.bind_host: 0.0.0.0
+network.host: 0.0.0.0
+http.enabled: true
+
+discovery.type: single-node
