@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -70,7 +70,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 
 public class ClientConnection {
 
@@ -89,7 +89,7 @@ public class ClientConnection {
 
     private final static CloseableHttpClient httpClient = getClosableHttpClient();
 
-    
+
     public final static CloseableHttpClient getClosableHttpClient() {
         return HttpClients.custom()
                 .useSystemProperties()
@@ -99,15 +99,16 @@ public class ClientConnection {
                 .setMaxConnTotal(500)
                 .build();
     }
-    
+
     private int status;
     public BufferedInputStream inputStream;
     private Map<String, List<String>> header;
     private HttpRequestBase request;
     private HttpResponse httpResponse;
     private ContentType contentType;
-    
+
     private static class TrustAllHostNameVerifier implements HostnameVerifier {
+        @Override
         public boolean verify(String hostname, SSLSession session) {
             return true;
         }
@@ -124,17 +125,17 @@ public class ClientConnection {
         this.request.setHeader("User-Agent", ClientIdentification.getAgent(ClientIdentification.yacyInternetCrawlerAgentName).userAgent);
         this.init();
     }
-    
+
     /**
      * POST request
      * @param urlstring
      * @param map
      * @param useAuthentication
-     * @throws ClientProtocolException 
+     * @throws ClientProtocolException
      * @throws IOException
      */
     public ClientConnection(String urlstring, Map<String, byte[]> map, boolean useAuthentication) throws ClientProtocolException, IOException {
-        this.request = new HttpPost(urlstring);        
+        this.request = new HttpPost(urlstring);
         MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
         entityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
         for (Map.Entry<String, byte[]> entry: map.entrySet()) {
@@ -144,7 +145,7 @@ public class ClientConnection {
         this.request.setHeader("User-Agent", ClientIdentification.getAgent(ClientIdentification.yacyInternetCrawlerAgentName).userAgent);
         this.init();
     }
-    
+
     /**
      * POST request
      * @param urlstring
@@ -155,7 +156,7 @@ public class ClientConnection {
     public ClientConnection(String urlstring, Map<String, byte[]> map) throws ClientProtocolException, IOException {
         this(urlstring, map, true);
     }
-    
+
     public static PoolingHttpClientConnectionManager getConnctionManager(){
 
         Registry<ConnectionSocketFactory> socketFactoryRegistry = null;
@@ -169,22 +170,22 @@ public class ClientConnection {
                     .register("https", trustSelfSignedSocketFactory)
                     .build();
         } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
-            Data.logger.warn("", e);
+            Logger.warn(e);
         }
-        
-        PoolingHttpClientConnectionManager cm = (socketFactoryRegistry != null) ? 
+
+        PoolingHttpClientConnectionManager cm = (socketFactoryRegistry != null) ?
                 new PoolingHttpClientConnectionManager(socketFactoryRegistry):
                 new PoolingHttpClientConnectionManager();
-        
+
         // twitter specific options
         cm.setMaxTotal(2000);
         cm.setDefaultMaxPerRoute(200);
-        
+
         return cm;
     }
 
     private void init() throws IOException {
-        
+
         this.httpResponse = null;
         try {
             this.httpResponse = httpClient.execute(this.request);
@@ -209,25 +210,25 @@ public class ClientConnection {
                     throw e;
                 }
                 this.header = new HashMap<String, List<String>>();
-                for (Header header: httpResponse.getAllHeaders()) {
+                for (Header header: this.httpResponse.getAllHeaders()) {
                     List<String> vals = this.header.get(header.getName());
                     if (vals == null) { vals = new ArrayList<String>(); this.header.put(header.getName(), vals); }
                     vals.add(header.getValue());
                 }
             } else {
                 this.request.releaseConnection();
-                throw new IOException("client connection to " + this.request.getURI() + " fail: " + status + ": " + httpResponse.getStatusLine().getReasonPhrase());
+                throw new IOException("client connection to " + this.request.getURI() + " fail: " + this.status + ": " + this.httpResponse.getStatusLine().getReasonPhrase());
             }
         } else {
             this.request.releaseConnection();
             throw new IOException("client connection to " + this.request.getURI() + " fail: no connection");
         }
     }
-    
+
     public ContentType getContentType() {
         return this.contentType == null ? ContentType.DEFAULT_BINARY : this.contentType;
     }
-    
+
     /**
      * get a redirect for an url: this method shall be called if it is expected that a url
      * is redirected to another url. This method then discovers the redirect.
@@ -261,7 +262,7 @@ public class ClientConnection {
             throw new IOException("client connection to " + urlstring + " fail: no connection");
         }
     }
-    
+
     public void close() {
         HttpEntity httpEntity = this.httpResponse.getEntity();
         if (httpEntity != null) EntityUtils.consumeQuietly(httpEntity);
@@ -271,7 +272,7 @@ public class ClientConnection {
             this.request.releaseConnection();
         }
     }
-    
+
     public static void download(String source_url, File target_file) {
         try {
             ClientConnection connection = new ClientConnection(source_url);
@@ -282,35 +283,35 @@ public class ClientConnection {
                 try {
                     while ((count = connection.inputStream.read(buffer)) > 0) os.write(buffer, 0, count);
                 } catch (IOException e) {
-                    Data.logger.warn(e.getMessage());
+                    Logger.warn(e.getMessage());
                 } finally {
                     os.close();
                 }
             } catch (IOException e) {
-                Data.logger.warn(e.getMessage());
+                Logger.warn(e.getMessage());
             } finally {
                 connection.close();
             }
         } catch (IOException e) {
-            Data.logger.warn(e.getMessage());
+            Logger.warn(e.getMessage());
         }
     }
-    
+
     public static void load(String source_url, File target_file) {
         download(source_url, target_file);
     }
-    
+
     /**
      * make GET request
      * @param source_url
-     * @return the response 
+     * @return the response
      * @throws IOException
      */
     public static byte[] load(String source_url) throws IOException {
         ClientConnection connection = new ClientConnection(source_url);
         return connection.load();
     }
-    
+
     /**
      * make POST request
      * @param source_url
@@ -331,7 +332,7 @@ public class ClientConnection {
         try {
             while ((count = this.inputStream.read(buffer)) > 0) baos.write(buffer, 0, count);
         } catch (IOException e) {
-            Data.logger.warn(e.getMessage());
+            Logger.warn(this.getClass(), e.getMessage());
         } finally {
             this.close();
         }

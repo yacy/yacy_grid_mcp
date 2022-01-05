@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -60,6 +60,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         this.targetFill = new AtomicInteger(0);
     }
 
+    @Override
     public abstract ActionResult processAction(SusiAction action, JSONArray data, String processName, int processNumber);
 
     @Override
@@ -69,7 +70,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
             try {
                 Data.gridBroker.recover(AbstractBrokerListener.this.service, queue);
             } catch (IOException e) {
-                Data.logger.fatal("Service " + this.service.name() + ": recover not possible: " + e.getMessage(), e);
+                Logger.fatal(this.getClass(), "Service " + this.service.name() + ": recover not possible: " + e.getMessage(), e);
             }
         }
 
@@ -77,21 +78,21 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         try {
             AvailableContainer[] ac = Data.gridBroker.available(AbstractBrokerListener.this.service, this.sourceQueues);
             for (int i = 0; i < ac.length; i++) {
-                Data.logger.info("Service " + this.service.name() + ", queue " + ac[i].getQueue() + ": " + ac[i].getAvailable() + " entries.");
+                Logger.info(this.getClass(), "Service " + this.service.name() + ", queue " + ac[i].getQueue() + ": " + ac[i].getAvailable() + " entries.");
             }
         } catch (IOException e) {
-            Data.logger.fatal("Service " + this.service.name() + ": AvailableContainer not available: " + e.getMessage(), e);
+            Logger.fatal(this.getClass(), "Service " + this.service.name() + ": AvailableContainer not available: " + e.getMessage(), e);
         }
 
         // start the listeners
         int threadsPerQueue = Math.max(1, this.threadCount / this.sourceQueues.length);
-        Data.logger.info("Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.sourceQueues.length + " queues");
+        Logger.info(this.getClass(), "Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.sourceQueues.length + " queues");
         for (GridQueue queue: this.sourceQueues) {
             for (int qc = 0; qc < threadsPerQueue; qc++) {
                 QueueListener listener = new QueueListener(queue, qc, Data.gridBroker.isAutoAck(), Data.gridBroker.getQueueThrottling());
                 listener.start();
-                threads.add(listener);
-                Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + queue + " started thread " + qc);
+                this.threads.add(listener);
+                Logger.info(this.getClass(), "Broker Listener for service " + this.service.name() + ", queue " + queue + " started thread " + qc);
             }
         }
 
@@ -100,18 +101,18 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         caretaker.run();
 
         // wait for termination, this happens when terminate() is called
-        threads.forEach(thread -> {
+        this.threads.forEach(thread -> {
             try {
                 thread.join();
-                Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + thread.queueName + " terminated");
+                Logger.info(this.getClass(), "Broker Listener for service " + this.service.name() + ", queue " + thread.queueName + " terminated");
             } catch (InterruptedException e) {
-                Data.logger.info("Broker Listener for service " + this.service.name() + ", queue " + thread.queueName + " interrupted", e);
+                Logger.warn(this.getClass(), "Broker Listener for service " + this.service.name() + ", queue " + thread.queueName + " interrupted", e);
             }
         });
         try {
             caretaker.join();
         } catch (InterruptedException e) {
-            Data.logger.info("Broker Listener for service " + this.service.name() + ", caretaker interrupted", e);
+            Logger.warn(this.getClass(), "Broker Listener for service " + this.service.name() + ", caretaker interrupted", e);
         }
     }
 
@@ -128,7 +129,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
         @Override
         public void run() {
-            while (shallRun) {
+            while (AbstractBrokerListener.this.shallRun) {
                 // collect size of target queues:
                 int targetQueueAggregator = 0;
                 for (Services targetService: AbstractBrokerListener.this.service.getTargetServices()) {
@@ -138,7 +139,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     } catch (IOException e) {}
                 }
                 AbstractBrokerListener.this.targetFill.set(targetQueueAggregator);
-                Data.logger.info("BrokerListener operates with " + AbstractBrokerListener.this.messagesPerMinute() + " messages per minute; target queues size: " + targetQueueAggregator);
+                Logger.info(this.getClass(), "BrokerListener operates with " + AbstractBrokerListener.this.messagesPerMinute() + " messages per minute; target queues size: " + targetQueueAggregator);
 
                 // wait a bit
                 try {Thread.sleep(60000);} catch (InterruptedException ee) {}
@@ -169,12 +170,12 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         public void run() {
             try {
                 AvailableContainer a = Data.gridBroker.available(AbstractBrokerListener.this.service, this.queueName);
-                Data.logger.info("Started QueueListener for Queue " + a.getQueue() + ", thread " + this.threadCounter + ": " + a.getAvailable() + " entries.");
+                Logger.info(this.getClass(), "Started QueueListener for Queue " + a.getQueue() + ", thread " + this.threadCounter + ": " + a.getAvailable() + " entries.");
             } catch (IOException e) {
-                Data.logger.fatal("Could not load AvailableContainer for Queue " + queueName + ": " + e.getMessage(), e);
+                Logger.fatal(this.getClass(), "Could not load AvailableContainer for Queue " + this.queueName + ": " + e.getMessage(), e);
             }
 
-            while (shallRun) {
+            while (AbstractBrokerListener.this.shallRun) {
                 if (Data.gridBroker == null) {
                     try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                     continue; // wait until initialization complete
@@ -185,7 +186,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 try {
                     // check short memory status
                     if (Memory.shortStatus()) {
-                        Data.logger.info("AbstractBrokerListener.QueueListener short memory status: assigned = " + Memory.assigned() + ", used = " + Memory.used());
+                        Logger.info(this.getClass(), "AbstractBrokerListener.QueueListener short memory status: assigned = " + Memory.assigned() + ", used = " + Memory.used());
                         Data.clearCaches();
                     }
 
@@ -194,17 +195,17 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                         long throttlingStart = this.targetQueueThrottling / 10 * 9;
                         long targetQueueAggregator = AbstractBrokerListener.this.targetFill.get();
                         if (targetQueueAggregator > throttlingStart) {
-                            Data.logger.info("AbstractBrokerListener.QueueListener target queue aggregated size = " + targetQueueAggregator + ", throttling start is " + throttlingStart);
+                            Logger.info(this.getClass(), "AbstractBrokerListener.QueueListener target queue aggregated size = " + targetQueueAggregator + ", throttling start is " + throttlingStart);
                             long throttlingTime = Math.min(10000L, (targetQueueAggregator - throttlingStart) / this.targetQueueThrottling * 100000L);
                             if (throttlingTime > 1000L) {
-                                Data.logger.info("AbstractBrokerListener.QueueListener throttling = " + this.targetQueueThrottling + ", sleeping for " + throttlingTime + " milliseconds");
+                                Logger.info(this.getClass(), "AbstractBrokerListener.QueueListener throttling = " + this.targetQueueThrottling + ", sleeping for " + throttlingTime + " milliseconds");
                                 try {Thread.sleep(throttlingTime);} catch (InterruptedException e) {}
                             }
                         }
                     }
 
                     // wait until message arrives
-                    mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000, autoAck);
+                    mc = Data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000, this.autoAck);
                     if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) {
                         result = handleMessage(mc, this.queueName.name(), this.threadCounter);
                         // track number of handles messages
@@ -216,10 +217,10 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     // try {Thread.sleep(1000);} catch (InterruptedException ee) {}
                 } catch (JSONException e) {
                     // happens if the payload has a wrong form
-                    Data.logger.info("QueueListener: message syntax error with '" + payload + "' in queue: " + e.getMessage(), e);
+                    Logger.warn(this.getClass(), "QueueListener: message syntax error with '" + payload + "' in queue: " + e.getMessage(), e);
                     try {Thread.sleep(10000);} catch (InterruptedException ee) {}
                 } catch (Throwable e) {
-                    Data.logger.info("QueueListener: " + e.getMessage(), e);
+                    Logger.warn(this.getClass(), "QueueListener: " + e.getMessage(), e);
                     try {Thread.sleep(10000);} catch (InterruptedException ee) {}
                     String m = e.getMessage();
                     if (m == null) m = e.getCause().getMessage();
@@ -230,7 +231,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                             try {
                                 Data.gridBroker.reject(AbstractBrokerListener.this.service, this.queueName, mc.getDeliveryTag());
                             } catch (IOException ee) {
-                                Data.logger.info("QueueListener: cannot acknowledge queue: " + ee.getMessage(), ee);
+                                Logger.warn(this.getClass(), "QueueListener: cannot acknowledge queue: " + ee.getMessage(), ee);
                             }
                         }
                     }
@@ -240,7 +241,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                         try {
                             Data.gridBroker.acknowledge(AbstractBrokerListener.this.service, this.queueName, mc.getDeliveryTag());
                         } catch (IOException e) {
-                            Data.logger.info("QueueListener: cannot acknowledge queue: " + e.getMessage(), e);
+                            Logger.warn(this.getClass(), "QueueListener: cannot acknowledge queue: " + e.getMessage(), e);
                         }
                     }
                 }
@@ -267,18 +268,18 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
             // check if the credentials to execute the queue are valid
             if (type == null || type.length() == 0 || queue == null || queue.length() == 0) {
-                Data.logger.info("bad message in queue, continue");
+                Logger.info(this.getClass(), "bad message in queue, continue");
                 continue actionloop;
             }
 
             // check if this is the correct queue
             if (!type.equals(this.service.name())) {
-                Data.logger.info("wrong message in queue: " + type + ", continue");
+                Logger.info(this.getClass(), "wrong message in queue: " + type + ", continue");
                 try {
                     loadNextAction(action, process.getData()); // put that into the correct queue
                 } catch (Throwable e) {
                     if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) return ActionResult.FAIL_RETRY;
-                    Data.logger.warn("", e);
+                    Logger.warn(this.getClass(), e);
                 }
                 continue actionloop;
             }
@@ -294,16 +295,16 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                         try {
                             loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), data);
                         } catch (UnsupportedOperationException | JSONException e) {
-                            Data.logger.warn("", e);
+                            Logger.warn(this.getClass(), e);
                         } catch (IOException e) {
                             if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) return ActionResult.FAIL_RETRY;
-                            Data.logger.warn("", e);
+                            Logger.warn(this.getClass(), e);
                             // do a re-try
                             try {Thread.sleep(10000);} catch (InterruptedException e1) {}
                             try {
                                 loadNextAction(new SusiAction(embeddedActions.getJSONObject(j)), data);
                             } catch (UnsupportedOperationException | JSONException | IOException ee) {
-                                Data.logger.warn("", e);
+                                Logger.warn(this.getClass(), e);
                             }
                         }
                     }

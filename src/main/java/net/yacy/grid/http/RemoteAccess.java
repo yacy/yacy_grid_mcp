@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -38,7 +38,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Part;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 
 /**
  * Storage of a peer list which can be used for peer-to-peer communication.
@@ -49,7 +49,7 @@ public class RemoteAccess {
 
     public static Map<String, Map<String, RemoteAccess>> history = new ConcurrentHashMap<String, Map<String, RemoteAccess>>();
     private final static MultipartConfigElement multipartConfigElement = new MultipartConfigElement("/tmp");
-    
+
     public static Query evaluate(final HttpServletRequest request) {
         try {request.setCharacterEncoding("UTF-8");} catch (UnsupportedEncodingException e){} // set character encoding before any request is made
         Map<String, String> qm = getQueryMap(request.getQueryString());
@@ -57,22 +57,22 @@ public class RemoteAccess {
         post.initGET(qm);
         return post;
     }
-    
+
     public static long latestVisit(String servlet, String remoteHost) {
         Map<String, RemoteAccess> hmap = history.get(servlet);
         if (hmap == null) {hmap = new ConcurrentHashMap<>(); history.put(servlet, hmap);}
         RemoteAccess ra = hmap.get(remoteHost);
         return ra == null ? -1 : ra.accessTime;
     }
-    
+
     public static String hostHash(String remoteHost) {
         return Integer.toHexString(Math.abs(remoteHost.hashCode()));
     }
-    
+
     private String remoteHost, localPath, peername;
     private int localHTTPPort, localHTTPSPort;
     private long accessTime;
-    
+
     private RemoteAccess(final String remoteHost, final String localPath, final Integer localHTTPPort, final Integer localHTTPSPort, final String peername) {
         this.remoteHost = remoteHost;
         this.localPath = localPath;
@@ -81,11 +81,11 @@ public class RemoteAccess {
         this.peername = peername;
         this.accessTime = System.currentTimeMillis();
     }
-    
+
     public String getRemoteHost() {
         return this.remoteHost;
     }
-    
+
     public String getLocalPath() {
         return this.localPath;
     }
@@ -101,11 +101,11 @@ public class RemoteAccess {
     public int getLocalHTTPSPort() {
         return this.localHTTPSPort;
     }
-    
+
     public String getPeername() {
         return this.peername;
     }
-    
+
     private static Set<String> localhostNames = new HashSet<>();
     static {
         localhostNames.add("0:0:0:0:0:0:0:1");
@@ -119,11 +119,11 @@ public class RemoteAccess {
         try {for (InetAddress a: InetAddress.getAllByName("localhost")) {localhostNames.add(a.getHostAddress()); localhostNames.add(a.getHostName()); localhostNames.add(a.getCanonicalHostName());}} catch (UnknownHostException e) {}
         //System.out.println(localhostNames);
     }
-    
+
     public static void addLocalhost(String h) {
         localhostNames.add(h);
     }
-    
+
     public static boolean isLocalhost(String host) {
         return localhostNames.contains(host);
     }
@@ -140,10 +140,10 @@ public class RemoteAccess {
                 value = URLDecoder.decode(value, "UTF-8");
                 map.put(key, value);
             } catch (UnsupportedEncodingException e) {}
-        }  
-        return map;  
+        }
+        return map;
     }
-    
+
     public static Map<String, byte[]> getPostMap(HttpServletRequest request) throws IOException {
         Map<String, byte[]> map = new HashMap<>();
         Map<String, String[]> pm = request.getParameterMap();
@@ -166,7 +166,7 @@ public class RemoteAccess {
                 map.put(name, baos.toByteArray());
             }
         } catch (IOException | ServletException | IllegalStateException e) {
-            Data.logger.debug("Parsing of POST multipart failed", e);
+            Logger.debug("Parsing of POST multipart failed", e);
             throw new IOException(e.getMessage());
         }
         return map;

@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import net.yacy.grid.io.db.MapDBSortedMap;
 import net.yacy.grid.io.db.MapStack;
 import net.yacy.grid.io.db.Stack;
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 
 /**
  * Factory for a queue using a stack
@@ -79,10 +79,10 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
      */
     @Override
     public Queue<byte[]> getQueue(String queueName) throws IOException {
-        StackQueue queue = queues.get(queueName);
+        StackQueue queue = this.queues.get(queueName);
         if (queue != null) return queue;
         synchronized (this) {
-            queue = queues.get(queueName);
+            queue = this.queues.get(queueName);
             if (queue != null) return queue;
             queue = new StackQueue(new MapStack<byte[]>(new MapDBSortedMap(new File(this.location, queueName))));
             this.queues.put(queueName, queue);
@@ -130,7 +130,7 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
                 }
                 return new MessageContainer<byte[]>(MapDBStackQueueFactory.this, this.stack.pot(), 0);
             } catch (InterruptedException e) {
-                Data.logger.debug("StackQueue: receive interrupted", e);
+                Logger.debug(this.getClass(), "StackQueue: receive interrupted", e);
             }
             return null;
         }
@@ -159,7 +159,7 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
             try {
                 this.stack.close();
             } catch (IOException e) {
-                Data.logger.debug("StackQueue: close error", e);
+                Logger.debug(this.getClass(), "StackQueue: close error", e);
             }
         }
     }

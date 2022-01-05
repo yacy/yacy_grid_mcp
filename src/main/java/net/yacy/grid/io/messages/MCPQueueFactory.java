@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -29,7 +29,7 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.mcp.api.messages.AcknowledgeService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
@@ -39,11 +39,11 @@ import net.yacy.grid.mcp.api.messages.RejectService;
 import net.yacy.grid.mcp.api.messages.SendService;
 
 public class MCPQueueFactory implements QueueFactory<byte[]> {
-    
+
     private GridBroker broker;
     private String server;
     private int port;
-    
+
     public MCPQueueFactory(GridBroker broker, String server, int port) {
         this.broker = broker;
         this.server = server;
@@ -182,9 +182,9 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                 if (response.has(ObjectAPIHandler.SERVICE_KEY)) {
                     String broker = response.getString(ObjectAPIHandler.SERVICE_KEY);
                     if (MCPQueueFactory.this.broker.connectRabbitMQ(broker)) {
-                        Data.logger.info("connected MCP broker at " + broker);
+                        Logger.info(this.getClass(), "connected MCP broker at " + broker);
                     } else {
-                        Data.logger.error("failed to connect MCP broker at " + broker);
+                        Logger.error(this.getClass(), "failed to connect MCP broker at " + broker);
                     }
                 }
             }
@@ -194,7 +194,7 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                 }
                 return new IOException("bad response from MCP: no success and no comment key");
             }
-            
+
         };
     }
 

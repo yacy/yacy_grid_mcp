@@ -49,7 +49,7 @@ import net.yacy.grid.http.ClientIdentification;
 import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.io.assets.FTPStorageFactory;
 import net.yacy.grid.io.assets.S3StorageFactory;
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.Classification.ContentDomain;
 import net.yacy.grid.tools.Punycode.PunycodeException;
 
@@ -2527,7 +2527,7 @@ public class MultiProtocolURL implements Serializable, Comparable<MultiProtocolU
             environment = element[0];
             url = element[1];
             try {aURL = MultiProtocolURL.newURL(environment, url);} catch (final MalformedURLException e) {
-                Data.logger.warn("", e);
+                Logger.warn(e);
                 aURL = null;
             }
             if (environment == null) {

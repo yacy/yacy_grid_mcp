@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -30,9 +30,7 @@ import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -46,7 +44,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 
 public final class OS {
 
@@ -74,10 +72,10 @@ public final class OS {
   public  static final Map<String, String> macFSCreatorCache = new HashMap<String, String>();
 
   private final static Set<PosixFilePermission> securePerm = new HashSet<PosixFilePermission>();
-  
+
   // system beans
   private static OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-  
+
   // static initialization
   static {
       // check operation system type
@@ -96,18 +94,18 @@ public final class OS {
 
       // set up maximum path length according to system
       if (isWindows) maxPathLength = 255; else maxPathLength = 65535;
-      
+
       securePerm.add(PosixFilePermission.OWNER_READ);
       securePerm.add(PosixFilePermission.OWNER_WRITE);
       securePerm.add(PosixFilePermission.OWNER_EXECUTE);
   }
-  
+
   public final static void protectPath(Path path) {
       try {
           Files.setPosixFilePermissions(path, securePerm);
       } catch (UnsupportedOperationException | IOException e) {}
   }
-  
+
   private static long copy(final InputStream source, final OutputStream dest, final long count)
           throws IOException {
       assert count < 0 || count > 0 : "precondition violated: count == " + count + " (nothing to copy)";
@@ -150,7 +148,7 @@ public final class OS {
               try {
                   fos.close();
               } catch (final Exception e ) {
-                  Data.logger.warn("", e);
+                  Logger.warn(e);
               }
           }
       }
@@ -171,7 +169,7 @@ public final class OS {
           try {
               Runtime.getRuntime().exec("chmod 755 " + scriptFile.getAbsolutePath().replaceAll(" ", "\\ ")).waitFor();
           } catch (final InterruptedException e) {
-              Data.logger.warn("DEPLOY of script file failed. file = " + scriptFile.getAbsolutePath(), e);
+              Logger.warn("DEPLOY of script file failed. file = " + scriptFile.getAbsolutePath(), e);
               throw new IOException(e.getMessage());
           }
       }
@@ -271,11 +269,11 @@ public final class OS {
   public static double getSystemCpuLoad() {
       return getOSBean("getSystemCpuLoad");
   }
-  
+
   public static double getProcessCpuLoad() {
       return getOSBean("getProcessCpuLoad");
   }
-  
+
   private static double getOSBean(String name) {
       try {
           Method m = osBean.getClass().getMethod(name);
@@ -325,5 +323,5 @@ public final class OS {
       if (p < 0) return false;
       return portIsOpen(address.substring(0, p), Integer.parseInt(address.substring(p + 1)));
   }
-  
+
 }

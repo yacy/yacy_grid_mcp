@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -23,13 +23,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 
 public class FilesystemStorageFactory implements StorageFactory<byte[]> {
 
     private final Storage<byte[]> storage;
     private boolean deleteafterread;
-    
+
     FilesystemStorageFactory(boolean deleteafterread, File basePath) {
         this.deleteafterread = deleteafterread;
         this.storage = new Storage<byte[]>() {
@@ -38,7 +38,7 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
             public void checkConnection() throws IOException {
                 // do nothing
             }
-            
+
             @Override
             public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
                 File f = new File(basePath, path);
@@ -66,7 +66,7 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
                     File parent = f.getParentFile();
                     if (parent.list().length == 0) parent.delete();
                 } catch (Throwable e) {
-                    Data.logger.warn("FileSystemStorageFactory.load ", e);
+                    Logger.warn(this.getClass(), "FileSystemStorageFactory.load ", e);
                 }
                 return new Asset<byte[]>(FilesystemStorageFactory.this, b);
             }
@@ -75,7 +75,7 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
             public void close() {
                 // do nothing
             }
-            
+
         };
     }
 
@@ -83,7 +83,7 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
     public String getSystem() {
         return "file";
     }
-    
+
     @Override
     public String getHost() {
         return null;

@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -34,18 +34,19 @@ import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 
 import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.mcp.MCP;
 import net.yacy.grid.mcp.Service;
 
 public class FTPStorageFactory implements StorageFactory<byte[]> {
 
     private static int DEFAULT_PORT = 21;
-    
+
     private String server, username, password;
     private int port;
     private Storage<byte[]> ftpClient;
     private boolean deleteafterread, active;
-    
+
     public FTPStorageFactory(String server, int port, String username, String password, boolean deleteafterread, boolean active) throws IOException {
         this.server = server;
         this.username = username == null ? "" : username;
@@ -60,7 +61,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             public void checkConnection() throws IOException {
                 return;
             }
-            
+
             private FTPClient initConnection() throws IOException {
                 FTPClient ftp = new FTPClient();
                 ftp.setDataTimeout(3000);
@@ -72,7 +73,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                 }
                 if (FTPStorageFactory.this.active)
                 	ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
-                else 
+                else
                 	ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
                 int reply = ftp.getReplyCode();
                 if(!FTPReply.isPositiveCompletion(reply)) {
@@ -87,7 +88,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                 ftp.setBufferSize(8192);
                 return ftp;
             }
-            
+
             @Override
             public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
                 long t0 = System.currentTimeMillis();
@@ -98,12 +99,12 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                     long t2 = System.currentTimeMillis();
                     if (FTPStorageFactory.this.active)
                     	ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
-                    else 
+                    else
                     	ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
                     boolean success = ftp.storeFile(file, new ByteArrayInputStream(asset));
                     long t3 = System.currentTimeMillis();
                     if (!success) throw new IOException("storage to path " + path + " was not successful (storeFile=false)");
-                    Data.logger.debug("FTPStorageFactory.store ftp store successfull: check connection = " + (t1 - t0) + ", cdPath = " + (t2 - t1) + ", store = " + (t3 - t2));
+                    Logger.debug(this.getClass(), "FTPStorageFactory.store ftp store successfull: check connection = " + (t1 - t0) + ", cdPath = " + (t2 - t1) + ", store = " + (t3 - t2));
                 } catch (IOException e) {
                     throw e;
                 } finally {
@@ -122,7 +123,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                     baos = new ByteArrayOutputStream();
                     if (FTPStorageFactory.this.active)
                     	ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
-                    else 
+                    else
                     	ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
                     ftp.retrieveFile(file, baos);
                     b = baos.toByteArray();
@@ -137,7 +138,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                             ftp.removeDirectory(path);
                         }
                     } catch (Throwable e) {
-                        Data.logger.warn("FTPStorageFactory.load failed to remove asset " + path, e );
+                        Logger.warn(this.getClass(), "FTPStorageFactory.load failed to remove asset " + path, e );
                     }
                 } catch (IOException e) {
                     throw e;
@@ -150,7 +151,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             @Override
             public void close() {
             }
-            
+
             private String cdPath(FTPClient ftp, String path) throws IOException {
                 int success_code = ftp.cwd("/");
                 if (success_code >= 300) throw new IOException("cannot cd into " + path + ": " + success_code);
@@ -178,11 +179,11 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
     public String getSystem() {
         return "ftp";
     }
-    
+
     @Override
     public String getConnectionURL() {
         return "ftp://" +
-                (this.username != null && this.username.length() > 0 ? username + (this.password != null && this.password.length() > 0 ? ":" + this.password : "") + "@" : "") +
+                (this.username != null && this.username.length() > 0 ? this.username + (this.password != null && this.password.length() > 0 ? ":" + this.password : "") + "@" : "") +
                 this.getHost() + ((this.hasDefaultPort() ? "" : ":" + this.getPort()));
     }
 
@@ -216,7 +217,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             List<Class<? extends Servlet>> services = new ArrayList<>();
             services.addAll(Arrays.asList(MCP.MCP_SERVICES));
             Service.initEnvironment(MCP.MCP_SERVICE, services, MCP.DATA_PATH, true);
-            
+
             //Data.init(new File("data"), new HashMap<String, String>(), true);
             FTPStorageFactory ftpc = new FTPStorageFactory("brain.local", 2121, "admin", "admin", true, true);
             Storage<byte[]> storage = ftpc.getStorage();
@@ -230,5 +231,5 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             e.printStackTrace();
         }
     }
-    
+
 }

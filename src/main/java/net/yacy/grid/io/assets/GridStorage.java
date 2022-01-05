@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.MultiProtocolURL;
 
 public class GridStorage extends PeerStorage implements Storage<byte[]> {
@@ -71,7 +71,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         try {
             u = new MultiProtocolURL(url);
         } catch (MalformedURLException e) {
-            Data.logger.debug("GridStorage.connectS3 trying to connect to the s3 server at " + url + " failed: " + e.getMessage());
+            Logger.debug(this.getClass(), "GridStorage.connectS3 trying to connect to the s3 server at " + url + " failed: " + e.getMessage());
             return false;
         }
         this.host = u.getHost();
@@ -89,7 +89,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
             this.s3 = s3;
             return true;
         } catch (IOException e) {
-            Data.logger.debug("GridStorage.connectS3 trying to connect to the ftp server at " + this.host + ":" + this.port + " failed");
+            Logger.debug(this.getClass(), "GridStorage.connectS3 trying to connect to the ftp server at " + this.host + ":" + this.port + " failed");
             return false;
         }
     }
@@ -108,7 +108,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         try {
             u = new MultiProtocolURL(url);
         } catch (MalformedURLException e) {
-            Data.logger.debug("GridStorage.connectFTP trying to connect to the ftp server at " + url + " failed: " + e.getMessage());
+            Logger.debug(this.getClass(), "GridStorage.connectFTP trying to connect to the ftp server at " + url + " failed: " + e.getMessage());
             return false;
         }
         this.host = u.getHost();
@@ -126,7 +126,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
             this.ftp = ftp;
             return true;
         } catch (IOException e) {
-            Data.logger.debug("GridStorage.connectFTP trying to connect to the ftp server at " + this.host + ":" + this.port + " failed");
+            Logger.debug(this.getClass(), "GridStorage.connectFTP trying to connect to the ftp server at " + this.host + ":" + this.port + " failed");
             return false;
         }
     }
@@ -145,7 +145,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
             this.mcp.getStorage().checkConnection();
             return true;
         } catch (IOException e) {
-            Data.logger.debug("GridStorage.connectMCP trying to connect to a Storage over MCP at " + host + ":" + port + " failed");
+            Logger.debug(this.getClass(), "GridStorage.connectMCP trying to connect to a Storage over MCP at " + host + ":" + port + " failed");
             return false;
         }
     }
@@ -158,7 +158,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
                 this.s3_fail.set(0);
                 return sf;
             } catch (IOException e) {
-                Data.logger.debug("GridStorage.store trying to connect to the ftp server failed", e);
+                Logger.debug(this.getClass(), "GridStorage.store trying to connect to the ftp server failed", e);
             }
             this.s3_fail.incrementAndGet();
         }
@@ -174,7 +174,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
                     // possible causes:
                     // 421 too many connections. possible counteractions: in apacheftpd, set i.e. ftpserver.user.anonymous.maxloginnumber=200 and ftpserver.user.anonymous.maxloginperip=200
                     if (cause.indexOf("421") >= 0) {try {Thread.sleep(retry * 500);} catch (InterruptedException e1) {} continue retryloop;}
-                    Data.logger.debug("GridStorage.store trying to connect to the ftp server failed, attempt " + retry + ": " + cause, e);
+                    Logger.debug(this.getClass(), "GridStorage.store trying to connect to the ftp server failed, attempt " + retry + ": " + cause, e);
                 }
             }
             this.ftp_fail.incrementAndGet();
@@ -182,7 +182,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         if (this.mcp != null) try {
             return this.mcp.getStorage().store(path, asset);
         } catch (IOException e) {
-            Data.logger.debug("GridStorage.store trying to connect to the mcp failed: " + e.getMessage(), e);
+            Logger.debug(this.getClass(), "GridStorage.store trying to connect to the mcp failed: " + e.getMessage(), e);
         }
         // failback to local storage
         return super.store(path, asset);
@@ -204,7 +204,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
                     this.s3_fail.set(0);
                     return asset;
                 } catch (IOException e) {
-                    Data.logger.debug("GridStorage.load trying to connect to the s3 server failed", e);
+                    Logger.debug(this.getClass(), "GridStorage.load trying to connect to the s3 server failed", e);
                 }
             this.s3_fail.incrementAndGet();
         }
@@ -220,7 +220,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
                     // 421 too many connections. possible counteractions: in apacheftpd, set i.e. ftpserver.user.anonymous.maxloginnumber=200 and ftpserver.user.anonymous.maxloginperip=200
                     if (cause.indexOf("421") >= 0) {try {Thread.sleep(retry * 500);} catch (InterruptedException e1) {} continue retryloop;}
                     if (cause.indexOf("refused") >= 0) break retryloop; // this will not go anywhere
-                    Data.logger.debug("GridStorage.load trying to connect to the ftp server failed, attempt " + retry + ": " + cause, e);
+                    Logger.debug(this.getClass(), "GridStorage.load trying to connect to the ftp server failed, attempt " + retry + ": " + cause, e);
                 }
             }
             this.ftp_fail.incrementAndGet();
@@ -228,7 +228,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
         if (this.mcp != null) try {
             return this.mcp.getStorage().load(path);
         } catch (IOException e) {
-            Data.logger.debug("GridStorage.load trying to connect to the mcp failed: " + e.getMessage(), e);
+            Logger.debug(this.getClass(), "GridStorage.load trying to connect to the mcp failed: " + e.getMessage(), e);
         }
         // no options left
         throw new IOException("no storage factory available to load asset");

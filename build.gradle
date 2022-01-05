@@ -67,5 +67,4 @@ dependencies {
     compile group: 'org.mapdb', name: 'mapdb', version: '3.+'
     compile group: 'org.slf4j', name: 'log4j-over-slf4j', version: '1.7.+'
     compile group: 'org.slf4j', name: 'slf4j-jdk14', version: '1.7.+'
-    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.+'
 }

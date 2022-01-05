@@ -48,19 +48,20 @@ import com.google.common.collect.Multimap;
 
 import net.yacy.grid.io.index.BoostsFactory.Boosts;
 import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.DateParser;
 
 public class YaCyQuery {
-    
+
     private static char space = ' ';
     private static char sq = '\'';
     private static char dq = '"';
     //private static String seps = ".:;#*`,!$%()=?^<>/&";
-    
-    
+
+
     public final static String FACET_DEFAULT_PARAMETER = "host_s,url_file_ext_s,author_sxt,dates_in_content_dts,language_s,url_protocol_s,collection_sxt";
-    
+
     public List<String> collectionTextFilterQuery(boolean noimages) {
         final ArrayList<String> fqs = new ArrayList<>();
 
@@ -70,7 +71,7 @@ public class YaCyQuery {
             fqs.add("-" + WebMapping.content_type.getMapping().name() + ":(image/*)");
             fqs.add("-" + WebMapping.url_file_ext_s.getMapping().name() + ":(jpg OR png OR gif)");
         }
-        
+
         return fqs;
     }
 
@@ -94,10 +95,10 @@ public class YaCyQuery {
         this.yacyModifiers = new HashSet<>();
         this.positiveBag = new HashSet<>();
         this.negativeBag = new HashSet<>();
-        
+
         // parse the query string
         this.queryBuilder = preparse(q, timezoneOffset);
-        
+
         // handle constraints and document types
         if (this.collections != null && this.collections.length > 0) {
             // attach collection constraint
@@ -129,16 +130,16 @@ public class YaCyQuery {
             qb.must(QueryBuilders.rangeQuery(WebMapping.videolinkscount_i.getMapping().name()).gt(new Integer(0)));
             this.queryBuilder = qb;
         }
-        
+
         // ready
-        //Data.logger.info("YaCyQuery: " + this.queryBuilder.toString());
-        Data.logger.info("YaCyQuery: " + q);
+        //Logger.info(this.getClass(), "YaCyQuery: " + this.queryBuilder.toString());
+        Logger.info(this.getClass(), "YaCyQuery: " + q);
     }
-    
+
     private static List<String> splitIntoORGroups(String q) {
         // detect usage of OR junctor usage. Right now we cannot have mixed AND and OR usage. Thats a hack right now
         q = q.replaceAll(" AND ", " "); // AND is default
-        
+
         // tokenize the query
         ArrayList<String> list = new ArrayList<>();
         Matcher m = term4ORPattern.matcher(q);
@@ -152,7 +153,7 @@ public class YaCyQuery {
         if (q.length() > 0) list.add(0, q);
         return list;
     }
-    
+
     /**
      * fixing a query mistake covers most common wrong queries from the user
      * @param q
@@ -163,14 +164,14 @@ public class YaCyQuery {
         q = q.replaceAll(" AND ", " "); // AND is default
         return q;
     }
-    
+
 
     private QueryBuilder preparse(String q, int timezoneOffset) {
         // detect usage of OR connector usage.
         q = fixQueryMistakes(q);
         List<String> terms = splitIntoORGroups(q); // OR binds stronger than AND
         //if (terms.size() == 0) QueryBuilders.constantScoreQuery(QueryBuilders.matchAllQuery());
-        
+
         // special handling: we don't need a boolean query builder on top; just return one parse object
         if (terms.size() == 1) return parse(terms.get(0), timezoneOffset);
 
@@ -182,7 +183,7 @@ public class YaCyQuery {
         }
         return aquery;
     }
-    
+
     private final static String[][] modifierTypes = new String[][] {
         new String[] {"id", "_id"},
         new String[] {"intitle", WebMapping.title.getMapping().name()},
@@ -192,18 +193,18 @@ public class YaCyQuery {
         new String[] {"author", WebMapping.author_sxt.getMapping().name()},
         new String[] {"yacy", "_id"}
     };
-    
+
     private QueryBuilder parse(String q, int timezoneOffset) {
         // detect usage of OR ORconnective usage. Because of the preparse step we will have only OR or only AND here.
         q = q.replaceAll(" AND ", " "); // AND is default
         boolean ORconnective = q.indexOf(" OR ") >= 0;
         q = q.replaceAll(" OR ", " "); // if we know that all terms are OR, we remove that and apply it later. Because we splitted into OR groups it is right to use OR here only
-        
+
         // tokenize the query
         Set<String> qe = new LinkedHashSet<String>();
         Matcher m = tokenizerPattern.matcher(q);
         while (m.find()) qe.add(m.group(1));
-        
+
         // twitter search syntax:
         //   term1 term2 term3 - all three terms shall appear
         //   "term1 term2 term3" - exact match of all terms
@@ -280,17 +281,17 @@ public class YaCyQuery {
                 continue;
             }
         }
-        
+
         // construct a ranking
         if (modifier.containsKey("boost")) {
             this.boosts.patchWithModifier(modifier.get("boost").iterator().next());
         }
-        
+
         // compose query for text
         List<QueryBuilder> queries = new ArrayList<>();
         // fuzzy matching
-        if (!text_positive_match.isEmpty()) queries.add(simpleQueryBuilder(String.join(" ", text_positive_match), ORconnective, boosts));
-        if (!text_negative_match.isEmpty()) queries.add(QueryBuilders.boolQuery().mustNot(simpleQueryBuilder(String.join(" ", text_negative_match), ORconnective, boosts)));
+        if (!text_positive_match.isEmpty()) queries.add(simpleQueryBuilder(String.join(" ", text_positive_match), ORconnective, this.boosts));
+        if (!text_negative_match.isEmpty()) queries.add(QueryBuilders.boolQuery().mustNot(simpleQueryBuilder(String.join(" ", text_negative_match), ORconnective, this.boosts)));
         // exact matching
         for (String text: text_positive_filter) {
             queries.add(exactMatchQueryBuilder(text, this.boosts));
@@ -298,7 +299,7 @@ public class YaCyQuery {
         for (String text: text_negative_filter) {
             queries.add(QueryBuilders.boolQuery().mustNot(exactMatchQueryBuilder(text, this.boosts)));
         }
-        
+
         // apply modifiers
         Collection<String> values;
         modifier_handling: for (String[] modifierType: modifierTypes) {
@@ -317,7 +318,7 @@ public class YaCyQuery {
                 queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery(index_name, values)));
                 continue modifier_handling;
             }
-           
+
             if ((values = modifier.get("-" + modifier_name)).size() > 0) {
                 if (modifier_name.equals("site") && values.size() == 1) {
                     String host = values.iterator().next();
@@ -375,21 +376,21 @@ public class YaCyQuery {
         } catch (ParseException e) {}
 
         // now combine queries with OR or AND operator
-        
+
         // simple case where we have one query only
         if (queries.size() == 1) {
             return queries.iterator().next();
         }
-        
+
         BoolQueryBuilder b = QueryBuilders.boolQuery();
         for (QueryBuilder filter : queries){
             if (ORconnective) b.should(filter); else b.must(filter);
         }
         if (ORconnective) b.minimumShouldMatch(1);
-        
+
         return b;
     }
-    
+
     public static QueryBuilder simpleQueryBuilder(String q, boolean or, Boosts boosts) {
         if (q.equals("yacyall")) return new MatchAllQueryBuilder();
         final MultiMatchQueryBuilder qb = QueryBuilders
@@ -399,12 +400,12 @@ public class YaCyQuery {
         boosts.forEach((mapping, boost) -> qb.field(mapping.getMapping().name(), boost));
         return qb;
     }
-    
+
     public static QueryBuilder exactMatchQueryBuilder(String q, Boosts boosts) {
         BoolQueryBuilder qb = QueryBuilders.boolQuery();
         boosts.forEach((mapping, boost) -> qb.should(QueryBuilders.termQuery(mapping.getMapping().name(), q)));
         qb.minimumShouldMatch(1);
         return qb;
     }
-    
+
 }

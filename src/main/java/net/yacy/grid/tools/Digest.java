@@ -39,7 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 
 public class Digest {
 
@@ -146,7 +146,7 @@ public class Digest {
         try {
             in = new FileInputStream(file);
         } catch (final java.io.FileNotFoundException e) {
-            Data.logger.warn("file not found:" + file.toString(), e);
+            Logger.warn("file not found:" + file.toString(), e);
             return null;
         }
 
@@ -167,7 +167,7 @@ public class Digest {
                 md5consumer.consume(c);
             }
         } catch (final IOException e) {
-            Data.logger.warn("file error with " + file.toString() + ": " + e.getMessage(), e);
+            Logger.warn("file error with " + file.toString() + ": " + e.getMessage(), e);
             md5consumer.consume(md5FilechunkConsumer.poison);
             throw e;
         } finally {
@@ -180,10 +180,10 @@ public class Digest {
         try {
             return md5result.get().digest();
         } catch (final InterruptedException e) {
-            Data.logger.warn("", e);
+            Logger.warn(e);
             throw new IOException(e);
         } catch (final ExecutionException e) {
-            Data.logger.warn("", e);
+            Logger.warn(e);
             throw new IOException(e);
         }
     }
@@ -222,7 +222,7 @@ public class Digest {
             try {
                 this.filed.put(c);
             } catch (final InterruptedException e) {
-                Data.logger.warn("", e);
+                Logger.warn(this.getClass(), "", e);
             }
         }
 
@@ -230,7 +230,7 @@ public class Digest {
             try {
                 return this.empty.take();
             } catch (final InterruptedException e) {
-                Data.logger.warn("", e);
+                Logger.warn(this.getClass(), "", e);
                 throw new IOException(e);
             }
         }
@@ -246,7 +246,7 @@ public class Digest {
                     this.empty.put(c);
                 }
             } catch (final InterruptedException e) {
-                Data.logger.warn("", e);
+                Logger.warn(this.getClass(), "", e);
             }
             return this.digest;
         }
@@ -292,7 +292,7 @@ public class Digest {
             try {
                 System.out.println("MD5 (" + f.getName() + ") = " + encodeMD5Hex(f));
             } catch (final IOException e) {
-                Data.logger.warn("", e);
+                Logger.warn(e);
             }
         }
 

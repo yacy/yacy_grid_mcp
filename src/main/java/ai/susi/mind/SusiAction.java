@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -25,7 +25,7 @@ import java.util.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.JSONList;
 
 /**
@@ -36,7 +36,7 @@ import net.yacy.grid.tools.JSONList;
 public class SusiAction {
 
     public static enum RenderType {loader, parser, indexer;}
-    
+
     private JSONObject json;
     /**
      * initialize an action using a json description.
@@ -45,19 +45,19 @@ public class SusiAction {
     public SusiAction(JSONObject json) {
         this.json = json;
     }
-    
+
     /**
     * Get the render type. That can be used to filter specific information from the action JSON object
     * to create specific activities like 'saying' a sentence, painting a graph and so on.
     * @return the action type
     */
     public RenderType getRenderType() {
-        if (renderTypeCache == null) 
-            renderTypeCache = this.json.has("type") ? RenderType.valueOf(this.json.getString("type")) : null;
-        return renderTypeCache;
+        if (this.renderTypeCache == null)
+            this.renderTypeCache = this.json.has("type") ? RenderType.valueOf(this.json.getString("type")) : null;
+        return this.renderTypeCache;
     }
     private RenderType renderTypeCache = null;
-    
+
     /**
      * if the action contains more String attributes where these strings are named, they can be retrieved here
      * @param attr the name of the string attribute
@@ -95,29 +95,29 @@ public class SusiAction {
         }
         return j;
     }
-    
+
     public JSONArray getEmbeddedActions() {
         return this.json.getJSONArray("actions");
     }
-    
+
     public boolean hasAsset(String name) {
         if (!this.json.has("assets")) return false;
         JSONObject assets = this.json.getJSONObject("assets");
         return assets.has(name);
     }
-    
+
     // attach a binary asset to the action
     public SusiAction setBinaryAsset(String name, byte[] b) {
         JSONObject assets;
         if (this.json.has("assets")) assets = this.json.getJSONObject("assets"); else {
             assets = new JSONObject();
             this.json.put("assets", assets);
-        } 
+        }
         final String bAsBase64 = Base64.getEncoder().encodeToString(b);
         assets.put(name, bAsBase64);
         return this;
     }
-    
+
     // read a binary asset from the action
     public byte[] getBinaryAsset(String name) {
         if (!this.json.has("assets")) return null;
@@ -125,7 +125,7 @@ public class SusiAction {
         String bAsBase64 = assets.getString(name);
         return Base64.getDecoder().decode(bAsBase64);
     }
-    
+
     public JSONList getJSONListAsset(String name) {
         if (!this.json.has("assets")) return null;
         JSONObject assets = this.json.getJSONObject("assets");
@@ -133,11 +133,11 @@ public class SusiAction {
         try {
 			return new JSONList(jsonlist);
 		} catch (IOException e) {
-            Data.logger.warn("error in getJSONListAsset with name " + name, e);
+            Logger.warn(this.getClass(), "error in getJSONListAsset with name " + name, e);
 			return null;
 		}
     }
-    
+
     public SusiAction setJSONListAsset(String name, JSONList list) {
         JSONObject assets;
         if (this.json.has("assets")) assets = this.json.getJSONObject("assets"); else {
@@ -147,11 +147,12 @@ public class SusiAction {
         assets.put(name, list.toArray());
         return this;
     }
-    
+
     /**
      * toString
      * @return return the json representation of the object as a string
      */
+    @Override
     public String toString() {
         return toJSONClone().toString();
     }

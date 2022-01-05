@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -36,10 +36,10 @@ import ai.susi.mind.SusiAction;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.io.index.CrawlerDocument;
-import net.yacy.grid.io.index.CrawlerMapping;
-import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.io.index.CrawlerDocument.Status;
+import net.yacy.grid.io.index.CrawlerMapping;
 import net.yacy.grid.io.index.GridIndex;
+import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.mcp.api.admin.InquirySubmitService;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
@@ -70,7 +70,7 @@ import net.yacy.grid.tools.MultiProtocolURL;
 
 /**
  * The Master Connect Program
- * 
+ *
  * URL for RabbitMQ: http://searchlab.eu:15672/
  */
 public class MCP {
@@ -78,7 +78,7 @@ public class MCP {
     public final static YaCyServices MCP_SERVICE = YaCyServices.mcp;
     public final static YaCyServices INDEXER_SERVICE = YaCyServices.indexer;
     public final static String DATA_PATH = "data";
- 
+
     // define services
     @SuppressWarnings("unchecked")
     public final static Class<? extends Servlet>[] MCP_SERVICES = new Class[]{
@@ -143,7 +143,7 @@ public class MCP {
                    byte[] source = asset.getPayload();
                    jsonlist = new JSONList(new ByteArrayInputStream(source));
                } catch (IOException e) {
-                   Data.logger.warn("MCP.processAction could not read asset from storage: " + sourceasset_path, e);
+                   Logger.warn(this.getClass(), "MCP.processAction could not read asset from storage: " + sourceasset_path, e);
                    return ActionResult.FAIL_IRREVERSIBLE;
                }
 
@@ -163,7 +163,7 @@ public class MCP {
                                        Data.config.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
                                        Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
                                        urlid, json.toMap());
-                   Data.logger.info("MCP.processAction indexed " + ((line + 1)/2)  + "/" + jsonlist.length()/2 + "(" + (created ? "created" : "updated")+ "): " + url);
+                   Logger.info(this.getClass(), "MCP.processAction indexed " + ((line + 1)/2)  + "/" + jsonlist.length()/2 + "(" + (created ? "created" : "updated")+ "): " + url);
                    //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
                    //bulk.add(be);
 
@@ -176,16 +176,16 @@ public class MCP {
                        // check with http://localhost:9200/crawler/_search?q=status_s:indexed
                    } catch (IOException e) {
                        // well that should not happen
-                       Data.logger.warn("could not write crawler index", e);
+                       Logger.warn(this.getClass(), "could not write crawler index", e);
                    }
                } catch (JSONException je) {
-                   Data.logger.warn("", je);
+                   Logger.warn(this.getClass(), "", je);
                }
                //Data.index.writeMapBulk(GridIndex.WEB_INDEX_NAME, bulk);
-               Data.logger.info("MCP.processAction processed indexing message from queue: " + sourceasset_path);
+               Logger.info(this.getClass(), "MCP.processAction processed indexing message from queue: " + sourceasset_path);
                return ActionResult.SUCCESS;
            } catch (Throwable e) {
-               Data.logger.warn("MCP.processAction", e);
+               Logger.warn(this.getClass(), "MCP.processAction", e);
                return ActionResult.FAIL_IRREVERSIBLE;
            }
        }
@@ -205,15 +205,15 @@ public class MCP {
         new Thread(brokerListener).start();
 
         // start server
-        Data.logger.info("started MCP");
-        Data.logger.info("Grid Name: " + Data.config.get("grid.name"));
-        Data.logger.info(new GitTool().toString());
-        Data.logger.info("you can now search using the query api, i.e.:");
-        Data.logger.info("curl http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=test");
+        Logger.info("started MCP");
+        Logger.info("Grid Name: " + Data.config.get("grid.name"));
+        Logger.info(new GitTool().toString());
+        Logger.info("you can now search using the query api, i.e.:");
+        Logger.info("curl http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=test");
         Service.runService(null);
 
         // this line is reached if the server was shut down
-        Data.logger.info("terminating MCP");
+        Logger.info("terminating MCP");
         brokerListener.terminate();
     }
 

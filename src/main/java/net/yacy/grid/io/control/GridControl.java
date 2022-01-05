@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -36,12 +36,12 @@ import org.json.JSONObject;
 import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.mcp.MCP;
 import net.yacy.grid.mcp.Service;
 import net.yacy.grid.mcp.api.control.LoaderThrottlingService;
 import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.tools.MultiProtocolURL;
-import net.yacy.grid.mcp.Data;
-import net.yacy.grid.mcp.MCP;
 
 public class GridControl {
 
@@ -65,7 +65,7 @@ public class GridControl {
         this.mcp_port = port;
         try {
             checkConnection();
-            Data.logger.info("Index/Client: connected to MCP control at " + host + ":" + port);
+            Logger.info(this.getClass(), "Index/Client: connected to MCP control at " + host + ":" + port);
             return true;
         } catch (IOException e) {
             return false;
@@ -103,7 +103,7 @@ public class GridControl {
         if (lastLoadTime == null) {
             // the host was never loaded!
             loaderAccess.put(host, System.currentTimeMillis());
-            Data.logger.info("GridControl.computeThrottling: never-loaded " + host + ", delay = 0, url = " + url);
+            Logger.info("GridControl.computeThrottling: never-loaded " + host + ", delay = 0, url = " + url);
             return 0;
         }
         // compute access delta
@@ -112,15 +112,15 @@ public class GridControl {
             // the latest load time was in the past
             loaderAccess.put(host, System.currentTimeMillis());
             long delay = Math.max(0, delta + 500); // in case that delta < -500, we don't need a throttling at all
-            if (delay > 0) Data.logger.info("GridControl.computeThrottling: past-loaded " + host + ", delay = " + delay + ", url = " + url);
-            return delay; 
+            if (delay > 0) Logger.info("GridControl.computeThrottling: past-loaded " + host + ", delay = " + delay + ", url = " + url);
+            return delay;
         }
         // the latest load time will be loaded by another thread in the future
         // we must add another delay to this
         long future = System.currentTimeMillis() + delta + 500;
         long delay = future - System.currentTimeMillis();
         loaderAccess.put(host, future);
-        Data.logger.info("GridControl.computeThrottling: future-loading " + host + ", delay = " + delay + ", url = " + url);
+        Logger.info("GridControl.computeThrottling: future-loading " + host + ", delay = " + delay + ", url = " + url);
         return delay; // == delta + 500
     }
 
@@ -159,5 +159,5 @@ public class GridControl {
         }
         System.out.println(delay);
     }
-    
+
 }

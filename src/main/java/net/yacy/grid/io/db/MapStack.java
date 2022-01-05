@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -24,36 +24,35 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 
 /**
  * A stack based on a map
  */
 public class MapStack<A> implements Stack<A> {
-    
+
     private NavigableCloseableMap<Long, A> map;
     private AtomicLong cc;
-    
+
     public MapStack(NavigableCloseableMap<Long, A> backedMap) {
         this.map = backedMap;
         this.cc = new AtomicLong(0);
     }
-    
+
     @Override
     public MapStack<A> clear() throws IOException {
         this.map.clear();
-       
+
         return this;
     }
-    
+
     @Override
     public int size() {
-        return map.size();
+        return this.map.size();
     }
-    
+
     @Override
     public boolean isEmpty() {
         return this.map.isEmpty();
@@ -89,14 +88,14 @@ public class MapStack<A> implements Stack<A> {
 
     @Override
     public void close() {
-        if (map instanceof Closeable)
+        if (this.map instanceof Closeable)
             try {
                 ((Closeable) this.map).close();
             } catch (IOException e) {
-                Data.logger.warn("", e);
+                Logger.warn(this.getClass(), e);
             }
     }
-    
+
     public static void main(String[] args) {
         File f = new File("/tmp/stacktest");
         MapStack<byte[]> stack = new MapStack<byte[]>(new MapDBSortedMap(f));

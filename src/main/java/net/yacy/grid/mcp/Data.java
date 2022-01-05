@@ -25,9 +25,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.io.assets.GridStorage;
 import net.yacy.grid.io.control.GridControl;
@@ -48,18 +45,13 @@ public class Data {
     public static GridStorage gridStorage;
     public static GridIndex gridIndex;
     public static GridControl gridControl;
-    public static Logger logger;
     public static Map<String, String> config;
-    public static LogAppender logAppender;
     public static BoostsFactory boostsFactory;
 
     //public static Swagger swagger;
 
     public static void init(File serviceData, Map<String, String> cc, boolean localStorage) {
-        PatternLayout layout = new PatternLayout("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %p %c %x - %m%n");
-        logger = Logger.getRootLogger();
-        logAppender = new LogAppender(layout, 10000);
-        logger.addAppender(logAppender);
+
         //final LogManager logManager = LogManager.getLogManager();
         config = cc;
         /*
@@ -101,7 +93,7 @@ public class Data {
 
         // check network situation
         try {
-            Data.logger.info("Local Host Address: " + InetAddress.getLocalHost().getHostAddress());
+            Logger.info("Local Host Address: " + InetAddress.getLocalHost().getHostAddress());
         } catch (UnknownHostException e1) {
             e1.printStackTrace();
         }
@@ -122,7 +114,7 @@ public class Data {
                     Data.gridIndex.connectMCP(host, port) &&
                     Data.gridControl.connectMCP(host, port)
                 ) {
-                Data.logger.info("Connected MCP at " + getHost(address));
+                Logger.info("Connected MCP at " + getHost(address));
                 mcpConnected = true;
                 break;
             }
@@ -136,12 +128,12 @@ public class Data {
             for (String address: gridBrokerAddress) {
                 if (!OS.portIsOpen(address)) continue;
                 if (Data.gridBroker.connectRabbitMQ(getHost(address), getPort(address, "-1"), getUser(address, "anonymous"), getPassword(address, "yacy"))) {
-                    Data.logger.info("Connected Broker at " + getHost(address));
+                    Logger.info("Connected Broker at " + getHost(address));
                     break;
                 }
             }
             if (!Data.gridBroker.isRabbitMQConnected()) {
-                Data.logger.info("Connected to the embedded Broker");
+                Logger.info("Connected to the embedded Broker");
             }
 
             // connect storage
@@ -150,7 +142,7 @@ public class Data {
             boolean  gridS3Active = config.containsKey("grid.s3.active") ? "true".equals(config.get("grid.s3.active")) : true;
             for (String address: gridS3Address) {
                 if (address.length() > 0 && Data.gridStorage.connectS3(getHost(address) /*bucket.endpoint*/, getPort(address, "9000"), getUser(address, "admin"), getPassword(address, "12345678"), gridS3Active)) {
-                    Data.logger.info("Connected S3 Storage at " + getHost(address));
+                    Logger.info("Connected S3 Storage at " + getHost(address));
                     break;
                 }
             }
@@ -160,14 +152,14 @@ public class Data {
             boolean  gridFtpActive = config.containsKey("grid.ftp.active") ? "true".equals(config.get("grid.ftp.active")) : true;
             for (String address: gridFtpAddress) {
                 if (address.length() > 0 && Data.gridStorage.connectFTP(getHost(address), getPort(address, "2121"), getUser(address, "admin"), getPassword(address, "admin"), gridFtpActive)) {
-                    Data.logger.info("Connected FTP Storage at " + getHost(address));
+                    Logger.info("Connected FTP Storage at " + getHost(address));
                     break;
                 }
             }
 
             // if there is no ftp and no s3 connection, we use a local asset storage
             if (!Data.gridStorage.isFTPConnected() && !Data.gridStorage.isS3Connected()) {
-                Data.logger.info("Connected to the embedded Asset Storage");
+                Logger.info("Connected to the embedded Asset Storage");
             }
 
             // connect index
@@ -187,7 +179,7 @@ public class Data {
         }
 
         // find connections first here before concurrent threads try to make their own connection concurrently
-        try { Data.gridIndex.checkConnection(); } catch (IOException e) { Data.logger.fatal("no connection to MCP", e); }
+        try { Data.gridIndex.checkConnection(); } catch (IOException e) { Logger.fatal("no connection to MCP", e); }
 
         // init boosts from configuration
         Map<String, String> defaultBoosts = Service.readDoubleConfig("boost.properties");
@@ -220,7 +212,7 @@ public class Data {
 
     public static void clearCaches() {
         // should i.e. be called in case of short memory status
-        logAppender.clean(5000);
+        Logger.clean(5000);
 
     }
 

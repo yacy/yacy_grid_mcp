@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -28,7 +28,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.JSONList;
 
 public class GridIndex implements Index {
@@ -88,11 +88,11 @@ public class GridIndex implements Index {
         loop: while (this.shallRun) {
             try {
                 this.elasticIndexFactory = new ElasticIndexFactory(address, cluster);
-                Data.logger.info("Index/Client: connected to elasticsearch at " + address);
+                Logger.info(this.getClass(), "Index/Client: connected to elasticsearch at " + address);
                 this.elastic_address = address;
                 return true;
             } catch (IOException e) {
-                Data.logger.info("Index/Client: trying to connect to elasticsearch at " + address + " failed", e);
+                Logger.warn(this.getClass(), "Index/Client: trying to connect to elasticsearch at " + address + " failed", e);
                 try {Thread.sleep(5000);} catch (InterruptedException e1) {}
                 continue loop;
             }
@@ -124,7 +124,7 @@ public class GridIndex implements Index {
         this.mcp_host = host;
         this.mcp_port = port;
         this.mcpIndexFactory = new MCPIndexFactory(this, host, port);
-        Data.logger.info("Index/Client: connected to an index over MCP at " + host + ":" + port);
+        Logger.info(this.getClass(), "Index/Client: connected to an index over MCP at " + host + ":" + port);
         return true;
     }
 
@@ -156,23 +156,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
             this.elasticIndexFactory.getIndex().add(indexName, typeName, id, object);
-            //Data.logger.info("Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return this.elasticIndexFactory;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
             this.mcpIndexFactory.getIndex().add(indexName, typeName, id, object);
-            //Data.logger.info("Index/Client: add mcp service '" + mcp_host + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: add mcp service '" + mcp_host + "', object with id:" + id);
             return this.mcpIndexFactory;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: add mcp service '" + mcp_host + "',mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: add mcp service '" + this.mcp_host + "',mcp fail", e);
         }
         throw new IOException("Index/Client: add mcp service: no factory found!");
     }
@@ -184,23 +184,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
             this.elasticIndexFactory.getIndex().addBulk(indexName, typeName, objects);
-            //Data.logger.info("Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return this.elasticIndexFactory;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
             this.mcpIndexFactory.getIndex().addBulk(indexName, typeName, objects);
-            //Data.logger.info("Index/Client: add mcp service '" + mcp_host + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: add mcp service '" + mcp_host + "', object with id:" + id);
             return this.mcpIndexFactory;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: add mcp service '" + mcp_host + "',mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: add mcp service '" + this.mcp_host + "',mcp fail", e);
         }
         throw new IOException("Index/Client: add mcp service: no factory found!");
     }
@@ -212,23 +212,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
             boolean exist = this.elasticIndexFactory.getIndex().exist(indexName, id);
-            //Data.logger.info("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
             boolean exist = this.mcpIndexFactory.getIndex().exist(indexName, id);
-            //Data.logger.info("Index/Client: exist mcp service '" + mcp_host + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: exist mcp service '" + mcp_host + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: exist mcp service '" + mcp_host + "',mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: exist mcp service '" + this.mcp_host + "',mcp fail", e);
         }
         throw new IOException("Index/Client: exist mcp service: no factory found!");
     }
@@ -240,23 +240,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
             Set<String> exist = this.elasticIndexFactory.getIndex().existBulk(indexName, ids);
-            //Data.logger.info("Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: existBulk elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: existBulk elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
             Set<String> exist = this.mcpIndexFactory.getIndex().existBulk(indexName, ids);
-            //Data.logger.info("Index/Client: exist mcp service '" + mcp_host + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: exist mcp service '" + mcp_host + "', object with id:" + id);
             return exist;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: existBulk mcp service '" + mcp_host + "', mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: existBulk mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: existBulk mcp service: no factory found!");
     }
@@ -268,23 +268,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
             long count = this.elasticIndexFactory.getIndex().count(indexName, language, query);
-            //Data.logger.info("Index/Client: count elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
+            //Logger.info(this.getClass(), "Index/Client: count elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return count;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: count elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: count elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
             long count = this.mcpIndexFactory.getIndex().count(indexName, language, query);
-            //Data.logger.info("Index/Client: count mcp service '" + mcp_host + "', object with query:" + query);
+            //Logger.info(this.getClass(), "Index/Client: count mcp service '" + mcp_host + "', object with query:" + query);
             return count;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: count mcp service '" + mcp_host + "', mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: count mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: count mcp service: no factory found!");
     }
@@ -296,23 +296,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
             JSONObject json = this.elasticIndexFactory.getIndex().query(indexName, id);
-            //Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return json;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: query/3 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: query/3 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
             JSONObject json = this.mcpIndexFactory.getIndex().query(indexName, id);
-            //Data.logger.info("Index/Client: query mcp service '" + mcp_host + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: query mcp service '" + mcp_host + "', object with id:" + id);
             return json;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: query/3 mcp service '" + mcp_host + "', mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: query/3 mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: query/3 mcp service: no factory found!");
     }
@@ -324,23 +324,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
             Map<String, JSONObject> map = this.elasticIndexFactory.getIndex().queryBulk(indexName, ids);
-            //Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return map;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: queryBulk/3 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: queryBulk/3 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
             Map<String, JSONObject> map = this.mcpIndexFactory.getIndex().queryBulk(indexName, ids);
-            //Data.logger.info("Index/Client: query mcp service '" + mcp_host + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: query mcp service '" + mcp_host + "', object with id:" + id);
             return map;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: queryBulk/3 mcp service '" + mcp_host + "', mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: queryBulk/3 mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: queryBulk/3 mcp service: no factory found!");
     }
@@ -352,23 +352,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
             JSONList list = this.elasticIndexFactory.getIndex().query(indexName, language, query, start, count);
-            //Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
+            //Logger.info(this.getClass(), "Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return list;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: query/6 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: query/6 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
             JSONList list = this.mcpIndexFactory.getIndex().query(indexName, language, query, start, count);
-            //Data.logger.info("Index/Client: query mcp service '" + mcp_host + "', object with query:" + query);
+            //Logger.info(this.getClass(), "Index/Client: query mcp service '" + mcp_host + "', object with query:" + query);
             return list;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: query/6 mcp service '" + mcp_host + "', mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: query/6 mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: query/6 mcp service: no factory found!");
     }
@@ -380,23 +380,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
         	JSONObject queryResult = this.elasticIndexFactory.getIndex().query(indexName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
-            //Data.logger.info("Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
+            //Logger.info(this.getClass(), "Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return queryResult;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: query/12 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: query/12 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
         	JSONObject queryResult = this.mcpIndexFactory.getIndex().query(indexName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
-            //Data.logger.info("Index/Client: query mcp service '" + mcp_host + "', object with query:" + query);
+            //Logger.info(this.getClass(), "Index/Client: query mcp service '" + mcp_host + "', object with query:" + query);
             return queryResult;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: query/12 mcp service '" + mcp_host + "', mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: query/12 mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: query/12 mcp service: no factory found!");
     }
@@ -408,23 +408,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
             boolean deleted = this.elasticIndexFactory.getIndex().delete(indexName, typeName, id);
-            //Data.logger.info("Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return deleted;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
             boolean deleted = this.mcpIndexFactory.getIndex().delete(indexName, typeName, id);
-            //Data.logger.info("Index/Client: delete mcp service '" + mcp_host + "', object with id:" + id);
+            //Logger.info(this.getClass(), "Index/Client: delete mcp service '" + mcp_host + "', object with id:" + id);
             return deleted;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: delete mcp service '" + mcp_host + "', mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: delete mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: delete mcp service: no factory found!");
     }
@@ -436,23 +436,23 @@ public class GridIndex implements Index {
         }
         if (this.elasticIndexFactory != null) try {
             long deleted = this.elasticIndexFactory.getIndex().delete(indexName, language, query);
-            //Data.logger.info("Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
+            //Logger.info(this.getClass(), "Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return deleted;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
+            Logger.debug(this.getClass(), "Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
             connectMCP(this.mcp_host, this.mcp_port); // try to connect again..
             if (this.mcpIndexFactory == null) {
-                Data.logger.warn("Index/Client: FATAL: connection to MCP lost!");
+                Logger.warn(this.getClass(), "Index/Client: FATAL: connection to MCP lost!");
             }
         }
         if (this.mcpIndexFactory != null) try {
             long deleted = this.mcpIndexFactory.getIndex().delete(indexName, language, query);
-            //Data.logger.info("Index/Client: delete mcp service '" + mcp_host + "', object with query:" + query);
+            //Logger.info(this.getClass(), "Index/Client: delete mcp service '" + mcp_host + "', object with query:" + query);
             return deleted;
         } catch (IOException e) {
-            Data.logger.debug("Index/Client: delete mcp service '" + mcp_host + "', mcp fail", e);
+            Logger.debug(this.getClass(), "Index/Client: delete mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: delete mcp service: no factory found!");
     }

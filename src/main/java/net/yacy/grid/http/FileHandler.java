@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -46,14 +46,14 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.resource.PathResource;
 import org.eclipse.jetty.util.resource.Resource;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.ByteBuffer;
 
 
 public class FileHandler extends ResourceHandler implements Handler {
-    
+
     private final long CACHE_LIMIT = 128L * 1024L;
-    
+
     /**
      * create a custom ResourceHandler with more caching
      * @param expiresSeconds the time each file shall stay in the cache
@@ -61,7 +61,7 @@ public class FileHandler extends ResourceHandler implements Handler {
     public FileHandler() {
         //this.setMinMemoryMappedContentLength((int) CACHE_LIMIT);
     }
-    
+
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         // use the ResourceHandler to handle the request. This method calls doResponseHeaders internally
@@ -77,12 +77,12 @@ public class FileHandler extends ResourceHandler implements Handler {
         setCaching(response, this.expiresSeconds);
     }
     */
-    
+
     public static void setCaching(final HttpServletResponse response, final int expiresSeconds) {
         if (response instanceof org.eclipse.jetty.server.Response) {
             org.eclipse.jetty.server.Response r = (org.eclipse.jetty.server.Response) response;
             HttpFields fields = r.getHttpFields();
-            
+
             // remove the last-modified field since caching otherwise does not work
             /*
                https://www.ietf.org/rfc/rfc2616.txt
@@ -122,16 +122,16 @@ public class FileHandler extends ResourceHandler implements Handler {
             if (!(resource instanceof PathResource) || !resource.exists()) return resource;
             File f = resource.getFile();
             if (f.isDirectory() && !path.equals("/")) return resource;
-            CacheResource cache = resourceCache.get(f);
+            CacheResource cache = this.resourceCache.get(f);
             if (cache != null) return cache;
-            if (f.length() < CACHE_LIMIT || f.getName().endsWith(".html") || path.equals("/")) {
+            if (f.length() < this.CACHE_LIMIT || f.getName().endsWith(".html") || path.equals("/")) {
                 cache = new CacheResource((PathResource) resource);
-                resourceCache.put(f, cache);
+                this.resourceCache.put(f, cache);
                 return cache;
             }
             return resource;
         } catch (IOException e) {
-            Data.logger.warn("", e);
+            Logger.warn(this.getClass(), e);
         }
         return null;
     }
@@ -139,29 +139,29 @@ public class FileHandler extends ResourceHandler implements Handler {
     private final Map<File, CacheResource> resourceCache = new ConcurrentHashMap<>();
     private final static byte[] SSI_START = "<!--#include file=\"".getBytes();
     private final static byte[] SSI_END   = "\" -->".getBytes();
-    
+
     private static class CacheResource extends Resource {
 
         private byte[] buffer;
         private long lastModified;
         private File file;
         private List<File> includes;
-        
+
         public CacheResource(PathResource pathResource) throws IOException {
             this.file = pathResource.getFile();
             if (this.file.isDirectory()) this.file = new File(this.file, "index.html");
             this.includes = new ArrayList<>(8);
             initCache(System.currentTimeMillis());
             pathResource.close();
-            
+
         }
-        
+
         private void initCache(long nextLastModified) throws IOException {
             this.buffer = Files.readAllBytes(this.file.toPath());
             if (this.file.getName().endsWith(".html")) this.buffer = insertSSI(this.buffer);
             this.lastModified = nextLastModified;
         }
-        
+
         private byte[] insertSSI(byte[] b) throws IOException {
             this.includes.clear();
             for (int p = findSSI_start(b, 0); p >= 0; p = findSSI_start(b, p)) {
@@ -191,7 +191,7 @@ public class FileHandler extends ResourceHandler implements Handler {
         private int findSSI_start(byte[] b, int p) {
             return ByteBuffer.indexOf(b, SSI_START, p);
         }
-        
+
         private int findSSI_end(byte[] b, int p) {
             return ByteBuffer.indexOf(b, SSI_END, p);
         }
@@ -211,7 +211,7 @@ public class FileHandler extends ResourceHandler implements Handler {
             for (File d: this.includes) l = Math.max(l, d.lastModified());
             return l;
         }
-        
+
         @Override
         public long lastModified() {
             long l = actualLastModified();
@@ -251,6 +251,6 @@ public class FileHandler extends ResourceHandler implements Handler {
         @Override public boolean isContainedIn(Resource arg0) throws MalformedURLException {throw new UnsupportedOperationException();}
         @Override public boolean renameTo(Resource arg0) throws SecurityException {throw new UnsupportedOperationException();}
     }
-    
-    
+
+
 }

@@ -56,14 +56,15 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -82,11 +83,10 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
-import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 
 /**
  * To get data out of the elasticsearch index which is written with this client, try:
@@ -111,7 +111,7 @@ public class ElasticsearchClient {
      * @param clusterName
      */
     public ElasticsearchClient(final String[] addresses, final String clusterName) {
-        Data.logger.info("ElasticsearchClient initiated client, address: " + addresses[0] + ", clusterName: " + clusterName);
+        Logger.info(this.getClass(), "ElasticsearchClient initiated client, address: " + addresses[0] + ", clusterName: " + clusterName);
         this.addresses = addresses;
         this.clusterName = clusterName;
         connect();
@@ -122,7 +122,7 @@ public class ElasticsearchClient {
         Settings.Builder settings = Settings.builder()
                 .put("cluster.routing.allocation.enable", "all")
                 .put("cluster.routing.allocation.allow_rebalance", "always");
-        if (clusterName != null) settings.put("cluster.name", this.clusterName);
+        if (this.clusterName != null) settings.put("cluster.name", this.clusterName);
 
         // create a client
         System.setProperty("es.set.netty.runtime.available.processors", "false"); // patch which prevents io.netty.util.NettyRuntime$AvailableProcessorsHolder.setAvailableProcessors from failing
@@ -131,11 +131,11 @@ public class ElasticsearchClient {
         	newClient = new PreBuiltTransportClient(settings.build());
             break;
         } catch (Exception e) {
-            Data.logger.warn("failed to create an elastic client, retrying...", e);
+            Logger.warn(this.getClass(), "failed to create an elastic client, retrying...", e);
             try { Thread.sleep(10000); } catch (InterruptedException e1) {}
         }
 
-        for (String address: addresses) {
+        for (String address: this.addresses) {
             String a = address.trim();
             int p = a.indexOf(':');
             if (p >= 0) try {
@@ -144,7 +144,7 @@ public class ElasticsearchClient {
                 //tc.addTransportAddress(new InetSocketTransportAddress(i, port));
                 newClient.addTransportAddress(new TransportAddress(i, port));
             } catch (UnknownHostException e) {
-                Data.logger.warn("", e);
+                Logger.warn(this.getClass(), "", e);
             }
         }
 
@@ -153,8 +153,9 @@ public class ElasticsearchClient {
         this.elasticsearchClient = newClient; // just switch out without closeing the old one first
         // because closing may cause blocking, we close this concurrently
         if (oldClient != null) new Thread() {
+            @Override
             public void run() {
-                this.setName("temporary client close job " + clusterName);
+                this.setName("temporary client close job " + ElasticsearchClient.this.clusterName);
                 try {
                     oldClient.close();
                 } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {}
@@ -165,9 +166,9 @@ public class ElasticsearchClient {
     @SuppressWarnings("unused")
     private ClusterStatsNodes getClusterStatsNodes() {
         ClusterStatsRequest clusterStatsRequest =
-            new ClusterStatsRequestBuilder(elasticsearchClient.admin().cluster(), ClusterStatsAction.INSTANCE).request();
+            new ClusterStatsRequestBuilder(this.elasticsearchClient.admin().cluster(), ClusterStatsAction.INSTANCE).request();
         ClusterStatsResponse clusterStatsResponse =
-            elasticsearchClient.admin().cluster().clusterStats(clusterStatsRequest).actionGet();
+            this.elasticsearchClient.admin().cluster().clusterStats(clusterStatsRequest).actionGet();
         ClusterStatsNodes clusterStatsNodes = clusterStatsResponse.getNodesStats();
         return clusterStatsNodes;
     }
@@ -176,10 +177,10 @@ public class ElasticsearchClient {
 
     @SuppressWarnings("unused")
     private boolean clusterReady() {
-        if (clusterReadyCache) return true;
-        ClusterHealthResponse chr = elasticsearchClient.admin().cluster().prepareHealth().get();
-        clusterReadyCache = chr.getStatus() != ClusterHealthStatus.RED;
-        return clusterReadyCache;
+        if (this.clusterReadyCache) return true;
+        ClusterHealthResponse chr = this.elasticsearchClient.admin().cluster().prepareHealth().get();
+        this.clusterReadyCache = chr.getStatus() != ClusterHealthStatus.RED;
+        return this.clusterReadyCache;
     }
 
     @SuppressWarnings("unused")
@@ -189,9 +190,9 @@ public class ElasticsearchClient {
         boolean is_ready;
         do {
             // wait for yellow status
-            ClusterHealthResponse health = elasticsearchClient.admin().cluster().prepareHealth().setWaitForStatus(status).execute().actionGet();
+            ClusterHealthResponse health = this.elasticsearchClient.admin().cluster().prepareHealth().setWaitForStatus(status).execute().actionGet();
             is_ready = !health.isTimedOut();
-            if (!is_ready && System.currentTimeMillis() - start > maxtimemillis) return false; 
+            if (!is_ready && System.currentTimeMillis() - start > maxtimemillis) return false;
         } while (!is_ready);
         return is_ready;
     }
@@ -207,11 +208,11 @@ public class ElasticsearchClient {
         Settings.Builder settingsBuilder =
                 Settings.builder()
                 .put(settingKey, settingValue);
-        request.settings(settingsBuilder); 
+        request.settings(settingsBuilder);
         CreateIndexRequest updateSettingsResponse =
                 this.elasticsearchClient.admin().indices().prepareCreate(indexName).setSettings(settingsBuilder).request();
     }
-    
+
     /**
      * create a new index. This method must be called to ensure that an elasticsearch index is available and can be used.
      * @param indexName
@@ -239,7 +240,7 @@ public class ElasticsearchClient {
                 .setSource(mapping, XContentType.JSON)
                 .setType("_default_").execute().actionGet();
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.warn("", e);
+            Logger.warn(this.getClass(), "", e);
         };
     }
 
@@ -261,28 +262,29 @@ public class ElasticsearchClient {
     /**
      * A finalize method is added to ensure that close() is always called.
      */
+    @Override
     public void finalize() {
         this.close(); // will not cause harm if this is the second call to close()
     }
 
     /**
      * Retrieve a statistic object from the connected elasticsearch cluster
-     * 
+     *
      * @return cluster stats from connected cluster
      */
     @SuppressWarnings("unused")
     private ClusterStatsNodes getStats() {
         final ClusterStatsRequest clusterStatsRequest =
-            new ClusterStatsRequestBuilder(elasticsearchClient.admin().cluster(), ClusterStatsAction.INSTANCE).request();
+            new ClusterStatsRequestBuilder(this.elasticsearchClient.admin().cluster(), ClusterStatsAction.INSTANCE).request();
         final ClusterStatsResponse clusterStatsResponse =
-            elasticsearchClient.admin().cluster().clusterStats(clusterStatsRequest).actionGet();
+            this.elasticsearchClient.admin().cluster().clusterStats(clusterStatsRequest).actionGet();
         final ClusterStatsNodes clusterStatsNodes = clusterStatsResponse.getNodesStats();
         return clusterStatsNodes;
     }
 
     /**
      * Get the number of documents in the search index
-     * 
+     *
      * @return the count of all documents in the index
      */
     private long count(String indexName) {
@@ -291,7 +293,7 @@ public class ElasticsearchClient {
 
     /**
      * Get the number of documents in the search index for a given search query
-     * 
+     *
      * @param q
      *            the query
      * @return the count of all documents in the index which matches with the query
@@ -300,14 +302,14 @@ public class ElasticsearchClient {
         while (true) try {
             return countInternal(q, indexName);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.info("ElasticsearchClient count failed with " + e.getMessage() + ", retrying to connect node...");
+            Logger.info(this.getClass(), "ElasticsearchClient count failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             connect();
         }
     }
 
     public long countInternal(final QueryBuilder q, final String indexName) {
-        SearchResponse response = elasticsearchClient.prepareSearch(indexName).setQuery(q).setSize(0).execute().actionGet();
+        SearchResponse response = this.elasticsearchClient.prepareSearch(indexName).setQuery(q).setSize(0).execute().actionGet();
         return response.getHits().getTotalHits();
     }
 
@@ -321,14 +323,14 @@ public class ElasticsearchClient {
         while (true) try {
             return existInternal(indexName, id);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.info("ElasticsearchClient exist failed with " + e.getMessage() + ", retrying to connect node...");
+            Logger.info(this.getClass(), "ElasticsearchClient exist failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             connect();
         }
     }
 
     public boolean existInternal(String indexName, final String id) {
-        GetResponse getResponse = elasticsearchClient
+        GetResponse getResponse = this.elasticsearchClient
                 .prepareGet(indexName, null, id)
                 .setFetchSource(false)
                 //.setOperationThreaded(false)
@@ -341,7 +343,7 @@ public class ElasticsearchClient {
         while (true) try {
             return existBulkInternal(indexName, ids);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.info("ElasticsearchClient existBulk failed with " + e.getMessage() + ", retrying to connect node...");
+            Logger.info(this.getClass(), "ElasticsearchClient existBulk failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             connect();
             continue;
@@ -350,11 +352,11 @@ public class ElasticsearchClient {
 
     private Set<String> existBulkInternal(String indexName, final Collection<String> ids) {
         if (ids == null || ids.size() == 0) return new HashSet<>();
-        MultiGetResponse multiGetItemResponses = elasticsearchClient.prepareMultiGet()
+        MultiGetResponse multiGetItemResponses = this.elasticsearchClient.prepareMultiGet()
                 .add(indexName, null, ids)
                 .get();
         Set<String> er = new HashSet<>();
-        for (MultiGetItemResponse itemResponse : multiGetItemResponses) { 
+        for (MultiGetItemResponse itemResponse : multiGetItemResponses) {
             GetResponse response = itemResponse.getResponse();
             if (response.isExists()) {
                 er.add(response.getId());
@@ -376,7 +378,7 @@ public class ElasticsearchClient {
      */
     @SuppressWarnings("unused")
     private String getType(String indexName, final String id) {
-        GetResponse getResponse = elasticsearchClient.prepareGet(indexName, null, id).execute().actionGet();
+        GetResponse getResponse = this.elasticsearchClient.prepareGet(indexName, null, id).execute().actionGet();
         return getResponse.isExists() ? getResponse.getType() : null;
     }
 
@@ -387,7 +389,7 @@ public class ElasticsearchClient {
      * rule. The information which document was deleted persists for one minute and
      * then inserting documents with the same version number as before is possible.
      * To modify this behavior, change the configuration setting index.gc_deletes
-     * 
+     *
      * @param id
      *            the unique identifier of a document
      * @return true if the document existed and was deleted, false otherwise
@@ -396,7 +398,7 @@ public class ElasticsearchClient {
         while (true) try {
             return deleteInternal(indexName, typeName, id);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.info("ElasticsearchClient delete failed with " + e.getMessage() + ", retrying to connect node...");
+            Logger.info(this.getClass(), "ElasticsearchClient delete failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             connect();
             continue;
@@ -404,7 +406,7 @@ public class ElasticsearchClient {
     }
 
     private boolean deleteInternal(String indexName, String typeName, final String id) {
-        DeleteResponse response = elasticsearchClient.prepareDelete(indexName, typeName, id).get();
+        DeleteResponse response = this.elasticsearchClient.prepareDelete(indexName, typeName, id).get();
         return response.getResult() == DocWriteResponse.Result.DELETED;
     }
 
@@ -414,7 +416,7 @@ public class ElasticsearchClient {
      * in later versions. Instead, there is a plugin which iterates over search results,
      * see https://www.elastic.co/guide/en/elasticsearch/plugins/current/plugins-delete-by-query.html
      * We simulate the same behaviour here without the need of that plugin.
-     * 
+     *
      * @param q
      * @return delete document count
      */
@@ -422,7 +424,7 @@ public class ElasticsearchClient {
         while (true) try {
             return deleteByQueryInternal(indexName, q);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.info("ElasticsearchClient deleteByQuery failed with " + e.getMessage() + ", retrying to connect node...");
+            Logger.info(this.getClass(), "ElasticsearchClient deleteByQuery failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             connect();
             continue;
@@ -431,7 +433,7 @@ public class ElasticsearchClient {
 
     private int deleteByQueryInternal(String indexName, final QueryBuilder q) {
         Map<String, String> ids = new TreeMap<>();
-        SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName);
+        SearchRequestBuilder request = this.elasticsearchClient.prepareSearch(indexName);
         request
             .setSearchType(SearchType.QUERY_THEN_FETCH)
             .setScroll(scrollKeepAlive)
@@ -447,7 +449,7 @@ public class ElasticsearchClient {
             // termination
             if (response.getHits().getHits().length == 0) break;
             // scroll
-            response = elasticsearchClient.prepareSearchScroll(response.getScrollId()).setScroll(scrollKeepAlive).execute().actionGet();
+            response = this.elasticsearchClient.prepareSearchScroll(response.getScrollId()).setScroll(scrollKeepAlive).execute().actionGet();
         }
         return deleteBulk(indexName, ids);
     }
@@ -455,7 +457,7 @@ public class ElasticsearchClient {
     /**
      * Delete a list of documents for a given set of ids
      * ATTENTION: read about the time-out of version number checking in the method above.
-     * 
+     *
      * @param ids
      *            a map from the unique identifier of a document to the document type
      * @return the number of deleted documents
@@ -463,7 +465,7 @@ public class ElasticsearchClient {
     private int deleteBulk(String indexName, Map<String, String> ids) {
         // bulk-delete the ids
         if (ids == null || ids.size() == 0) return 0;
-        BulkRequestBuilder bulkRequest = elasticsearchClient.prepareBulk();
+        BulkRequestBuilder bulkRequest = this.elasticsearchClient.prepareBulk();
         for (Map.Entry<String, String> id : ids.entrySet()) {
             bulkRequest.add(new DeleteRequest().id(id.getKey()).index(indexName).type(id.getValue()));
         }
@@ -477,21 +479,21 @@ public class ElasticsearchClient {
      * elasticsearch does not do any json transformation or parsing. We
      * get simply the text from the '_source' field. This might be useful to
      * make a dump from the index content.
-     * 
+     *
      * @param id
      *            the unique identifier of a document
      * @return the document as source text
      */
     @SuppressWarnings("unused")
     private byte[] readSource(String indexName, final String id) {
-        GetResponse response = elasticsearchClient.prepareGet(indexName, null, id).execute().actionGet();
+        GetResponse response = this.elasticsearchClient.prepareGet(indexName, null, id).execute().actionGet();
         return response.getSourceAsBytes();
     }
 
     /**
      * Read a json document from the search index for a given id.
      * Elasticsearch reads the '_source' field and parses the content as json.
-     * 
+     *
      * @param id
      *            the unique identifier of a document
      * @return the document as json, matched on a Map<String, Object> object instance
@@ -500,7 +502,7 @@ public class ElasticsearchClient {
         while (true) try {
             return readMapInternal(indexName, id);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.info("ElasticsearchClient readMap failed with " + e.getMessage() + ", retrying to connect node...");
+            Logger.info(this.getClass(), "ElasticsearchClient readMap failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             connect();
             continue;
@@ -508,7 +510,7 @@ public class ElasticsearchClient {
     }
 
     private Map<String, Object> readMapInternal(final String indexName, final String id) {
-        GetResponse response = elasticsearchClient.prepareGet(indexName, null, id).execute().actionGet();
+        GetResponse response = this.elasticsearchClient.prepareGet(indexName, null, id).execute().actionGet();
         Map<String, Object> map = getMap(response);
         return map;
     }
@@ -517,7 +519,7 @@ public class ElasticsearchClient {
         while (true) try {
             return readMapBulkInternal(indexName, ids);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.info("ElasticsearchClient readMapBulk failed with " + e.getMessage() + ", retrying to connect node...");
+            Logger.info(this.getClass(), "ElasticsearchClient readMapBulk failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             connect();
             continue;
@@ -525,7 +527,7 @@ public class ElasticsearchClient {
     }
 
     private Map<String, Map<String, Object>> readMapBulkInternal(final String indexName, final Collection<String> ids) {
-        MultiGetRequestBuilder mgrb = elasticsearchClient.prepareMultiGet();
+        MultiGetRequestBuilder mgrb = this.elasticsearchClient.prepareMultiGet();
         ids.forEach(id -> mgrb.add(indexName, null, id).execute().actionGet());
         MultiGetResponse response = mgrb.execute().actionGet();
         Map<String, Map<String, Object>> bulkresponse = new HashMap<>();
@@ -552,7 +554,7 @@ public class ElasticsearchClient {
      * Write a json document into the search index. The id must be calculated by the calling environment.
      * This id should be unique for the json. The best way to calculate this id is, to use an existing
      * field from the jsonMap which contains a unique identifier for the jsonMap.
-     * 
+     *
      * @param indexName the name of the index
      * @param typeName the type of the index
      * @param id the unique identifier of a document
@@ -563,7 +565,7 @@ public class ElasticsearchClient {
         while (true) try {
             return writeMapInternal(indexName, typeName, id, jsonMap);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.info("ElasticsearchClient writeMap failed with " + e.getMessage() + ", retrying to connect node...");
+            Logger.info(this.getClass(), "ElasticsearchClient writeMap failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             connect();
             continue;
@@ -576,7 +578,7 @@ public class ElasticsearchClient {
         // get the version number out of the json, if any is given
         Long version = (Long) jsonMap.remove("_version");
         // put this to the index
-        UpdateResponse r = elasticsearchClient
+        UpdateResponse r = this.elasticsearchClient
             .prepareUpdate(indexName, typeName, id)
             .setDoc(jsonMap)
             .setUpsert(jsonMap)
@@ -590,7 +592,7 @@ public class ElasticsearchClient {
         // TODO: error handling
         boolean created = r != null && r.status() == RestStatus.CREATED; // true means created, false means updated
         long duration = Math.max(1, System.currentTimeMillis() - start);
-        Data.logger.info("ElasticsearchClient write entry to index " + indexName + ": " + (created ? "created":"updated") + ", " + duration + " ms");
+        Logger.info(this.getClass(), "ElasticsearchClient write entry to index " + indexName + ": " + (created ? "created":"updated") + ", " + duration + " ms");
         return created;
     }
 
@@ -611,7 +613,7 @@ public class ElasticsearchClient {
         while (true) try {
             return writeMapBulkInternal(indexName, jsonMapList);
         } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
-            Data.logger.info("ElasticsearchClient writeMapBulk failed with " + e.getMessage() + ", retrying to connect node...");
+            Logger.info(this.getClass(), "ElasticsearchClient writeMapBulk failed with " + e.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException ee) {}
             connect();
             continue;
@@ -620,11 +622,11 @@ public class ElasticsearchClient {
 
     private BulkWriteResult writeMapBulkInternal(final String indexName, final List<BulkEntry> jsonMapList) {
         long start = System.currentTimeMillis();
-        BulkRequestBuilder bulkRequest = elasticsearchClient.prepareBulk();
+        BulkRequestBuilder bulkRequest = this.elasticsearchClient.prepareBulk();
         for (BulkEntry be: jsonMapList) {
             if (be.id == null) continue;
             bulkRequest.add(
-                    elasticsearchClient.prepareIndex(indexName, be.type, be.id).setSource(be.jsonMap)
+                    this.elasticsearchClient.prepareIndex(indexName, be.type, be.id).setSource(be.jsonMap)
                         .setCreate(false) // enforces OpType.INDEX
                         .setVersionType(VersionType.INTERNAL));
         }
@@ -650,7 +652,7 @@ public class ElasticsearchClient {
             regulator = (long) (throttling_factor * duration);
             try {Thread.sleep(regulator);} catch (InterruptedException e) {}
         }
-        Data.logger.info("ElasticsearchClient write bulk to index " + indexName + ": " + jsonMapList.size() + " entries, " + result.created.size() + " created, " + result.errors.size() + " errors, " + duration + " ms" + (regulator == 0 ? "" : ", throttled with " + regulator + " ms") + ", " + ops + " objects/second");
+        Logger.info(this.getClass(), "ElasticsearchClient write bulk to index " + indexName + ": " + jsonMapList.size() + " entries, " + result.created.size() + " created, " + result.errors.size() + " errors, " + duration + " ms" + (regulator == 0 ? "" : ", throttled with " + regulator + " ms") + ", " + ops + " objects/second");
         return result;
     }
 
@@ -701,11 +703,11 @@ public class ElasticsearchClient {
                 return new Query(indexName,  queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
             } catch (NoNodeAvailableException | IllegalStateException | ClusterBlockException | SearchPhaseExecutionException e) {
                 ee = e;
-                Data.logger.info("ElasticsearchClient query failed with " + e.getMessage() + ", retrying attempt " + t + " ...");
+                Logger.info(this.getClass(), "ElasticsearchClient query failed with " + e.getMessage() + ", retrying attempt " + t + " ...");
                 try {Thread.sleep(100);} catch (InterruptedException eee) {}
                 continue;
             }
-            Data.logger.info("ElasticsearchClient query failed with " + ee.getMessage() + ", retrying to connect node...");
+            Logger.info(this.getClass(), "ElasticsearchClient query failed with " + ee.getMessage() + ", retrying to connect node...");
             try {Thread.sleep(1000);} catch (InterruptedException eee) {}
             connect();
             continue;
@@ -732,7 +734,7 @@ public class ElasticsearchClient {
          */
         private Query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) {
             // prepare request
-            SearchRequestBuilder request = elasticsearchClient.prepareSearch(indexName);
+            SearchRequestBuilder request = ElasticsearchClient.this.elasticsearchClient.prepareSearch(indexName);
             request
                     .setExplain(explain)
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
@@ -752,14 +754,14 @@ public class ElasticsearchClient {
             // get response
             SearchResponse response = request.execute().actionGet();
             SearchHits searchHits = response.getHits();
-            hitCount = (int) searchHits.getTotalHits();
+            this.hitCount = (int) searchHits.getTotalHits();
 
             // evaluate search result
             //long totalHitCount = response.getHits().getTotalHits();
             SearchHit[] hits = searchHits.getHits();
-            this.results = new ArrayList<Map<String, Object>>(hitCount);
-            this.explanations = new ArrayList<String>(hitCount);
-            this.highlights = new ArrayList<Map<String, HighlightField>>(hitCount);
+            this.results = new ArrayList<Map<String, Object>>(this.hitCount);
+            this.explanations = new ArrayList<String>(this.hitCount);
+            this.highlights = new ArrayList<Map<String, HighlightField>>(this.hitCount);
             for (SearchHit hit: hits) {
                 Map<String, Object> map = hit.getSourceAsMap();
                 if (!map.containsKey("id")) map.put("id", hit.getId());
@@ -799,7 +801,7 @@ public class ElasticsearchClient {
                         list.add(new AbstractMap.SimpleEntry<String, Long>(key, v));
                     }
                 }
-                aggregations.put(field.getMapping().name(), list);
+                this.aggregations.put(field.getMapping().name(), list);
                 //if (field.equals("place_country")) {
                     // special handling of country aggregation: add the country center as well
                 //}
@@ -846,7 +848,7 @@ public class ElasticsearchClient {
             String mapping = new String(Files.readAllBytes(Paths.get("conf/mappings/web.json")));
             client.setMapping("test", mapping);
         } catch (IOException e) {
-            Data.logger.warn("", e);
+            Logger.warn(e);
         }
 
         client.close();

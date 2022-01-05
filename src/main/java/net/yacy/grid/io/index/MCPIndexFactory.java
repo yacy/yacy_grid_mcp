@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -36,7 +36,7 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.mcp.api.index.AddService;
 import net.yacy.grid.mcp.api.index.CheckService;
 import net.yacy.grid.mcp.api.index.CountService;
@@ -96,9 +96,9 @@ public class MCPIndexFactory implements IndexFactory {
                 if (response.has(ObjectAPIHandler.SERVICE_KEY)) {
                     String elastic = response.getString(ObjectAPIHandler.SERVICE_KEY);
                     if (MCPIndexFactory.this.index.connectElasticsearch(elastic)) {
-                        Data.logger.info("connected MCP index at " + elastic);
+                        Logger.info(this.getClass(), "connected MCP index at " + elastic);
                     } else {
-                        Data.logger.error("failed to connect MCP index at " + elastic);
+                        Logger.error(this.getClass(), "failed to connect MCP index at " + elastic);
                     }
                 }
             }

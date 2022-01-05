@@ -34,18 +34,19 @@ import java.util.Map;
 import java.util.Set;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
+import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.elasticsearch.common.unit.Fuzziness;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import net.yacy.grid.io.index.ElasticsearchClient.BulkEntry;
 import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.JSONList;
 
@@ -66,7 +67,7 @@ public class ElasticIndexFactory implements IndexFactory {
 
         // create elasticsearch connection
         this.elasticsearchClient = new ElasticsearchClient(new String[]{this.elasticsearchAddress}, this.elasticsearchClusterName.length() == 0 ? null : this.elasticsearchClusterName);
-        Data.logger.info("Connected elasticsearch at " + Data.getHost(this.elasticsearchAddress));
+        Logger.info(this.getClass(), "Connected elasticsearch at " + Data.getHost(this.elasticsearchAddress));
 
         Path mappingsPath = Paths.get("conf","mappings");
         if (mappingsPath.toFile().exists()) {
@@ -79,10 +80,10 @@ public class ElasticIndexFactory implements IndexFactory {
                         JSONObject mo = new JSONObject(new JSONTokener(new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8)));
                         mo = mo.getJSONObject("mappings").getJSONObject("_default_");
                         this.elasticsearchClient.setMapping(indexName, mo.toString());
-                        Data.logger.info("initiated mapping for index " + indexName);
+                        Logger.info(this.getClass(), "initiated mapping for index " + indexName);
                     } catch (IOException | NoNodeAvailableException e) {
                         this.elasticsearchClient = null; // index not available
-                        Data.logger.info("Failed creating mapping for index " + indexName, e);
+                        Logger.warn(this.getClass(), "Failed creating mapping for index " + indexName, e);
                     }
                 }
             }

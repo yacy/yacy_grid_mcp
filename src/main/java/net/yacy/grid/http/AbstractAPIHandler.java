@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -30,7 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 
 @SuppressWarnings("serial")
 public abstract class AbstractAPIHandler extends HttpServlet implements APIHandler {
@@ -41,10 +41,14 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
     public AbstractAPIHandler() {
     }
 
+    @Override
     public abstract ServiceResponse serviceImpl(final String protocolhostportstub, JSONObject params) throws IOException;
+    @Override
     public abstract ServiceResponse serviceImpl(final String protocolhostportstub, Map<String, byte[]> params) throws IOException;
+    @Override
     public abstract ServiceResponse serviceImpl(Query call, HttpServletResponse response) throws APIException;
 
+    @Override
     public String getAPIName() {
         String path = this.getAPIPath();
         int p = path.lastIndexOf('/');
@@ -147,6 +151,6 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
         if (q.length() > 0) path = path + "?" + q;
         if (message.length() > 512) message = message.substring(0, 512) + "...";
         String m = host + " - " + httpResponseCode + " - " + t + "ms - " + path + " - " + message;
-        Data.logger.info(m);
+        Logger.info(this.getClass(), m);
     }
 }

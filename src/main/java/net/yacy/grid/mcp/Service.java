@@ -154,7 +154,7 @@ public enum Service {
             port = APIServer.open(port, html_path, portForce);
 
             // give positive feedback
-            Data.logger.info("Service started at port " + port);
+            Logger.info("Service started at port " + port);
 
             // prepare shutdown signal
             boolean pidkillfileCreated = false;
@@ -169,20 +169,20 @@ public enum Service {
                 pidfile.createNewFile();
                 if (pidfile.exists()) {pidfile.deleteOnExit(); pidkillfileCreated = true;}
             } catch (IOException e) {
-                Data.logger.info("pid file " + pidfile.getAbsolutePath() + " creation failed: " + e.getMessage());
+                Logger.info("pid file " + pidfile.getAbsolutePath() + " creation failed: " + e.getMessage());
             }
             if (!killfile.exists()) try {
                 killfile.createNewFile();
                 if (killfile.exists()) killfile.deleteOnExit(); else pidkillfileCreated = false;
             } catch (IOException e) {
-                Data.logger.info("kill file " + killfile.getAbsolutePath() + " creation failed: " + e.getMessage());
+                Logger.info("kill file " + killfile.getAbsolutePath() + " creation failed: " + e.getMessage());
                 pidkillfileCreated = false;
             }
 
             // wait for shutdown signal (kill on process)
             if (pidkillfileCreated) {
                 // we can control this by deletion of the kill file
-                Data.logger.info("to stop this process, delete kill file " + killfile.getAbsolutePath());
+                Logger.info("to stop this process, delete kill file " + killfile.getAbsolutePath());
                 while (APIServer.isAlive() && killfile.exists()) {
                     try {Thread.sleep(1000);} catch (InterruptedException e) {}
                 }
@@ -191,15 +191,15 @@ public enum Service {
                 // something with the pid file creation did not work; fail-over to normal operation waiting for a kill command
                 APIServer.join();
             }
-            Data.logger.info("server nominal termination requested");
+            Logger.info("server nominal termination requested");
         } catch (IOException e) {
-            Data.logger.error("Main fail", e);
+            Logger.error("Main fail", e);
         } finally {
             APIServer.stop();
             if (hazelcast != null) hazelcast.shutdown();
-            Data.logger.info("closing data.");
+            Logger.info("closing data.");
             Data.close();
-            Data.logger.info("server terminated.");
+            Logger.info("server terminated.");
         }
     }
 

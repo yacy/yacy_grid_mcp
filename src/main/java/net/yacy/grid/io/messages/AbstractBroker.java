@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.yacy.grid.Services;
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Logger;
 
 public abstract class AbstractBroker<A> implements Broker<A> {
 
@@ -37,7 +37,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     private final Map<Services, AtomicInteger> roundRobinLookup = new ConcurrentHashMap<>();
     private final Map<Services, Map<String, Integer>> leastFilledLookup = new ConcurrentHashMap<>();
     private final Map<Services, Set<String>> switchedIDsMap = new ConcurrentHashMap<>();
-    
+
     @Override
     public abstract void close() throws IOException;
 
@@ -89,7 +89,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         if (idx >= psq.length) idx = 0;
         return psq[idx];
     }
-    
+
 
     @Override
     public abstract MessageContainer<A> receive(final Services service, final GridQueue queue, long timeout, boolean autoAck) throws IOException;
@@ -101,18 +101,18 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     private Map<String, Long> actime = new ConcurrentHashMap<>();
     public AvailableContainer bufferedAvailable(final Services service, final GridQueue queue) throws IOException {
         String bkey = service.name() + "_" + queue.name();
-        Long lacc = actime.get(bkey);
+        Long lacc = this.actime.get(bkey);
         long laccl = lacc == null ? 0 : lacc.longValue();
         long now = System.currentTimeMillis();
-        AvailableContainer ac = acbuffers.get(bkey);
+        AvailableContainer ac = this.acbuffers.get(bkey);
         if (ac == null || now - laccl > 10000) {
             ac = available(service, queue);
-            acbuffers.put(bkey, ac);
-            actime.put(bkey, now);
+            this.acbuffers.put(bkey, ac);
+            this.actime.put(bkey, now);
         }
         return ac;
     }
-    
+
     @Override
     public AvailableContainer[] available(final Services service, final GridQueue[] queues) throws IOException {
         AvailableContainer[] ac = new AvailableContainer[queues.length];
@@ -132,7 +132,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         if (latestCounter.incrementAndGet() >= queues.length) latestCounter.set(0);
         return latestCounter.get();
     }
-    
+
     /**
      * pick one container out of the given one which has the least number of entries.
      * Because the input container may be outdated right now (it comes from a buffer)
@@ -158,11 +158,11 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         }
         return index;
     }
-    
+
     private int hash(final Services service, final GridQueue[] queues, final String hashingKey) throws IOException {
         return hashingKey.hashCode() % queues.length;
     }
-    
+
     private int lookup(final Services service, final GridQueue[] queues, final String hashingKey) throws IOException {
         if (queues.length == 1) return 0;
         Map<String, Integer> lookupMap = this.leastFilledLookup.get(service);
@@ -178,7 +178,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         }
         return lookupIndex;
     }
-    
+
     private int balance(final Services service, final GridQueue[] queues, final String hashingKey) throws IOException {
         if (queues.length == 1) return 0;
         Map<String, Integer> lookupMap = this.leastFilledLookup.get(service);
@@ -200,15 +200,15 @@ public abstract class AbstractBroker<A> implements Broker<A> {
             // Check if this hashing key was never switched to a different queue
             // and if an empty queue exist: then switch to that queue to balance all queues.
             // That means also that every domain may only switched once
-            Set<String> switchedIDs = switchedIDsMap.get(service);
+            Set<String> switchedIDs = this.switchedIDsMap.get(service);
             if (switchedIDs == null) {
                 switchedIDs = ConcurrentHashMap.newKeySet();
-                switchedIDsMap.put(service, switchedIDs);
+                this.switchedIDsMap.put(service, switchedIDs);
             }
             if (available[lookupIndex].getAvailable() > 100 && available[leastFilled].getAvailable() == 0 && !switchedIDs.contains(hashingKey)) {
                 switchedIDs.add(hashingKey);
                 // switch to leastFilled
-                Data.logger.info("AbstractBroker switching " + hashingKey + " from " + lookupIndex + " to " + leastFilled);
+                Logger.info(this.getClass(), "AbstractBroker switching " + hashingKey + " from " + lookupIndex + " to " + leastFilled);
                 lookupIndex = leastFilled;
                 lookupMap.put(hashingKey, lookupIndex);
             }
@@ -216,13 +216,13 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         assert lookupIndex < queues.length;
         return lookupIndex;
     }
-    
+
     private int random(final Services service, final GridQueue[] queues) throws IOException {
         return random.nextInt(queues.length);
     }
-    
+
     private int first(final Services service, final GridQueue[] queues) throws IOException {
         return 0;
     }
-    
+
 }
