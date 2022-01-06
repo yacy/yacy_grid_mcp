@@ -74,7 +74,7 @@ public class Logger {
     public static class LineFormatter extends Formatter {
 
         // format string for printing the log record
-        private static final String format = "%1$s - %2$s %3$s: %4$s%5$s%n";
+        private static final String format = "%1$s - %2$s - %3$s - %4$s%5$s%n";
         private final Date dat = new Date();
 
         @Override
@@ -90,6 +90,11 @@ public class Logger {
                 source = record.getLoggerName();
             }
             String message = formatMessage(record);
+            int p = message.indexOf('$');
+            if (p > 0) {
+                source = message.substring(0, p);
+                message = message.substring(p + 1);
+            }
             String throwable = "";
             if (record.getThrown() != null) {
                 StringWriter sw = new StringWriter();
@@ -101,9 +106,9 @@ public class Logger {
             }
             String levelname = record.getLevel().getName();
             String line = String.format(format,
+                                 levelname,
                                  DateParser.formatRFC1123(this.dat),
                                  source,
-                                 levelname,
                                  message,
                                  throwable);
             return line;
@@ -144,12 +149,15 @@ public class Logger {
         }
         return l;
     }
+    
+    private final static String loggerClassName = Logger.class.getCanonicalName();
 
     private static Class<?> getCallerClass() {
         StackTraceElement[] stElements = Thread.currentThread().getStackTrace();
         for (int i = 1; i < stElements.length; i++) {
             StackTraceElement ste = stElements[i];
-            if (!ste.getClassName().equals(Logger.class.getCanonicalName()) && ste.getClassName().indexOf("java.lang.Thread") != 0) {
+            String cn = ste.getClassName();
+            if (!cn.equals(loggerClassName) && cn.indexOf("java.lang") < 0) {
                 return ste.getClass();
             }
         }
@@ -157,28 +165,25 @@ public class Logger {
     }
 
     public static void debug(String msg) {
-        getLogger(getCallerClass()).info(msg);
-        append(msg);
+        debug(getCallerClass(), msg);
     }
 
     public static void debug(String msg, Throwable t) {
-        getLogger(getCallerClass()).info(msg, t);
-        append(msg);
+        debug(getCallerClass(), msg, t);
     }
 
     public static void debug(Class<?> cls, String msg) {
-        getLogger(cls).info(msg);
+        getLogger(cls).info(cls.getCanonicalName() + '$' + msg);
         append(msg);
     }
 
     public static void debug(Class<?> cls, String msg, Throwable t) {
-        getLogger(cls).info(msg, t);
+        getLogger(cls).info(cls.getCanonicalName() + '$' + msg, t);
         append(msg);
     }
 
     public static void info(String msg) {
-        getLogger(getCallerClass()).info(msg);
-        append(msg);
+        info(getCallerClass(), msg);
     }
 
     public static void info(Class<?> cls, String msg) {
@@ -187,87 +192,81 @@ public class Logger {
     }
 
     public static void warn(String msg) {
-        getLogger(getCallerClass()).warn(msg);
-        append(msg);
+        warn(getCallerClass(), msg);
     }
 
     public static void warn(Class<?> cls, String msg) {
-        getLogger(cls).warn(msg);
+        getLogger(cls).warn(cls.getCanonicalName() + '$' + msg);
         append(msg);
     }
 
     public static void warn(String msg, Throwable t) {
-        getLogger(getCallerClass()).warn(msg, t);
-        append(msg);
+        warn(getCallerClass(), msg, t);
     }
 
     public static void warn(Class<?> cls, String msg, Throwable t) {
-        getLogger(cls).warn(msg, t);
+        getLogger(cls).warn(cls.getCanonicalName() + '$' + msg, t);
         append(msg);
     }
 
     public static void warn(Throwable t) {
-        getLogger(getCallerClass()).warn("", t);
+        warn(getCallerClass(), t);
     }
 
     public static void warn(Class<?> cls, Throwable t) {
-        getLogger(cls).warn("", t);
+        getLogger(cls).warn(cls.getCanonicalName() + '$', t);
     }
 
     public static void error(String msg) {
-        getLogger(getCallerClass()).error(msg);
-        append(msg);
+        error(getCallerClass(), msg);
     }
 
     public static void error(Class<?> cls, String msg) {
-        getLogger(cls).error(msg);
+        getLogger(cls).error(cls.getCanonicalName() + '$' + msg);
         append(msg);
     }
 
     public static void error(String msg, Throwable t) {
-        getLogger(getCallerClass()).error(msg, t);
-        append(msg);
+        error(getCallerClass(), msg, t);
     }
 
     public static void error(Class<?> cls, String msg, Throwable t) {
-        getLogger(cls).error(msg, t);
+        getLogger(cls).error(cls.getCanonicalName() + '$' + msg, t);
         append(msg);
     }
 
     public static void error(Throwable t) {
-        getLogger(getCallerClass()).error("", t);
+        error(getCallerClass(), t);
     }
 
     public static void error(Class<?> cls, Throwable t) {
-        getLogger(cls).error("", t);
+        getLogger(cls).error(cls.getCanonicalName() + '$', t);
     }
 
 
     public static void fatal(String msg) {
-        getLogger(getCallerClass()).error(msg);
-        append(msg);
+        fatal(getCallerClass(), msg);
     }
 
     public static void fatal(Class<?> cls, String msg) {
-        getLogger(cls).error(msg);
+        getLogger(cls).error(cls.getCanonicalName() + '$' + msg);
         append(msg);
     }
 
     public static void fatal(String msg, Throwable t) {
-        getLogger(getCallerClass()).error(msg, t);
-        append(msg);
+        fatal(getCallerClass(), msg, t);
     }
 
     public static void fatal(Class<?> cls, String msg, Throwable t) {
-        getLogger(cls).error(msg, t);
+        getLogger(cls).error(cls.getCanonicalName() + '$' + msg, t);
         append(msg);
     }
 
     public static void fatal(Throwable t) {
-        getLogger(getCallerClass()).error("", t);
+        fatal(getCallerClass(), t);
     }
 
     public static void fatal(Class<?> cls, Throwable t) {
-        getLogger(cls).error("", t);
+        getLogger(cls).error(cls.getCanonicalName() + '$', t);
     }
 }
