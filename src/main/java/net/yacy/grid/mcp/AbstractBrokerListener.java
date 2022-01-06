@@ -70,7 +70,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
             try {
                 Data.gridBroker.recover(AbstractBrokerListener.this.service, queue);
             } catch (IOException e) {
-                Logger.fatal(this.getClass(), "Service " + this.service.name() + ": recover not possible: " + e.getMessage(), e);
+                Logger.error(this.getClass(), "Service " + this.service.name() + ": recover not possible: " + e.getMessage(), e);
             }
         }
 
@@ -81,7 +81,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 Logger.info(this.getClass(), "Service " + this.service.name() + ", queue " + ac[i].getQueue() + ": " + ac[i].getAvailable() + " entries.");
             }
         } catch (IOException e) {
-            Logger.fatal(this.getClass(), "Service " + this.service.name() + ": AvailableContainer not available: " + e.getMessage(), e);
+            Logger.error(this.getClass(), "Service " + this.service.name() + ": AvailableContainer not available: " + e.getMessage(), e);
         }
 
         // start the listeners
@@ -172,7 +172,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 AvailableContainer a = Data.gridBroker.available(AbstractBrokerListener.this.service, this.queueName);
                 Logger.info(this.getClass(), "Started QueueListener for Queue " + a.getQueue() + ", thread " + this.threadCounter + ": " + a.getAvailable() + " entries.");
             } catch (IOException e) {
-                Logger.fatal(this.getClass(), "Could not load AvailableContainer for Queue " + this.queueName + ": " + e.getMessage(), e);
+                Logger.error(this.getClass(), "Could not load AvailableContainer for Queue " + this.queueName + ": " + e.getMessage(), e);
             }
 
             while (AbstractBrokerListener.this.shallRun) {

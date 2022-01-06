@@ -179,7 +179,7 @@ public class Data {
         }
 
         // find connections first here before concurrent threads try to make their own connection concurrently
-        try { Data.gridIndex.checkConnection(); } catch (IOException e) { Logger.fatal("no connection to MCP", e); }
+        try { Data.gridIndex.checkConnection(); } catch (IOException e) { Logger.error("no connection to MCP", e); }
 
         // init boosts from configuration
         Map<String, String> defaultBoosts = Service.readDoubleConfig("boost.properties");
