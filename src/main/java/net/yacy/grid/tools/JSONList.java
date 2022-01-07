@@ -1,6 +1,6 @@
 /**
  *  JSONList
- *  (C) 3.7.2017 by Michael Peter Christen; mc@yacy.net, @0rb1t3r
+ *  (C) 3.7.2017 by Michael Peter Christen; mc@yacy.net, @orbiterlab
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public

@@ -1,6 +1,6 @@
 /**
  *  Services
- *  Copyright 16.01.2017 by Michael Peter Christen, @0rb1t3r
+ *  Copyright 16.01.2017 by Michael Peter Christen, @orbiterlab
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public

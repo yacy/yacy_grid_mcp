@@ -1,6 +1,6 @@
 /**
  *  MapUtil
- *  Copyright 02.10.2016 by Michael Peter Christen, @0rb1t3r
+ *  Copyright 02.10.2016 by Michael Peter Christen, @orbiterlab
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public

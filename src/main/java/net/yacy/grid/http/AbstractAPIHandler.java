@@ -1,6 +1,6 @@
 /**
  *  AbstractAPIHandler
- *  Copyright 17.05.2016 by Michael Peter Christen, @0rb1t3r and Robert Mader, @treba123
+ *  Copyright 17.05.2016 by Michael Peter Christen, @orbiterlab and Robert Mader, @treba123
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public

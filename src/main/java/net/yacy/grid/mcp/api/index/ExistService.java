@@ -1,6 +1,6 @@
 /**
  *  ExistService
- *  Copyright 04.03.2018 by Michael Peter Christen, @0rb1t3r
+ *  Copyright 04.03.2018 by Michael Peter Christen, @orbiterlab
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
