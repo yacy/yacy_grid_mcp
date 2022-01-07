@@ -43,11 +43,11 @@ public class Logger {
     private static final org.slf4j.Logger dfltLogger = org.slf4j.LoggerFactory.getLogger("default");
 
     static {
-        StreamHandler sh = new ConsoleHandler();
+        final StreamHandler sh = new ConsoleHandler();
         java.util.logging.Logger javaLogger = java.util.logging.Logger.getGlobal();
         while (javaLogger.getParent() != null) javaLogger = javaLogger.getParent();
-        Handler[] dfltHandlers = javaLogger.getHandlers();
-        for (Handler handler: dfltHandlers) javaLogger.removeHandler(handler);
+        final Handler[] dfltHandlers = javaLogger.getHandlers();
+        for (final Handler handler: dfltHandlers) javaLogger.removeHandler(handler);
         sh.setFormatter(new LineFormatter());
         javaLogger.addHandler(sh);
         javaLogger.log(java.util.logging.Level.INFO, "configured logging");
@@ -87,23 +87,23 @@ public class Logger {
             } else {
                 source = record.getLoggerName();
             }
-            String message = formatMessage(record);
-            int p = message.indexOf('$');
+            String message = this.formatMessage(record);
+            final int p = message.indexOf('$');
             if (p >= 0) {
                 source = message.substring(0, p);
                 message = message.substring(p + 1);
             }
             String throwable = "";
             if (record.getThrown() != null) {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
+                final StringWriter sw = new StringWriter();
+                final PrintWriter pw = new PrintWriter(sw);
                 pw.println();
                 record.getThrown().printStackTrace(pw);
                 pw.close();
                 throwable = sw.toString();
             }
-            String levelname = record.getLevel().getName();
-            String line = String.format(format,
+            final String levelname = record.getLevel().getName();
+            final String line = String.format(format,
                     levelname,
                     source,
                     DateParser.formatRFC1123(this.dat),
@@ -118,9 +118,9 @@ public class Logger {
     }
 
     public static ArrayList<String> getLines(int max) {
-        Object[] a = lines.toArray();
-        ArrayList<String> l = new ArrayList<>();
-        int start = Math.max(0, a.length - max);
+        final Object[] a = lines.toArray();
+        final ArrayList<String> l = new ArrayList<>();
+        final int start = Math.max(0, a.length - max);
         for (int i = start; i < a.length; i++) l.add((String) a[i]);
         return l;
     }
@@ -140,6 +140,8 @@ public class Logger {
 
     private static org.slf4j.Logger getLogger(String className) {
         if (className == null || className.length() == 0) return dfltLogger;
+        final int p = className.indexOf(':');
+        if (p >= 0) className = className.substring(0, p);
         org.slf4j.Logger l = logger.get(className);
         if (l == null) {
             l = org.slf4j.LoggerFactory.getLogger(className);
@@ -151,12 +153,12 @@ public class Logger {
     private final static String loggerClassName = Logger.class.getCanonicalName();
 
     private static String getCallerClassName() {
-        StackTraceElement[] stElements = Thread.currentThread().getStackTrace();
+        final StackTraceElement[] stElements = Thread.currentThread().getStackTrace();
         for (int i = 1; i < stElements.length; i++) {
-            StackTraceElement ste = stElements[i];
-            String cn = ste.getClassName();
+            final StackTraceElement ste = stElements[i];
+            final String cn = ste.getClassName();
             if (!cn.equals(loggerClassName) && cn.indexOf("java.lang") < 0) {
-                return cn;
+                return cn + ":" + ste.getLineNumber();
             }
         }
         return null;
