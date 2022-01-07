@@ -30,7 +30,7 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
 
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 
 public class MapDBSortedMap implements NavigableCloseableMap<Long, byte[]>, CloseableMap<Long, byte[]> {
 

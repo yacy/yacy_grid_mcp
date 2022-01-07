@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.yacy.grid.Services;
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 
 public abstract class AbstractBroker<A> implements Broker<A> {
 

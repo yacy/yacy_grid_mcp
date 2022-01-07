@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import net.yacy.grid.io.db.MapDBSortedMap;
 import net.yacy.grid.io.db.MapStack;
 import net.yacy.grid.io.db.Stack;
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 
 /**
  * Factory for a queue using a stack

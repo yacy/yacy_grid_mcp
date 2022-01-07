@@ -34,6 +34,7 @@ import net.yacy.grid.io.index.BoostsFactory;
 import net.yacy.grid.io.index.ElasticIndexFactory;
 import net.yacy.grid.io.index.GridIndex;
 import net.yacy.grid.io.messages.GridBroker;
+import net.yacy.grid.tools.Logger;
 import net.yacy.grid.tools.OS;
 
 public class Data {

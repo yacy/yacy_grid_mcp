@@ -39,7 +39,7 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 
 /**
  * main server class as static class: we made this static on purpose because then it is always

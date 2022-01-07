@@ -25,8 +25,8 @@ import java.util.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.JSONList;
+import net.yacy.grid.tools.Logger;
 
 /**
  * An action is an application on the information deduced during inferences on mind states

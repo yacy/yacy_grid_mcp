@@ -38,6 +38,7 @@ import com.hazelcast.core.HazelcastInstance;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIServer;
 import net.yacy.grid.mcp.api.info.StatusService;
+import net.yacy.grid.tools.Logger;
 import net.yacy.grid.tools.MapUtil;
 
 /**

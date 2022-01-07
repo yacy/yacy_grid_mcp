@@ -49,7 +49,6 @@ import net.yacy.grid.http.ClientIdentification;
 import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.io.assets.FTPStorageFactory;
 import net.yacy.grid.io.assets.S3StorageFactory;
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.Classification.ContentDomain;
 import net.yacy.grid.tools.Punycode.PunycodeException;
 

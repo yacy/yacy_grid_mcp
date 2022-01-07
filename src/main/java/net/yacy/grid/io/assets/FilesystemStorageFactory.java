@@ -23,7 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 
 public class FilesystemStorageFactory implements StorageFactory<byte[]> {
 

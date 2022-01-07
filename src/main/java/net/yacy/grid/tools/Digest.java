@@ -39,8 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import net.yacy.grid.mcp.Logger;
-
 public class Digest {
 
 	public static Queue<MessageDigest> digestPool = new ConcurrentLinkedQueue<MessageDigest>();

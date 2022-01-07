@@ -29,7 +29,7 @@ import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.assets.Asset;
 import net.yacy.grid.mcp.Data;
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 
 /**
  * test with http://127.0.0.1:8100/yacy/grid/mcp/assets/load?path=/xx/test.txt

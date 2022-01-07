@@ -34,9 +34,9 @@ import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 
 import net.yacy.grid.mcp.Data;
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.mcp.MCP;
 import net.yacy.grid.mcp.Service;
+import net.yacy.grid.tools.Logger;
 
 public class FTPStorageFactory implements StorageFactory<byte[]> {
 

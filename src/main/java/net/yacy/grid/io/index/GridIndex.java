@@ -28,8 +28,8 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.JSONList;
+import net.yacy.grid.tools.Logger;
 
 public class GridIndex implements Index {
 

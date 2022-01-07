@@ -86,7 +86,7 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 
 /**
  * To get data out of the elasticsearch index which is written with this client, try:

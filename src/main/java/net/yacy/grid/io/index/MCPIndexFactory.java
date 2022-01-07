@@ -36,7 +36,6 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.mcp.api.index.AddService;
 import net.yacy.grid.mcp.api.index.CheckService;
 import net.yacy.grid.mcp.api.index.CountService;
@@ -44,6 +43,7 @@ import net.yacy.grid.mcp.api.index.DeleteService;
 import net.yacy.grid.mcp.api.index.ExistService;
 import net.yacy.grid.mcp.api.index.QueryService;
 import net.yacy.grid.tools.JSONList;
+import net.yacy.grid.tools.Logger;
 
 public class MCPIndexFactory implements IndexFactory {
 

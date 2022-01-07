@@ -48,9 +48,9 @@ import com.google.common.collect.Multimap;
 
 import net.yacy.grid.io.index.BoostsFactory.Boosts;
 import net.yacy.grid.mcp.Data;
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.DateParser;
+import net.yacy.grid.tools.Logger;
 
 public class YaCyQuery {
 

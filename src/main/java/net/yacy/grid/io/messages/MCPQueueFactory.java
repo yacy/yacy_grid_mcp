@@ -29,7 +29,6 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.mcp.api.messages.AcknowledgeService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
@@ -37,6 +36,7 @@ import net.yacy.grid.mcp.api.messages.ReceiveService;
 import net.yacy.grid.mcp.api.messages.RecoverService;
 import net.yacy.grid.mcp.api.messages.RejectService;
 import net.yacy.grid.mcp.api.messages.SendService;
+import net.yacy.grid.tools.Logger;
 
 public class MCPQueueFactory implements QueueFactory<byte[]> {
 

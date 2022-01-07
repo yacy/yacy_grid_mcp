@@ -1,5 +1,5 @@
 /**
- *  LogAppender
+ *  Logger
  *  Copyright 02.01.2018 by Michael Peter Christen, @0rb1t3r
  *
  *  This library is free software; you can redistribute it and/or
@@ -17,7 +17,7 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.yacy.grid.mcp;
+package net.yacy.grid.tools;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -32,8 +32,6 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
-
-import net.yacy.grid.tools.DateParser;
 
 
 public class Logger {

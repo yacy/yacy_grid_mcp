@@ -36,11 +36,11 @@ import org.json.JSONObject;
 import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.mcp.MCP;
 import net.yacy.grid.mcp.Service;
 import net.yacy.grid.mcp.api.control.LoaderThrottlingService;
 import net.yacy.grid.mcp.api.info.StatusService;
+import net.yacy.grid.tools.Logger;
 import net.yacy.grid.tools.MultiProtocolURL;
 
 public class GridControl {

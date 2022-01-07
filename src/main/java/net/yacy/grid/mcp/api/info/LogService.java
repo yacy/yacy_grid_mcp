@@ -27,7 +27,7 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 
 /**
  * The Log Service

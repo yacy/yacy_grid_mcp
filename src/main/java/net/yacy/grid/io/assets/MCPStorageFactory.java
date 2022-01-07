@@ -36,12 +36,12 @@ import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.mcp.MCP;
 import net.yacy.grid.mcp.Service;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
 import net.yacy.grid.mcp.api.info.StatusService;
+import net.yacy.grid.tools.Logger;
 
 public class MCPStorageFactory implements StorageFactory<byte[]> {
 

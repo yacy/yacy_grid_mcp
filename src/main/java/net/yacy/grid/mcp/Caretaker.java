@@ -19,6 +19,8 @@
 
 package net.yacy.grid.mcp;
 
+import net.yacy.grid.tools.Logger;
+
 public class Caretaker implements Runnable {
 
     private boolean shallRun;

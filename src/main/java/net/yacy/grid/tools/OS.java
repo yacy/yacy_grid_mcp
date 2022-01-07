@@ -44,8 +44,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import net.yacy.grid.mcp.Logger;
-
 public final class OS {
 
   // constants for system identification

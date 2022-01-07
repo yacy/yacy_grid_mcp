@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 import net.yacy.grid.Services;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.mcp.Data;
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 
 /**
  * This GridBroker is a local implementation of the broker interface, using either a connection to a RabbitMQ

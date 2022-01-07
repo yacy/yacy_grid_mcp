@@ -24,8 +24,6 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
-import net.yacy.grid.mcp.Logger;
-
 public class Memory {
 
     private static final Runtime runtime = Runtime.getRuntime();

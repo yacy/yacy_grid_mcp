@@ -31,8 +31,8 @@ import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Data;
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.mcp.Service;
+import net.yacy.grid.tools.Logger;
 
 /**
  * test url

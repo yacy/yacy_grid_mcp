@@ -33,8 +33,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPInputStream;
 
-import net.yacy.grid.mcp.Logger;
-
 /**
  * a key list is a file which contains a list of key words; each line one word
  * The key list is stored into a java set object and the list can be extended on the fly

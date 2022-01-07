@@ -30,7 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 
 @SuppressWarnings("serial")
 public abstract class AbstractAPIHandler extends HttpServlet implements APIHandler {

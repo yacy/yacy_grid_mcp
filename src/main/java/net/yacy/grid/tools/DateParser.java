@@ -32,8 +32,6 @@ import java.util.concurrent.TimeUnit;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
-import net.yacy.grid.mcp.Logger;
-
 public class DateParser {
 
     public final static long HOUR_MILLIS = 60 * 60 * 1000;

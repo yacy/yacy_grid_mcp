@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import net.yacy.grid.mcp.Logger;
+import net.yacy.grid.tools.Logger;
 import net.yacy.grid.tools.MultiProtocolURL;
 
 public class GridStorage extends PeerStorage implements Storage<byte[]> {

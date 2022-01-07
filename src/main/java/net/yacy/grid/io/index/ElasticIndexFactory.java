@@ -46,9 +46,9 @@ import org.json.JSONTokener;
 
 import net.yacy.grid.io.index.ElasticsearchClient.BulkEntry;
 import net.yacy.grid.mcp.Data;
-import net.yacy.grid.mcp.Logger;
 import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.JSONList;
+import net.yacy.grid.tools.Logger;
 
 public class ElasticIndexFactory implements IndexFactory {
 
