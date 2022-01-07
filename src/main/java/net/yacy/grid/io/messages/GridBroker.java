@@ -45,9 +45,9 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     private int rabbitMQ_port;
     private String mcp_host;
     private int mcp_port;
-    private boolean lazy;
-    private boolean autoAck;
-    private int queueLimit, queueThrottling;
+    private final boolean lazy;
+    private final boolean autoAck;
+    private final int queueLimit, queueThrottling;
 
     /**
      * Make a grid-based broker
@@ -89,7 +89,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public boolean connectRabbitMQ(String address) {
         if (!address.startsWith(RabbitQueueFactory.PROTOCOL_PREFIX)) return false;
         address = address.substring(RabbitQueueFactory.PROTOCOL_PREFIX.length());
-        return connectRabbitMQ(Data.getHost(address), Data.getPort(address, "-1"), Data.getUser(address, null), Data.getPassword(address, null));
+        return this.connectRabbitMQ(Data.getHost(address), Data.getPort(address, "-1"), Data.getUser(address, null), Data.getPassword(address, null));
     }
 
     public boolean connectRabbitMQ(String host, int port, String username, String password) {
@@ -102,11 +102,11 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             //firsttry = true;
         }
         try {
-            QueueFactory<byte[]> qc = new RabbitQueueFactory(host, port, username, password, this.lazy, this.queueLimit);
+            final QueueFactory<byte[]> qc = new RabbitQueueFactory(host, port, username, password, this.lazy, this.queueLimit);
             this.rabbitQueueFactory = qc;
             Logger.info(this.getClass(), "Broker/Client: connected to the rabbitMQ broker at " + host + ":" + port);
             return true;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             /*if (firsttry)*/ Logger.warn(this.getClass(), "Broker/Client: trying to connect to the rabbitMQ broker at " + host + ":" + port + " failed: " + e.getMessage(), e);
             return false;
         }
@@ -120,13 +120,13 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         this.mcp_host = host;
         this.mcp_port = port;
         try {
-            QueueFactory<byte[]> mcpqf = new MCPQueueFactory(this, host, port);
-            String queueName = YaCyServices.indexer.name() + "_" + YaCyServices.indexer.getSourceQueues()[0].name();
+            final QueueFactory<byte[]> mcpqf = new MCPQueueFactory(this, host, port);
+            final String queueName = YaCyServices.indexer.name() + "_" + YaCyServices.indexer.getSourceQueues()[0].name();
             mcpqf.getQueue(queueName).checkConnection();
             this.mcpQueueFactory = mcpqf;
             Logger.info(this.getClass(), "Broker/Client: connected to a Queue over MCP at " + host + ":" + port);
             return true;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             /*if (firsttry)*/ Logger.info(this.getClass(), "Broker/Client: trying to connect to a Queue over MCP at " + host + ":" + port + " failed: " + e.getMessage());
             return false;
         }
@@ -139,7 +139,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
         String m = new String(message, 0, Math.min(1000, message.length), StandardCharsets.UTF_8);
         m = m.replace('\n', ' ');
         while (true) {
-            int l = m.length();
+            final int l = m.length();
             m = SPACE2.matcher(m).replaceAll(" ");
             if (m.length() == l) break;
         }
@@ -150,7 +150,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public QueueFactory<byte[]> send(Services serviceName, GridQueue queueName, byte[] message) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
             // try to connect again..
-            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+            this.connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
         }
         if (this.rabbitQueueFactory == null) {
             this.rabbitMQ_host = null;
@@ -158,22 +158,22 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).send(message);
             Logger.info(this.getClass(), "Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(message));
             return this.rabbitQueueFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             String m = e.getMessage();
             if (m == null) m = e.getCause().getMessage();
-            try {Thread.sleep(1000);} catch (InterruptedException ee) {}
+            try {Thread.sleep(1000);} catch (final InterruptedException ee) {}
             if (m.equals(TARGET_LIMIT_MESSAGE)) {
                 // queue limitation is like running against a wall: don't do this at all (if you know there is a wall)
                 // at least: If you insist in queue limitation don't do this too aggressive;
                 // I recommend to do not to limit queues; instead do throttling
-                try {Thread.sleep(3000);} catch (InterruptedException ee) {}
+                try {Thread.sleep(3000);} catch (final InterruptedException ee) {}
                 throw e; // consider this as fatal to trigger throttling (hope throttling is done on every send-location
             }
             /*if (!e.getMessage().contains("timeout"))*/ Logger.debug(this.getClass(), "Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {
             // try to connect again..
-            connectMCP(this.mcp_host, this.mcp_port);
+            this.connectMCP(this.mcp_host, this.mcp_port);
             if (this.mcpQueueFactory == null) {
                 Logger.warn(this.getClass(), "Broker/Client: FATAL: connection to MCP lost! send mcp service '" + serviceName + "', queue '" + queueName);
             }
@@ -182,7 +182,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).send(message);
             Logger.info(this.getClass(), "Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(message));
             return this.mcpQueueFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
         }
         Logger.info(this.getClass(), "Broker/Client: send() on peer broker/local db");
@@ -193,35 +193,35 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public MessageContainer<byte[]> receive(Services serviceName, GridQueue queueName, long timeout, boolean autoAck) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
             // try to connect again..
-            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+            this.connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
         }
         if (this.rabbitQueueFactory == null) {
             this.rabbitMQ_host = null;
         } else try {
-            Queue<byte[]> rabbitQueue = this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName));
-            MessageContainer<byte[]> mc = rabbitQueue.receive(timeout, autoAck);
+            final Queue<byte[]> rabbitQueue = this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName));
+            final MessageContainer<byte[]> mc = rabbitQueue.receive(timeout, autoAck);
             if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) Logger.info(this.getClass(), "Broker/Client: received rabbitMQ service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
             return mc;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Broker/Client: receive rabbitMQ service '" + serviceName + "', queue '" + queueName + "',rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {
             // try to connect again..
-            connectMCP(this.mcp_host, this.mcp_port);
+            this.connectMCP(this.mcp_host, this.mcp_port);
             if (this.mcpQueueFactory == null) {
                 Logger.warn(this.getClass(), "Broker/Client: FATAL: connection to MCP lost! receive mcp service '" + serviceName + "', queue '" + queueName);
             }
         }
         if (this.mcpQueueFactory != null) try {
-            Queue<byte[]> mcpQueue = this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName));
-            MessageContainer<byte[]> mc = mcpQueue.receive(timeout, autoAck);
+            final Queue<byte[]> mcpQueue = this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName));
+            final MessageContainer<byte[]> mc = mcpQueue.receive(timeout, autoAck);
             if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) Logger.info(this.getClass(), "Broker/Client: receive mcp service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
             return mc;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Broker/Client: receive mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
         }
-        Logger.info(this.getClass(), "Broker/Client: receive() on peer broker/local db");
-        MessageContainer<byte[]> mc = super.receive(serviceName, queueName, timeout, autoAck);
+        //Logger.info(this.getClass(), "Broker/Client: receive() on peer broker/local db");
+        final MessageContainer<byte[]> mc = super.receive(serviceName, queueName, timeout, autoAck);
         if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) Logger.info(this.getClass(), "Broker/Client: received peer broker/local db service '" + serviceName + "', queue '" + queueName + "', message:" + messagePP(mc.getPayload()));
         return mc;
     }
@@ -230,7 +230,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public QueueFactory<byte[]> acknowledge(Services serviceName, GridQueue queueName, long deliveryTag) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
             // try to connect again..
-            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+            this.connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
         }
         if (this.rabbitQueueFactory == null) {
             this.rabbitMQ_host = null;
@@ -238,12 +238,12 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).acknowledge(deliveryTag);
             Logger.info(this.getClass(), "Broker/Client: acknowledged rabbitMQ service '" + serviceName + "', queue '" + queueName + "', deliveryTag " + deliveryTag);
             return this.rabbitQueueFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Broker/Client: acknowledge rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {
             // try to connect again..
-            connectMCP(this.mcp_host, this.mcp_port);
+            this.connectMCP(this.mcp_host, this.mcp_port);
             if (this.mcpQueueFactory == null) {
                 Logger.warn(this.getClass(), "Broker/Client: FATAL: connection to MCP lost! send mcp service '" + serviceName + "', queue '" + queueName);
             }
@@ -252,7 +252,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).acknowledge(deliveryTag);
             Logger.info(this.getClass(), "Broker/Client: acknowledged mcp service '" + serviceName + "', queue '" + queueName + "', deliveryTag " + deliveryTag);
             return this.mcpQueueFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Broker/Client: acknowledge mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
         }
         Logger.info(this.getClass(), "Broker/Client: acknowledge() on peer broker/local db");
@@ -263,7 +263,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public QueueFactory<byte[]> reject(Services serviceName, GridQueue queueName, long deliveryTag) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
             // try to connect again..
-            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+            this.connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
         }
         if (this.rabbitQueueFactory == null) {
             this.rabbitMQ_host = null;
@@ -271,12 +271,12 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).reject(deliveryTag);
             Logger.info(this.getClass(), "Broker/Client: rejected rabbitMQ service '" + serviceName + "', queue '" + queueName + "', deliveryTag " + deliveryTag);
             return this.rabbitQueueFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Broker/Client: acknowledge rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {
             // try to connect again..
-            connectMCP(this.mcp_host, this.mcp_port);
+            this.connectMCP(this.mcp_host, this.mcp_port);
             if (this.mcpQueueFactory == null) {
                 Logger.warn(this.getClass(), "Broker/Client: FATAL: connection to MCP lost! send mcp service '" + serviceName + "', queue '" + queueName);
             }
@@ -285,7 +285,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).reject(deliveryTag);
             Logger.info(this.getClass(), "Broker/Client: rejected mcp service '" + serviceName + "', queue '" + queueName + "', deliveryTag " + deliveryTag);
             return this.mcpQueueFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Broker/Client: acknowledge mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
         }
         Logger.info(this.getClass(), "Broker/Client: reject() on peer broker/local db");
@@ -296,7 +296,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public QueueFactory<byte[]> recover(Services serviceName, GridQueue queueName) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
             // try to connect again..
-            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+            this.connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
         }
         if (this.rabbitQueueFactory == null) {
             this.rabbitMQ_host = null;
@@ -304,12 +304,12 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).recover();
             Logger.info(this.getClass(), "Broker/Client: recovered rabbitMQ service '" + serviceName + "', queue '" + queueName + "'");
             return this.rabbitQueueFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Logger.debug(this.getClass(), "Broker/Client: recover rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {
             // try to connect again..
-            connectMCP(this.mcp_host, this.mcp_port);
+            this.connectMCP(this.mcp_host, this.mcp_port);
             if (this.mcpQueueFactory == null) {
                 Logger.warn(this.getClass(), "Broker/Client: FATAL: connection to MCP lost! recover mcp service '" + serviceName + "', queue '" + queueName);
             }
@@ -318,7 +318,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).recover();
             Logger.info(this.getClass(), "Broker/Client: recovered mcp service '" + serviceName + "', queue '" + queueName + "'");
             return this.mcpQueueFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Logger.debug(this.getClass(), "Broker/Client: recover mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
         }
         Logger.info(this.getClass(), "Broker/Client: recover() on peer broker/local db");
@@ -329,27 +329,27 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public AvailableContainer available(Services serviceName, GridQueue queueName) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
             // try to connect again..
-            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+            this.connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
         }
         if (this.rabbitQueueFactory == null) {
             this.rabbitMQ_host = null;
         } else try {
-            AvailableContainer ac = new AvailableContainer(this.rabbitQueueFactory, queueName.name, this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).available());
+            final AvailableContainer ac = new AvailableContainer(this.rabbitQueueFactory, queueName.name, this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).available());
             return ac;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Logger.debug(this.getClass(), "Broker/Client: available rabbitMQ service '" + serviceName + "', queue '" + queueName + "',rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {
             // try to connect again..
-            connectMCP(this.mcp_host, this.mcp_port);
+            this.connectMCP(this.mcp_host, this.mcp_port);
             if (this.mcpQueueFactory == null) {
                 Logger.warn(this.getClass(), "Broker/Client: FATAL: connection to MCP lost! available mcp service '" + serviceName + "', queue '" + queueName);
             }
         }
         if (this.mcpQueueFactory != null) try {
-            AvailableContainer ac = new AvailableContainer(this.mcpQueueFactory, queueName.name, this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).available());
+            final AvailableContainer ac = new AvailableContainer(this.mcpQueueFactory, queueName.name, this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).available());
             return ac;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Logger.debug(this.getClass(), "Broker/Client: available mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
         }
         Logger.info(this.getClass(), "Broker/Client: available() on peer broker/local db");
@@ -360,7 +360,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
     public QueueFactory<byte[]> clear(Services serviceName, GridQueue queueName) throws IOException {
         if (this.rabbitQueueFactory == null && this.rabbitMQ_host != null) {
             // try to connect again..
-            connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
+            this.connectRabbitMQ(this.rabbitMQ_host, this.rabbitMQ_port, this.rabbitMQ_username, this.rabbitMQ_password);
         }
         if (this.rabbitQueueFactory == null) {
             this.rabbitMQ_host = null;
@@ -368,12 +368,12 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.rabbitQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).clear();
             Logger.info(this.getClass(), "Broker/Client: clear rabbitMQ service '" + serviceName + "', queue '" + queueName + "'");
             return this.rabbitQueueFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Logger.debug(this.getClass(), "Broker/Client: send rabbitMQ service '" + serviceName + "', queue '" + queueName + "', rabbitmq fail", e);
         }
         if (this.mcpQueueFactory == null && this.mcp_host != null) {
                 // try to connect again..
-                connectMCP(this.mcp_host, this.mcp_port);
+                this.connectMCP(this.mcp_host, this.mcp_port);
                 if (this.mcpQueueFactory == null) {
                     Logger.warn(this.getClass(), "Broker/Client: FATAL: connection to MCP lost! send mcp service '" + serviceName + "', queue '" + queueName);
                 }
@@ -382,7 +382,7 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
             this.mcpQueueFactory.getQueue(serviceQueueName(serviceName, queueName)).clear();
             Logger.info(this.getClass(), "Broker/Client: clear mcp service '" + serviceName + "', queue '" + queueName + "'");
             return this.mcpQueueFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             /*if (!e.getMessage().contains("timeout"))*/ Logger.debug(this.getClass(), "Broker/Client: send mcp service '" + serviceName + "', queue '" + queueName + "',mcp fail", e);
         }
         Logger.info(this.getClass(), "Broker/Client: send() on peer broker/local db");
@@ -391,9 +391,9 @@ public class GridBroker extends PeerBroker implements Broker<byte[]> {
 
     @Override
     public void close() {
-        if (this.rabbitQueueFactory != null) try {this.rabbitQueueFactory.close();} catch (Throwable e) {}
-        if (this.mcpQueueFactory != null) try {this.mcpQueueFactory.close();} catch (Throwable e) {}
-        try {super.close();} catch (Throwable e) {}
+        if (this.rabbitQueueFactory != null) try {this.rabbitQueueFactory.close();} catch (final Throwable e) {}
+        if (this.mcpQueueFactory != null) try {this.mcpQueueFactory.close();} catch (final Throwable e) {}
+        try {super.close();} catch (final Throwable e) {}
     }
 
 }
