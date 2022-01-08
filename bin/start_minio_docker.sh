@@ -1,0 +1,1 @@
+docker run -d --restart=unless-stopped --name=yacy-grid-minio -e MINIO_ROOT_USER=admin -e MINIO_ROOT_PASSWORD=12345678 -v yacy-grid-minio:/data -p 9000:9000 -p 9001:9001 --console-address :9001 quay.io/minio/minio server /data
