@@ -350,9 +350,9 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     public static void main(String[] args) {
         RabbitQueueFactory qc;
         try {
-            qc = new RabbitQueueFactory("127.0.0.1", -1, null, null, true, 0);
+            qc = new RabbitQueueFactory("127.0.0.1", -1, "guest", "guest", true, 0);
             qc.getQueue("test").send("Hello World".getBytes());
-            System.out.println(qc.getQueue("test2").receive(60000, true));
+            System.out.println(new String(qc.getQueue("test2").receive(60000, true).getPayload()));
             qc.close();
         } catch (IOException e) {
             Logger.warn(e);
