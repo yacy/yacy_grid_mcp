@@ -133,7 +133,9 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
 
     @Override
     public String getConnectionURL() {
-        return "s3://" + this.bucket + "." + this.endpoint + (hasDefaultPort() ? "" : ":" + this.port);
+        return "s3://" +
+                (this.accessKey != null && this.accessKey.length() > 0 ? this.accessKey + (this.secretKey != null && this.secretKey.length() > 0 ? ":" + this.secretKey : "") + "@" : "") +
+                this.bucket + "." + this.endpoint + (hasDefaultPort() ? "" : ":" + this.port);
     }
 
     @Override

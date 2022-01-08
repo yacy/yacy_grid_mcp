@@ -72,9 +72,9 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                     ftp.connect(FTPStorageFactory.this.server, FTPStorageFactory.this.port);
                 }
                 if (FTPStorageFactory.this.active)
-                	ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
+                    ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
                 else
-                	ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
+                    ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
                 final int reply = ftp.getReplyCode();
                 if(!FTPReply.isPositiveCompletion(reply)) {
                     if (ftp != null) try {ftp.disconnect();} catch (final Throwable ee) {}
@@ -98,9 +98,9 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                     final String file = this.cdPath(ftp, path);
                     final long t2 = System.currentTimeMillis();
                     if (FTPStorageFactory.this.active)
-                    	ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
+                        ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
                     else
-                    	ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
+                        ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
                     final boolean success = ftp.storeFile(file, new ByteArrayInputStream(asset));
                     final long t3 = System.currentTimeMillis();
                     if (!success) throw new IOException("storage to path " + path + " was not successful (storeFile=false)");
@@ -122,9 +122,9 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
                     final String file = this.cdPath(ftp, path);
                     baos = new ByteArrayOutputStream();
                     if (FTPStorageFactory.this.active)
-                    	ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
+                        ftp.enterLocalActiveMode(); // The data transfer process establishes the data connection
                     else
-                    	ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
+                        ftp.enterLocalPassiveMode(); // The server opens a data port to which the client conducts data transfers
                     ftp.retrieveFile(file, baos);
                     b = baos.toByteArray();
                     if (FTPStorageFactory.this.deleteafterread) try {
