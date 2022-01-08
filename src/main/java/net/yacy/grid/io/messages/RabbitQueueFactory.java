@@ -33,6 +33,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConfirmCallback;
 import com.rabbitmq.client.Connection;
@@ -287,7 +288,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         public void acknowledge(long deliveryTag) throws IOException {
             try {
                 this.channel.basicAck(deliveryTag, false);
-            } catch (IOException e) {
+            } catch (IOException | AlreadyClosedException e) {
                 // try again
                 Logger.warn(this.getClass(), "RabbitQueueFactory.acknowledge: re-connecting broker");
                 connect() ;
@@ -299,7 +300,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         public void reject(long deliveryTag) throws IOException {
             try {
                 this.channel.basicReject(deliveryTag, true);
-            } catch (IOException e) {
+            } catch (IOException | AlreadyClosedException e) {
                 // try again
                 Logger.warn(this.getClass(), "RabbitQueueFactory.reject: re-connecting broker");
                 connect() ;
@@ -311,7 +312,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         public void recover() throws IOException {
             try {
                 this.channel.basicRecover(true);
-            } catch (IOException e) {
+            } catch (IOException | AlreadyClosedException e) {
                 // try again
                 Logger.warn(this.getClass(), "RabbitQueueFactory.recover: re-connecting broker");
                 connect() ;
@@ -323,7 +324,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         public long available() throws IOException {
             try {
                 return availableInternal();
-            } catch (IOException e) {
+            } catch (IOException | AlreadyClosedException e) {
                 // try again
                 Logger.warn(this.getClass(), "RabbitQueueFactory.available: re-connecting broker");
                 connect() ;
