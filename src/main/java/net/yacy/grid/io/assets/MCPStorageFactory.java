@@ -93,7 +93,7 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
                 final Map<String, byte[]> params = new HashMap<>();
                 String protocolhostportstub = MCPStorageFactory.this.getConnectionURL();
                 ServiceResponse sr = APIServer.getAPI(StatusService.NAME).serviceImpl(protocolhostportstub, params);
-                if (!sr.getObject().has("system")) throw new IOException("MCP does not respond properly");
+                if (!sr.getObject().has("status")) throw new IOException("MCP does not respond properly");
             }
 
             @Override

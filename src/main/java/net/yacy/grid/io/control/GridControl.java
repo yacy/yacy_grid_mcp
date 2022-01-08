@@ -88,7 +88,7 @@ public class GridControl {
         final Map<String, byte[]> params = new HashMap<>();
         String protocolhostportstub = GridControl.this.getConnectionURL();
         ServiceResponse sr = APIServer.getAPI(StatusService.NAME).serviceImpl(protocolhostportstub, params);
-        if (!sr.getObject().has("system")) throw new IOException("MCP does not respond properly");
+        if (!sr.getObject().has("status")) throw new IOException("MCP does not respond properly");
     }
 
     public static long computeThrottling(String id, String url, int depth, int crawlingDepth, boolean loaderHeadless, int priority) {
