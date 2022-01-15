@@ -1,0 +1,158 @@
+version: '3'
+services:
+
+  elasticsearch:
+    image: elasticsearch:6.8.20
+    container_name: yacy-grid-elasticsearch
+    environment:
+      - cluster.name=elasticsearch
+      - node.name="yacygrid-node"
+      - node.master=true
+      - node.data=true
+      - network.bind_host=0.0.0.0
+      - network.host=0.0.0.0
+      - http.enabled=true
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1g
+    volumes:
+      - ./conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - yacy-grid-elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+    expose:
+      - "9300"
+      - "9200"
+    healthcheck:
+      test: curl -f http://elasticsearch:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:3.9-management-alpine
+    container_name: yacy-grid-rabbitmq
+    ports:
+      - 15672:15672
+      - 4369:4369
+      - 5672:5672
+      - 35197:35197
+      - 15671:15671
+      - 15691-15692:15691-15692
+      - 25672:25672
+    environment:
+      - RABBITMQ_CONFIG_FILE=/etc/rabbitmq/rabbitmq.conf
+    volumes:
+      - ./conf/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - yacy-grid-rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: quay.io/minio/minio
+    container_name: yacy-grid-minio
+    command: server --console-address ":9001" /data
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=12345678
+    volumes:
+      - yacy-grid-minio:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
+    healthcheck:
+      test: curl -f http://minio:9001/login || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  mcp:
+    image: yacy/yacy_grid_mcp
+    container_name: yacy_grid_mcp
+    environment:
+      - grid_ftp_active=false
+      - grid_s3_address=admin:12345678@yacygrid.minio:9000
+      - grid_s3_active=true
+      - grid_broker_address=guest:guest@rabbitmq:5672
+      - grid_assets_delete=true
+      - grid_elasticsearch_address=elasticsearch:9300
+      - grid.ftp.active=false
+      - grid.s3.address=admin:12345678@yacygrid.minio:9000
+      - grid.s3.active=true
+      - grid.broker.address=guest:guest@rabbitmq:5672
+      - grid.assets.delete=true
+      - grid.elasticsearch.address=elasticsearch:9300
+    depends_on:
+        minio:
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        elasticsearch:
+          condition: service_healthy
+    ports:
+      - 8100:8100
+    healthcheck:
+      test: wget -nv -t1 --spider 'http://mcp:8100/yacy/grid/mcp/info/status.json' || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  crawler:
+    image: yacy/yacy_grid_crawler
+    container_name: yacy_grid_crawler
+    environment:
+      - grid_mcp_address=mcp:8100
+    depends_on:
+      mcp:
+        condition: service_healthy
+    ports:
+      - 8300:8300
+
+  loader:
+    image: yacy/yacy_grid_loader
+    container_name: yacy_grid_loader
+    environment:
+      - grid_mcp_address=mcp:8100
+    depends_on:
+      mcp:
+        condition: service_healthy
+    ports:
+      - 8200:8200
+
+  parser:
+    image: yacy/yacy_grid_parser
+    container_name: yacy_grid_parser
+    environment:
+      - grid_mcp_address=mcp:8100
+    depends_on:
+      mcp:
+        condition: service_healthy
+    ports:
+      - 8500:8500
+
+  search:
+    image: yacy/yacy_grid_search
+    container_name: yacy_grid_search
+    environment:
+      - grid_mcp_address=mcp:8100
+    depends_on:
+      mcp:
+        condition: service_healthy
+    ports:
+      - 8800:8800
+
+
+volumes:
+  yacy-grid-elasticsearch-data:
+  yacy-grid-rabbitmq:
+  yacy-grid-minio:
+
+
+
