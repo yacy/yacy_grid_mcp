@@ -113,19 +113,34 @@ public class Data {
         final String[] gridMcpAddress = gridMcpAddressl.split(",");
         boolean mcpConnected = false;
         for (final String address: gridMcpAddress) {
-        	if (address.length() == 0) continue;
+            if (address.length() <= 0) continue;
+            Logger.info("Attempting Grid Connection to " + address);
+
             final String host = getHost(address);
             final int port = YaCyServices.mcp.getDefaultPort();
-            if (    address.length() > 0 &&
-                    Data.gridBroker.connectMCP(host, port) &&
-                    Data.gridStorage.connectMCP(host, port, true) &&
-                    Data.gridIndex.connectMCP(host, port) &&
-                    Data.gridControl.connectMCP(host, port)
-                ) {
-                Logger.info("Connected MCP at " + getHost(address));
-                mcpConnected = true;
-                break;
-            }
+            Logger.info("Checking Broker connection at " + host + ":" + port);
+            boolean brokerConnected = Data.gridBroker.connectMCP(host, port);
+            if (!brokerConnected) {Logger.warn("..failed"); continue;}
+            Logger.info(".. ok, RabbitMQ connected: " + Data.gridBroker.isRabbitMQConnected());
+
+            Logger.info("Checking Storage connection at " + host + ":" + port);
+            boolean storageConnected = Data.gridStorage.connectMCP(host, port, true);
+            if (!storageConnected) {Logger.warn("..failed"); continue;}
+            Logger.info(".. ok, S3 connected: " + Data.gridStorage.isS3Connected());
+
+            Logger.info("Checking Index connection at " + host + ":" + port);
+            boolean indexConnected = Data.gridIndex.connectMCP(host, port);
+            if (!indexConnected) {Logger.warn("..failed"); continue;}
+            Logger.info(".. ok, Elastic connected: " + Data.gridIndex.isConnected());
+
+            Logger.info("Checking Control connection at " + host + ":" + port);
+            boolean controlConnected = Data.gridControl.connectMCP(host, port);
+            if (!controlConnected) {Logger.warn("..failed"); continue;}
+            Logger.info(".. ok, Control connected: " + Data.gridControl.getConnectionURL() + " with url "+ Data.gridControl.getConnectionURL());
+
+            Logger.info("Connected MCP at " + getHost(address));
+            mcpConnected = true;
+            break;
         }
 
         if (!mcpConnected) {
