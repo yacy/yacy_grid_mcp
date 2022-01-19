@@ -63,6 +63,13 @@ public class Data {
         */
         //swagger.getServlets().forEach(path -> System.out.println(swagger.getServlet(path).toString()));
 
+        // log config
+        for (Map.Entry<String, String> centry: config.entrySet()) {
+            String key = centry.getKey();
+            boolean pw = key.toLowerCase().contains("password");
+            Logger.info("CONFIG: " + key + " = " + (pw ? "***" : centry.getValue()));
+        }
+
         gridServicePath = serviceData;
         if (!gridServicePath.exists()) gridServicePath.mkdirs();
 
