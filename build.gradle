@@ -1,19 +1,10 @@
-buildscript {
-    repositories {
-        jcenter()
-    }
-
-    dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
-    }
-}
-
 plugins {
+  id 'java'
+  id 'maven-publish'
   id 'com.github.johnrengelman.shadow' version '5.1.0'
 }
 
 apply plugin: 'java'
-apply plugin: 'maven'
 apply plugin: 'eclipse'
 apply plugin: 'application'
 
@@ -44,27 +35,23 @@ jar {
 }
 
 shadowJar {
-    mergeServiceFiles()
-
-    from('conf') {
-        into 'conf'
-    }
+  zip64 true
+  exclude 'data'
 }
-assemble.dependsOn shadowJar
 
 dependencies {
-    compile group: 'com.hazelcast', name: 'hazelcast', version: '4.2.+'
-    compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.+'
-    compile group: 'commons-net', name: 'commons-net', version: '3.+'
-    compile group: 'io.minio', name: 'minio', version: '8.3.+'
-    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '4.+'
-    compile group: 'jcifs', name: 'jcifs', version: '1.+'
-    compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.+'
-    compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.+'
-    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '9.4.+'
-    compile group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '5.+'
-    compile group: 'org.elasticsearch.client', name: 'transport', version: '6.8.+'
-    compile group: 'org.mapdb', name: 'mapdb', version: '3.+'
-    compile group: 'org.slf4j', name: 'log4j-over-slf4j', version: '1.7.+'
-    compile group: 'org.slf4j', name: 'slf4j-jdk14', version: '1.7.+'
+    implementation 'com.hazelcast:hazelcast:4.2.+'
+    implementation 'com.rabbitmq:amqp-client:5.+'
+    implementation 'commons-net:commons-net:3.+'
+    implementation 'io.minio:minio:8.3.+'
+    implementation 'javax.servlet:javax.servlet-api:4.+'
+    implementation 'jcifs:jcifs:1.+'
+    implementation 'org.apache.httpcomponents:httpmime:4.+'
+    implementation 'org.eclipse.jetty:jetty-server:9.4.+'
+    implementation 'org.eclipse.jetty:jetty-servlet:9.4.+'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:5.+'
+    implementation 'org.elasticsearch.client:transport:6.8.+'
+    implementation 'org.mapdb:mapdb:3.+'
+    implementation 'org.slf4j:log4j-over-slf4j:1.7.+'
+    implementation 'org.slf4j:slf4j-jdk14:1.7.+'
 }
