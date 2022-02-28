@@ -62,7 +62,7 @@ public class YaCyQuery {
 
     public final static String FACET_DEFAULT_PARAMETER = "host_s,url_file_ext_s,author_sxt,dates_in_content_dts,language_s,url_protocol_s,collection_sxt";
 
-    public List<String> collectionTextFilterQuery(boolean noimages) {
+    public List<String> collectionTextFilterQuery(final boolean noimages) {
         final ArrayList<String> fqs = new ArrayList<>();
 
         // add filter to prevent that results come from failed urls
@@ -86,7 +86,7 @@ public class YaCyQuery {
     public HashSet<String> yacyModifiers;
     public HashSet<String> positiveBag, negativeBag;
 
-    public YaCyQuery(String q, String[] collections, Classification.ContentDomain contentdom, int timezoneOffset) {
+    public YaCyQuery(final String q, final String[] collections, final Classification.ContentDomain contentdom, final int timezoneOffset) {
         // default values for since and util
         this.since = new Date(0);
         this.until = new Date(Long.MAX_VALUE);
@@ -102,10 +102,10 @@ public class YaCyQuery {
         // handle constraints and document types
         if (this.collections != null && this.collections.length > 0) {
             // attach collection constraint
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
-            BoolQueryBuilder collectionQuery = QueryBuilders.boolQuery();
-            for (String s: this.collections) {
-                int p = s.indexOf('^');
+            final BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
+            final BoolQueryBuilder collectionQuery = QueryBuilders.boolQuery();
+            for (final String s: this.collections) {
+                final int p = s.indexOf('^');
                 TermQueryBuilder tq;
                 if (p >= 0) {
                     tq = QueryBuilders.termQuery(WebMapping.collection_sxt.getMapping().name(), s.substring(0, p));
@@ -121,13 +121,13 @@ public class YaCyQuery {
 
         // add content domain
         if (contentdom == Classification.ContentDomain.IMAGE) {
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
-            qb.must(QueryBuilders.rangeQuery(WebMapping.imagescount_i.getMapping().name()).gt(new Integer(0)));
+            final BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
+            qb.must(QueryBuilders.rangeQuery(WebMapping.imagescount_i.getMapping().name()).gt(Integer.valueOf(0)));
             this.queryBuilder = qb;
         }
         if (contentdom == Classification.ContentDomain.VIDEO) {
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
-            qb.must(QueryBuilders.rangeQuery(WebMapping.videolinkscount_i.getMapping().name()).gt(new Integer(0)));
+            final BoolQueryBuilder qb = QueryBuilders.boolQuery().must(this.queryBuilder);
+            qb.must(QueryBuilders.rangeQuery(WebMapping.videolinkscount_i.getMapping().name()).gt(Integer.valueOf(0)));
             this.queryBuilder = qb;
         }
 
@@ -141,10 +141,10 @@ public class YaCyQuery {
         q = q.replaceAll(" AND ", " "); // AND is default
 
         // tokenize the query
-        ArrayList<String> list = new ArrayList<>();
+        final ArrayList<String> list = new ArrayList<>();
         Matcher m = term4ORPattern.matcher(q);
         while (m.find()) {
-            String d = m.group(1);
+            final String d = m.group(1);
             q = q.replace(d, "").replace("  ", " ");
             list.add(d);
             m = term4ORPattern.matcher(q);
@@ -166,19 +166,19 @@ public class YaCyQuery {
     }
 
 
-    private QueryBuilder preparse(String q, int timezoneOffset) {
+    private QueryBuilder preparse(String q, final int timezoneOffset) {
         // detect usage of OR connector usage.
         q = fixQueryMistakes(q);
-        List<String> terms = splitIntoORGroups(q); // OR binds stronger than AND
+        final List<String> terms = splitIntoORGroups(q); // OR binds stronger than AND
         //if (terms.size() == 0) QueryBuilders.constantScoreQuery(QueryBuilders.matchAllQuery());
 
         // special handling: we don't need a boolean query builder on top; just return one parse object
         if (terms.size() == 1) return parse(terms.get(0), timezoneOffset);
 
         // generic handling: all of those OR groups MUST match. That is done with the must query
-        BoolQueryBuilder aquery = QueryBuilders.boolQuery();
-        for (String t: terms) {
-            QueryBuilder partial = parse(t, timezoneOffset);
+        final BoolQueryBuilder aquery = QueryBuilders.boolQuery();
+        for (final String t: terms) {
+            final QueryBuilder partial = parse(t, timezoneOffset);
             aquery.must(partial);
         }
         return aquery;
@@ -194,15 +194,15 @@ public class YaCyQuery {
         new String[] {"yacy", "_id"}
     };
 
-    private QueryBuilder parse(String q, int timezoneOffset) {
+    private QueryBuilder parse(String q, final int timezoneOffset) {
         // detect usage of OR ORconnective usage. Because of the preparse step we will have only OR or only AND here.
         q = q.replaceAll(" AND ", " "); // AND is default
-        boolean ORconnective = q.indexOf(" OR ") >= 0;
+        final boolean ORconnective = q.indexOf(" OR ") >= 0;
         q = q.replaceAll(" OR ", " "); // if we know that all terms are OR, we remove that and apply it later. Because we splitted into OR groups it is right to use OR here only
 
         // tokenize the query
-        Set<String> qe = new LinkedHashSet<String>();
-        Matcher m = tokenizerPattern.matcher(q);
+        final Set<String> qe = new LinkedHashSet<String>();
+        final Matcher m = tokenizerPattern.matcher(q);
         while (m.find()) qe.add(m.group(1));
 
         // twitter search syntax:
@@ -217,13 +217,13 @@ public class YaCyQuery {
         //   since:2015-04-01 until:2015-04-03 - tweets within given time range
         // additional constraints:
         //   /image /audio /video /place - restrict to tweets which have attached images, audio, video or place
-        ArrayList<String> text_positive_match = new ArrayList<>();
-        ArrayList<String> text_negative_match = new ArrayList<>();
-        ArrayList<String> text_positive_filter = new ArrayList<>();
-        ArrayList<String> text_negative_filter = new ArrayList<>();
-        Multimap<String, String> modifier = HashMultimap.create();
-        Set<String> constraints_positive = new HashSet<>();
-        Set<String> constraints_negative = new HashSet<>();
+        final ArrayList<String> text_positive_match = new ArrayList<>();
+        final ArrayList<String> text_negative_match = new ArrayList<>();
+        final ArrayList<String> text_positive_filter = new ArrayList<>();
+        final ArrayList<String> text_negative_filter = new ArrayList<>();
+        final Multimap<String, String> modifier = HashMultimap.create();
+        final Set<String> constraints_positive = new HashSet<>();
+        final Set<String> constraints_negative = new HashSet<>();
         for (String t: qe) {
             if (t.length() == 0) continue;
             if (t.startsWith("/")) {
@@ -233,12 +233,12 @@ public class YaCyQuery {
                 constraints_negative.add(t.substring(2));
                 continue;
             } else if (t.indexOf(':') > 0) {
-                int p = t.indexOf(':');
-                String name = t.substring(0, p).toLowerCase();
-                String value = t.substring(p + 1);
+                final int p = t.indexOf(':');
+                final String name = t.substring(0, p).toLowerCase();
+                final String value = t.substring(p + 1);
                 if (value.indexOf('|') > 0) {
-                	String[] values = value.split("\\|");
-                	for (String v: values) {
+                	final String[] values = value.split("\\|");
+                	for (final String v: values) {
                     	modifier.put(name, v);
                 	}
                 } else {
@@ -247,7 +247,7 @@ public class YaCyQuery {
                 continue;
             } else {
                 // patch characters that will confuse elasticsearch or have a different meaning
-                boolean negative = t.startsWith("-");
+                final boolean negative = t.startsWith("-");
                 if (negative) t = t.substring(1);
                 if (t.length() == 0) continue;
                 if ((t.charAt(0) == dq && t.charAt(t.length() - 1) == dq) || (t.charAt(0) == sq && t.charAt(t.length() - 1) == sq)) {
@@ -288,23 +288,23 @@ public class YaCyQuery {
         }
 
         // compose query for text
-        List<QueryBuilder> queries = new ArrayList<>();
+        final List<QueryBuilder> queries = new ArrayList<>();
         // fuzzy matching
         if (!text_positive_match.isEmpty()) queries.add(simpleQueryBuilder(String.join(" ", text_positive_match), ORconnective, this.boosts));
         if (!text_negative_match.isEmpty()) queries.add(QueryBuilders.boolQuery().mustNot(simpleQueryBuilder(String.join(" ", text_negative_match), ORconnective, this.boosts)));
         // exact matching
-        for (String text: text_positive_filter) {
+        for (final String text: text_positive_filter) {
             queries.add(exactMatchQueryBuilder(text, this.boosts));
         }
-        for (String text: text_negative_filter) {
+        for (final String text: text_negative_filter) {
             queries.add(QueryBuilders.boolQuery().mustNot(exactMatchQueryBuilder(text, this.boosts)));
         }
 
         // apply modifiers
         Collection<String> values;
-        modifier_handling: for (String[] modifierType: modifierTypes) {
-            String modifier_name = modifierType[0];
-            String index_name = modifierType[1];
+        modifier_handling: for (final String[] modifierType: modifierTypes) {
+            final String modifier_name = modifierType[0];
+            final String index_name = modifierType[1];
 
             if ((values = modifier.get(modifier_name)).size() > 0) {
                 if (modifier_name.equals("yacy")) {
@@ -312,7 +312,7 @@ public class YaCyQuery {
                     continue modifier_handling;
                 }
                 if (modifier_name.equals("site") && values.size() == 1) {
-                    String host = values.iterator().next();
+                    final String host = values.iterator().next();
                     if (host.startsWith("www.")) values.add(host.substring(4)); else values.add("www." + host);
                 }
                 queries.add(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery(index_name, values)));
@@ -321,7 +321,7 @@ public class YaCyQuery {
 
             if ((values = modifier.get("-" + modifier_name)).size() > 0) {
                 if (modifier_name.equals("site") && values.size() == 1) {
-                    String host = values.iterator().next();
+                    final String host = values.iterator().next();
                     if (host.startsWith("www.")) values.add(host.substring(4)); else values.add("www." + host);
                 }
                 queries.add(QueryBuilders.boolQuery().mustNot(QueryBuilders.constantScoreQuery(QueryBuilders.termsQuery(index_name, values))));
@@ -329,29 +329,29 @@ public class YaCyQuery {
             }
         }
         if (modifier.containsKey("collection") && (this.collections == null || this.collections.length == 0)) {
-            Collection<String> c = modifier.get("collection");
+            final Collection<String> c = modifier.get("collection");
             this.collections = c.toArray(new String[c.size()]);
         }
         if (modifier.containsKey("daterange")) {
-            String dr = modifier.get("daterange").iterator().next();
+            final String dr = modifier.get("daterange").iterator().next();
             if (dr.length() > 0) {
-                String from_to[] = dr.endsWith("..") ? new String[]{dr.substring(0, dr.length() - 2), ""} : dr.startsWith("..") ? new String[]{"", dr.substring(2)} : dr.split("\\.\\.");
+                final String from_to[] = dr.endsWith("..") ? new String[]{dr.substring(0, dr.length() - 2), ""} : dr.startsWith("..") ? new String[]{"", dr.substring(2)} : dr.split("\\.\\.");
                 if (from_to.length == 2)  {
                     if (from_to[0] != null && from_to[0].length() > 0) try {
                         modifier.put("since", DateParser.dayDateFormat.format(DateParser.parse(from_to[0], timezoneOffset).getTime()));
-                    } catch (ParseException e) {}
+                    } catch (final ParseException e) {}
                     if (from_to[1] != null && from_to[1].length() > 0) try {
                         modifier.put("until", DateParser.dayDateFormat.format(DateParser.parse(from_to[1], timezoneOffset).getTime()));
-                    } catch (ParseException e) {}
+                    } catch (final ParseException e) {}
                 }
             }
         }
         if (modifier.containsKey("since")) try {
-            Calendar since = DateParser.parse(modifier.get("since").iterator().next(), timezoneOffset);
+            final Calendar since = DateParser.parse(modifier.get("since").iterator().next(), timezoneOffset);
             this.since = since.getTime();
-            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.last_modified.getMapping().name()).from(DateParser.formatGSAFS(this.since));
+            final RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.last_modified.getMapping().name()).from(DateParser.formatGSAFS(this.since));
             if (modifier.containsKey("until")) {
-                Calendar until = DateParser.parse(modifier.get("until").iterator().next(), timezoneOffset);
+                final Calendar until = DateParser.parse(modifier.get("until").iterator().next(), timezoneOffset);
                 if (until.get(Calendar.HOUR) == 0 && until.get(Calendar.MINUTE) == 0) {
                     // until must be the day which is included in results.
                     // To get the result within the same day, we must add one day.
@@ -363,17 +363,17 @@ public class YaCyQuery {
                 this.until = new Date(Long.MAX_VALUE);
             }
             queries.add(rangeQuery);
-        } catch (ParseException e) {} else if (modifier.containsKey("until")) try {
-            Calendar until = DateParser.parse(modifier.get("until").iterator().next(), timezoneOffset);
+        } catch (final ParseException e) {} else if (modifier.containsKey("until")) try {
+            final Calendar until = DateParser.parse(modifier.get("until").iterator().next(), timezoneOffset);
             if (until.get(Calendar.HOUR) == 0 && until.get(Calendar.MINUTE) == 0) {
                 // until must be the day which is included in results.
                 // To get the result within the same day, we must add one day.
                 until.add(Calendar.DATE, 1);
             }
             this.until = until.getTime();
-            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.last_modified.getMapping().name()).to(DateParser.formatGSAFS(this.until));
+            final RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(WebMapping.last_modified.getMapping().name()).to(DateParser.formatGSAFS(this.until));
             queries.add(rangeQuery);
-        } catch (ParseException e) {}
+        } catch (final ParseException e) {}
 
         // now combine queries with OR or AND operator
 
@@ -382,8 +382,8 @@ public class YaCyQuery {
             return queries.iterator().next();
         }
 
-        BoolQueryBuilder b = QueryBuilders.boolQuery();
-        for (QueryBuilder filter : queries){
+        final BoolQueryBuilder b = QueryBuilders.boolQuery();
+        for (final QueryBuilder filter : queries){
             if (ORconnective) b.should(filter); else b.must(filter);
         }
         if (ORconnective) b.minimumShouldMatch(1);
@@ -391,7 +391,7 @@ public class YaCyQuery {
         return b;
     }
 
-    public static QueryBuilder simpleQueryBuilder(String q, boolean or, Boosts boosts) {
+    public static QueryBuilder simpleQueryBuilder(final String q, final boolean or, final Boosts boosts) {
         if (q.equals("yacyall")) return new MatchAllQueryBuilder();
         final MultiMatchQueryBuilder qb = QueryBuilders
                 .multiMatchQuery(q)
@@ -401,8 +401,8 @@ public class YaCyQuery {
         return qb;
     }
 
-    public static QueryBuilder exactMatchQueryBuilder(String q, Boosts boosts) {
-        BoolQueryBuilder qb = QueryBuilders.boolQuery();
+    public static QueryBuilder exactMatchQueryBuilder(final String q, final Boosts boosts) {
+        final BoolQueryBuilder qb = QueryBuilders.boolQuery();
         boosts.forEach((mapping, boost) -> qb.should(QueryBuilders.termQuery(mapping.getMapping().name(), q)));
         qb.minimumShouldMatch(1);
         return qb;
