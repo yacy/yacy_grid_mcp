@@ -25,10 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import net.yacy.grid.mcp.Data;
-
 public enum WebMapping implements MappingDeclaration {
- 
+
     // mandatory
     url_s(MappingType.string, true, true, false, true, true, "url of document", true), // a 'sku' is a stock-keeping unit, a unique identifier and a default field in unmodified solr.
     //sku(MappingType.text_en_splitting_tight, true, true, false, true, true, "url of document"), // a 'sku' is a stock-keeping unit, a unique identifier and a default field in unmodified solr.
@@ -48,7 +46,7 @@ public enum WebMapping implements MappingDeclaration {
     inboundlinks_sxt(MappingType.string, true, true, true, false, true, "internal links", true),
     outboundlinks_sxt(MappingType.string, true, true, true, false, false, "external links", true),
     images_sxt(MappingType.string, true, true, true, false, true, "all image links", true),
-    
+
     // optional but recommended, part of index distribution
     fresh_date_dt(MappingType.date, true, true, false, false, false, "date until resource shall be considered as fresh"),
     referrer_url_s(MappingType.string, true, true, false, false, false, "id of the referrer to this document, discovered during crawling"),// byte[] referrerHash();
@@ -57,7 +55,7 @@ public enum WebMapping implements MappingDeclaration {
     audiolinkscount_i(MappingType.num_integer, true, true, false, false, false, "number of links to audio resources"),// int laudio();
     videolinkscount_i(MappingType.num_integer, true, true, false, false, false, "number of links to video resources"),// int lvideo();
     applinkscount_i(MappingType.num_integer, true, true, false, false, false, "number of links to application resources"),// int lapp();
-    
+
     // optional but recommended
     dates_in_content_dts(MappingType.date, true, true, true, false, true, "if date expressions can be found in the content, these dates are listed here as date objects in order of the appearances"),
     dates_in_content_count_i(MappingType.num_integer, true, true, false, false, false, "the number of entries in dates_in_content_sxt"),
@@ -100,7 +98,7 @@ public enum WebMapping implements MappingDeclaration {
     h5_txt(MappingType.text_general, true, true, true, false, true, "h5 header"),
     h6_txt(MappingType.text_general, true, true, true, false, true, "h6 header"),
     score_l(MappingType.num_long, true, true, false, false, false, "custom score"),
-    
+
     // optional values, not part of standard YaCy handling (but useful for external applications)
     collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation to separate the search result into user-defined subsets", false,
             "collections", "Collections", "String", "collection"),
@@ -129,11 +127,11 @@ public enum WebMapping implements MappingDeclaration {
     metagenerator_t(MappingType.text_general, true, true, false, false, false, "content of <meta name=\"generator\" content=#content#> tag"),
     inboundlinks_anchortext_txt(MappingType.text_general, true, true, true, false, true, "internal links, the visible anchor text"),
     outboundlinks_anchortext_txt(MappingType.text_general, true, true, true, false, true, "external links, the visible anchor text"),
-    
+
     icons_sxt(MappingType.string, true, true, true, false, true, "all icon links"),
     icons_rel_sxt(MappingType.string, true, true, true, false, false, "all icon links relationships space separated (e.g.. 'icon apple-touch-icon')"),
     icons_sizes_sxt(MappingType.num_integer, true, true, true, false, false, "all icon sizes space separated (e.g. '16x16 32x32')"),
-    
+
     images_text_t(MappingType.text_general, true, true, false, false, true, "all text/words appearing in image alt texts or the tokenized url"),
     images_alt_sxt(MappingType.string, true, true, true, false, true, "all image link alt tag"), // no need to index this; don't turn it into a txt field; use images_text_t instead
     images_height_val(MappingType.num_integer, true, true, true, false, false, "size of images:height"),
@@ -169,7 +167,7 @@ public enum WebMapping implements MappingDeclaration {
     navigation_url_sxt(MappingType.string, true, true, true, false, false, "page navigation url, see http://googlewebmastercentral.blogspot.de/2011/09/pagination-with-relnext-and-relprev.html"),
     navigation_type_sxt(MappingType.string, true, true, true, false, false, "page navigation rel property value, can contain one of {top,up,next,prev,first,last}"),
     publisher_url_s(MappingType.string, true, true, false, false, false, "publisher url as defined in http://support.google.com/plus/answer/1713826?hl=de"),
-    
+
     url_protocol_s(MappingType.string, true, true, false, false, false, "the protocol of the url", false, "protocols", "Protocol", "String", "protocol"),
     url_file_name_s(MappingType.string, true, true, false, false, true, "the file name (which is the string after the last '/' and before the query part from '?' on) without the file extension"),
     url_file_name_tokens_t(MappingType.text_general, true, true, false, false, true, "tokens generated from url_file_name_s which can be used for better matching and result boosting"),
@@ -205,15 +203,15 @@ public enum WebMapping implements MappingDeclaration {
     opengraph_type_s(MappingType.text_general, true, true, false, false, false, "Open Graph Metadata from og:type metadata field, see http://ogp.me/ns#"),
     opengraph_url_s(MappingType.text_general, true, true, false, false, false, "Open Graph Metadata from og:url metadata field, see http://ogp.me/ns#"),
     opengraph_image_s(MappingType.text_general, true, true, false, false, false, "Open Graph Metadata from og:image metadata field, see http://ogp.me/ns#"),
-    
+
     // link structure for ranking
     cr_host_count_i(MappingType.num_integer, true, true, false, false, false, "the number of documents within a single host"),
     cr_host_chance_d(MappingType.num_double, true, true, false, false, false, "the chance to click on this page when randomly clicking on links within on one host"),
     cr_host_norm_i(MappingType.num_integer, true, true, false, false, false, "normalization of chance: 0 for lower halve of cr_host_count_i urls, 1 for 1/2 of the remaining and so on. the maximum number is 10"),
-    
+
     // custom rating; values to influence the ranking in combination with boost rules
     rating_i(MappingType.num_integer, true, true, false, false, false, "custom rating; to be set with external rating information"),
-    
+
     // special values; can only be used if '_val' type is defined in schema file; this is not standard
     bold_val(MappingType.num_integer, true, true, true, false, false, "number of occurrences of texts in bold_txt"),
     italic_val(MappingType.num_integer, true, true, true, false, false, "number of occurrences of texts in italic_txt"),
@@ -242,9 +240,9 @@ public enum WebMapping implements MappingDeclaration {
     public final static String VOCABULARY_COUNT_SUFFIX = "_i"; // suffix for the term counter (>=1) that start with VOCABULARY_PREFIX - middle part is vocabulary name
     public final static String VOCABULARY_LOGCOUNT_SUFFIX = "_log_i"; // log2(VOCABULARY_COUNT)] -- can be used for ranking boosts based on the number of occurrences
     public final static String VOCABULARY_LOGCOUNTS_SUFFIX = "_log_val"; // all integers from [0 to log2(VOCABULARY_COUNT)] -- can be used for ranking boosts based on the number of occurrences
-    
+
     private Mapping mapping;
-    
+
     private WebMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment) {
         this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, false);
     }
@@ -252,25 +250,25 @@ public enum WebMapping implements MappingDeclaration {
     private WebMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment, final boolean mandatory) {
         this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, mandatory);
     }
-    
+
     private WebMapping(final MappingType type, final boolean indexed, final boolean stored, final boolean multiValued, final boolean omitNorms, final boolean searchable, final String comment, final boolean mandatory,
                        final String facetname, final String displayname, final String facettype, final String facetmodifier) {
         this.mapping = new Mapping(this.name(), type, indexed, stored, multiValued, omitNorms, searchable, comment, mandatory, facetname, displayname, facettype, facetmodifier);
     }
-    
+
     @Override
     public final Mapping getMapping() {
         return this.mapping;
     }
 
     public static final Pattern catchall_pattern = Pattern.compile(".*");
-    
-    public static Map<String, Pattern> collectionParser(String collectionString) {
+
+    public static Map<String, Pattern> collectionParser(final String collectionString) {
         if (collectionString == null || collectionString.length() == 0) return new HashMap<String, Pattern>();
-        String[] cs = collectionString.split(",");
+        final String[] cs = collectionString.split(",");
         final Map<String, Pattern> cm = new LinkedHashMap<String, Pattern>();
-        for (String c: cs) {
-            int p = c.indexOf(':');
+        for (final String c: cs) {
+            final int p = c.indexOf(':');
             if (p < 0) cm.put(c, catchall_pattern); else cm.put(c.substring(0, p), Pattern.compile(c.substring(p + 1)));
         }
         return cm;
@@ -320,10 +318,8 @@ public enum WebMapping implements MappingDeclaration {
      * curl http://elastic:changeme@localhost:9200/web/_count
      * @param args
      */
-    public static void main(String[] args) {
-        System.out.println(Mapping.elasticsearchMapping(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB)
-        ).toString(2));
+    public static void main(final String[] args) {
+        System.out.println(Mapping.elasticsearchMapping(GridIndex.DEFAULT_INDEXNAME_WEB).toString(2));
     }
 }
 

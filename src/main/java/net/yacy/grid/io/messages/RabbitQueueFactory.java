@@ -58,6 +58,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
 
     private final String server, username, password;
     private final int port;
+    private final ConnectionFactory connectionFactory;
     private Connection connection;
     private Map<String, Queue<byte[]>> queues;
     private final AtomicBoolean lazy;
@@ -82,29 +83,29 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         this.queueLimit = new AtomicInteger(queueLimit);
         this.connection = null;
         this.queues = new ConcurrentHashMap<>();
+        this.connectionFactory = new ConnectionFactory();
+        this.connectionFactory.setAutomaticRecoveryEnabled(false); // false -> SIC! - when leaving this 'true', old connections will be reused even if a old connection is closed and replace with a new one, resulting is "already closed exception".
+        this.connectionFactory.setHost(this.server);
+        if (this.port > 0) this.connectionFactory.setPort(this.port);
+        if (this.username != null && this.username.length() > 0) this.connectionFactory.setUsername(this.username);
+        if (this.password != null && this.password.length() > 0) this.connectionFactory.setPassword(this.password);
     }
 
     private Connection getConnection() throws IOException {
         if (this.connection != null && this.connection.isOpen()) return this.connection;
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setAutomaticRecoveryEnabled(true);
-        factory.setHost(this.server);
-        if (this.port > 0) factory.setPort(this.port);
-        if (this.username != null && this.username.length() > 0) factory.setUsername(this.username);
-        if (this.password != null && this.password.length() > 0) factory.setPassword(this.password);
         try {
-            this.connection = factory.newConnection();
+            this.connection = this.connectionFactory.newConnection();
             //Map<String, Object> map = this.connection.getServerProperties();
             if (!this.connection.isOpen()) throw new IOException("no connection");
             return this.connection;
-        } catch (TimeoutException e) {
+        } catch (final TimeoutException e) {
             throw new IOException(e.getMessage());
         }
     }
 
     private Channel getChannel() throws IOException {
         getConnection();
-        Channel channel = this.connection.createChannel();
+        final Channel channel = this.connection.createChannel();
         if (!channel.isOpen()) throw new IOException("no channel");
         return channel;
     }
@@ -132,7 +133,8 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     }
 
     @Override
-    public Queue<byte[]> getQueue(String queueName) throws IOException {
+    public Queue<byte[]> getQueue(final String queueName) throws IOException {
+        if (this.queues == null) return null;
         Queue<byte[]> queue = this.queues.get(queueName);
         if (queue != null) return queue;
         synchronized (this) {
@@ -148,14 +150,14 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         private final String queueName;
         private final SortedMap<Long, BlockingQueue<Boolean>> unconfirmedSet;
         private Channel channel;
-        public RabbitMessageQueue(String queueName) throws IOException {
+        public RabbitMessageQueue(final String queueName) throws IOException {
             this.queueName = queueName;
             this.unconfirmedSet = Collections.synchronizedSortedMap(new TreeMap<>());
             connect();
         }
 
         private void connect() throws IOException {
-            Map<String, Object> arguments = new HashMap<>();
+            final Map<String, Object> arguments = new HashMap<>();
             arguments.put("x-queue-mode", RabbitQueueFactory.this.lazy.get() ? "lazy" : "default"); // we want to minimize memory usage; see http://www.rabbitmq.com/lazy-queues.html
             if (RabbitQueueFactory.this.queueLimit.get() > 0) {
                 arguments.put("x-max-length", RabbitQueueFactory.this.queueLimit.get());
@@ -164,20 +166,20 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             this.channel = RabbitQueueFactory.this.getChannel();
             try {
                 this.channel.queueDeclare(this.queueName, true, false, false, arguments);
-            } catch (Throwable e) {
+            } catch (final Throwable e) {
                 // we first try to delete the old queue, but only if it is not used and if empty
                 try {
                     this.channel = RabbitQueueFactory.this.connection.createChannel();
                     this.channel.queueDelete(this.queueName, true, true);
-                } catch (Throwable ee) {}
+                } catch (final Throwable ee) {}
 
                 // try again
                 try {
                     this.channel = RabbitQueueFactory.this.connection.createChannel();
                     this.channel.queueDeclare(this.queueName, true, false, false, arguments);
-                } catch (Throwable ee) {
+                } catch (final Throwable ee) {
                     // that did not work. Try to modify the call to match with the previous queueDeclare
-                    String ec = ee.getCause() == null ? ee.getMessage() : ee.getCause().getMessage();
+                    final String ec = ee.getCause() == null ? ee.getMessage() : ee.getCause().getMessage();
                     if (ec != null && ec.contains("'signedint' but current is none")) {
                         arguments.remove("x-max-length");
                         arguments.remove("x-overflow");
@@ -186,7 +188,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                     try {
                         this.channel = RabbitQueueFactory.this.connection.createChannel();
                         this.channel.queueDeclare(this.queueName, true, false, false, arguments);
-                    } catch (Throwable eee) {
+                    } catch (final Throwable eee) {
                         throw new IOException(eee.getMessage());
                     }
                 }
@@ -195,26 +197,26 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
             this.channel.addConfirmListener(
                 new ConfirmCallback() { // ack
                     @Override
-                    public void handle(long seqNo, boolean multiple) throws IOException {
+                    public void handle(final long seqNo, final boolean multiple) throws IOException {
                         if (multiple) {
-                            Map<Long, BlockingQueue<Boolean>> m = RabbitMessageQueue.this.unconfirmedSet.headMap(seqNo + 1);
+                            final Map<Long, BlockingQueue<Boolean>> m = RabbitMessageQueue.this.unconfirmedSet.headMap(seqNo + 1);
                             m.forEach((s, b) -> b.add(Boolean.TRUE));
                             m.clear();
                         } else {
-                            BlockingQueue<Boolean> b = RabbitMessageQueue.this.unconfirmedSet.remove(seqNo);
+                            final BlockingQueue<Boolean> b = RabbitMessageQueue.this.unconfirmedSet.remove(seqNo);
                             assert b != null;
                             if (b != null) b.add(Boolean.TRUE);
                         }
                     }},
                 new ConfirmCallback() { // nack
                     @Override
-                    public void handle(long seqNo, boolean multiple) throws IOException {
+                    public void handle(final long seqNo, final boolean multiple) throws IOException {
                         if (multiple) {
-                            Map<Long, BlockingQueue<Boolean>> m = RabbitMessageQueue.this.unconfirmedSet.headMap(seqNo + 1);
+                            final Map<Long, BlockingQueue<Boolean>> m = RabbitMessageQueue.this.unconfirmedSet.headMap(seqNo + 1);
                             m.forEach((s, b) -> b.add(Boolean.FALSE));
                             m.clear();
                         } else {
-                            BlockingQueue<Boolean> b = RabbitMessageQueue.this.unconfirmedSet.remove(seqNo);
+                            final BlockingQueue<Boolean> b = RabbitMessageQueue.this.unconfirmedSet.remove(seqNo);
                             assert b != null;
                             if (b != null) b.add(Boolean.FALSE);
                         }
@@ -228,10 +230,10 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
 
         @Override
-        public Queue<byte[]> send(byte[] message) throws IOException {
+        public Queue<byte[]> send(final byte[] message) throws IOException {
             try {
                 return sendInternal(message);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 if (e.getMessage().equals(GridBroker.TARGET_LIMIT_MESSAGE)) throw e;
                 // try again
                 Logger.warn(this.getClass(), "RabbitQueueFactory.send: re-connecting broker");
@@ -239,53 +241,53 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                 return sendInternal(message);
             }
         }
-        private Queue<byte[]> sendInternal(byte[] message) throws IOException {
-            BlockingQueue<Boolean> semaphore = new ArrayBlockingQueue<>(1);
-            long seqNo = this.channel.getNextPublishSeqNo();
+        private Queue<byte[]> sendInternal(final byte[] message) throws IOException {
+            final BlockingQueue<Boolean> semaphore = new ArrayBlockingQueue<>(1);
+            final long seqNo = this.channel.getNextPublishSeqNo();
             this.unconfirmedSet.put(seqNo, semaphore);
             this.channel.basicPublish(DEFAULT_EXCHANGE, this.queueName, MessageProperties.PERSISTENT_BASIC, message);
             // wait for confirmation
             try {
-                Boolean delivered = semaphore.poll(10, TimeUnit.SECONDS);
+                final Boolean delivered = semaphore.poll(10, TimeUnit.SECONDS);
                 if (delivered == null) throw new IOException("message sending timeout");
                 if (delivered) return this;
                 throw new IOException(GridBroker.TARGET_LIMIT_MESSAGE);
-            } catch (InterruptedException x) {
+            } catch (final InterruptedException x) {
                 this.unconfirmedSet.remove(seqNo); // prevent a memory leak
                 throw new IOException("message sending interrupted");
             }
         }
 
         @Override
-        public MessageContainer<byte[]> receive(long timeout, boolean autoAck) throws IOException {
+        public MessageContainer<byte[]> receive(long timeout, final boolean autoAck) throws IOException {
             if (timeout <= 0) timeout = Long.MAX_VALUE;
-            long termination = timeout <= 0 || timeout == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeout;
+            final long termination = timeout <= 0 || timeout == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeout;
             Throwable ee = null;
             while (System.currentTimeMillis() < termination) {
                 ee = null;
                 try {
-                    GetResponse response = this.channel.basicGet(this.queueName, autoAck);
+                    final GetResponse response = this.channel.basicGet(this.queueName, autoAck);
                     if (response != null) {
-                        Envelope envelope = response.getEnvelope();
-                        long deliveryTag = envelope.getDeliveryTag();
+                        final Envelope envelope = response.getEnvelope();
+                        final long deliveryTag = envelope.getDeliveryTag();
                         //channel.basicAck(deliveryTag, false);
                         return new MessageContainer<byte[]>(RabbitQueueFactory.this, response.getBody(), deliveryTag);
                     }
                     //Logger.warn(this.getClass(), "receive failed: response empty");
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                     Logger.warn(this.getClass(), "receive failed: " + e.getMessage(), e);
                     connect() ;
                     ee = e;
                     //autoAck = ! autoAck;
                 }
-                try {Thread.sleep(1000);} catch (InterruptedException e) {return null;}
+                try {Thread.sleep(1000);} catch (final InterruptedException e) {return null;}
             }
             if (ee == null) return null;
             throw new IOException(ee.getMessage());
         }
 
         @Override
-        public void acknowledge(long deliveryTag) throws IOException {
+        public void acknowledge(final long deliveryTag) throws IOException {
             try {
                 this.channel.basicAck(deliveryTag, false);
             } catch (IOException | AlreadyClosedException e) {
@@ -297,7 +299,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
 
         @Override
-        public void reject(long deliveryTag) throws IOException {
+        public void reject(final long deliveryTag) throws IOException {
             try {
                 this.channel.basicReject(deliveryTag, true);
             } catch (IOException | AlreadyClosedException e) {
@@ -333,29 +335,43 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
         private int availableInternal() throws IOException {
             //int a = channel.queueDeclarePassive(this.queueName).getMessageCount();
-            int b = (int) this.channel.messageCount(this.queueName);
+            final int b = (int) this.channel.messageCount(this.queueName);
             //assert a == b;
             return b;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (this.channel != null) try {
+                this.channel.close();
+            } catch (IOException | TimeoutException e) {
+            }
         }
     }
 
     @Override
     public void close() {
+        //for (final Queue<byte[]> q: this.queues.values()) {try {q.close();} catch (final IOException e) {}}
+        //
+        // ATTENTION:
+        // We do not close the queues because RabbitMQ tries to recover old queues even if a new connection is initiated.
+        // Am exception will occur in case that we make a new connection and use old closed queues, stating that the queue was already closed.
+        // There must be a static status inside the RabbitMQ client which remembers all queues, even if they have been closed.
+        //
+        try {this.connection.close();} catch (final IOException e) {}
         this.queues.clear();
-        try {
-            this.connection.close();
-        } catch (IOException e) {}
         this.queues = null;
+        this.connection = null;
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         RabbitQueueFactory qc;
         try {
             qc = new RabbitQueueFactory("127.0.0.1", -1, "guest", "guest", true, 0);
             qc.getQueue("test").send("Hello World".getBytes());
             System.out.println(new String(qc.getQueue("test2").receive(60000, true).getPayload()));
             qc.close();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.warn(e);
         }
     }

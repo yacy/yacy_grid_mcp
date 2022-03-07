@@ -39,21 +39,21 @@ import eu.searchlab.storage.json.PersistentCord;
 public class S3QueueFactory extends PersistentCord implements QueueFactory<byte[]> {
 
     private URL url;
-    private String endpointURL;
-    private IOPath iop;
+    private final String endpointURL;
+    private final IOPath iop;
     private GenericIO io;
 
-    public S3QueueFactory(GenericIO io, IOPath iop) {
+    public S3QueueFactory(final GenericIO io, final IOPath iop) {
         super(io, iop);
         this.endpointURL = (io instanceof S3IO) ? ((S3IO) io).getEndpointURL() : null;
         try {
             this.url = new URL(this.endpointURL);
-        } catch (MalformedURLException e) {
+        } catch (final MalformedURLException e) {
             this.url = null;
         }
         try {
             this.io = (io instanceof S3IO) ? new S3IO(this.endpointURL, ((S3IO) io).getAccessKey(), ((S3IO) io).getSecretKey()) : new FileIO(new File("data"));
-        } catch (IOException e) {
+        } catch (final IOException e) {
             e.printStackTrace();
         }
         this.iop = iop;
@@ -79,22 +79,22 @@ public class S3QueueFactory extends PersistentCord implements QueueFactory<byte[
         return this.endpointURL;
     }
 
-    private static JSONObject message2json(byte[] message) {
+    private static JSONObject message2json(final byte[] message) {
         if (message == null) return new JSONObject();
         if (message[0] == '{') {
             // consider that this is already json
             return new JSONObject(new JSONTokener(new String(message, StandardCharsets.UTF_8)));
         }
-        JSONObject json = new JSONObject();
+        final JSONObject json = new JSONObject();
         json.put("message", Base64.getEncoder().encodeToString(message));
         return json;
     }
 
-    private static byte[] json2message(JSONObject json) {
+    private static byte[] json2message(final JSONObject json) {
         if (json.has("message")) {
-            String message = json.optString("message", "");
+            final String message = json.optString("message", "");
             if (message.length() > 0) {
-                byte[] m = Base64.getDecoder().decode(message);
+                final byte[] m = Base64.getDecoder().decode(message);
                 return m;
             }
         }
@@ -102,7 +102,7 @@ public class S3QueueFactory extends PersistentCord implements QueueFactory<byte[
     }
 
     @Override
-    public Queue<byte[]> getQueue(String queueName) throws IOException {
+    public Queue<byte[]> getQueue(final String queueName) throws IOException {
         return new Queue<byte[]>() {
 
             @Override
@@ -112,24 +112,24 @@ public class S3QueueFactory extends PersistentCord implements QueueFactory<byte[
             }
 
             @Override
-            public Queue<byte[]> send(byte[] message) throws IOException {
+            public Queue<byte[]> send(final byte[] message) throws IOException {
                 S3QueueFactory.this.append(message2json(message));
                 return this;
             }
 
             @Override
-            public MessageContainer<byte[]> receive(long timeout, boolean autoAck) throws IOException {
-                JSONObject json = S3QueueFactory.this.getFirst();
+            public MessageContainer<byte[]> receive(final long timeout, final boolean autoAck) throws IOException {
+                final JSONObject json = S3QueueFactory.this.getFirst();
                 return new MessageContainer<byte[]>(S3QueueFactory.this, json2message(json), 0 /* delivery tag */);
             }
 
             @Override
-            public void acknowledge(long deliveryTag) throws IOException {
+            public void acknowledge(final long deliveryTag) throws IOException {
                 // do nothing, this class does not provide a message acknowledge function
             }
 
             @Override
-            public void reject(long deliveryTag) throws IOException {
+            public void reject(final long deliveryTag) throws IOException {
                 // do nothing, this class does not provide a message reject function
             }
 
@@ -146,6 +146,11 @@ public class S3QueueFactory extends PersistentCord implements QueueFactory<byte[
             @Override
             public void clear() throws IOException {
                 // do nothing, this class does not provide a clear function
+            }
+
+            @Override
+            public void close() throws IOException {
+                // nothing to close
             }
 
         };

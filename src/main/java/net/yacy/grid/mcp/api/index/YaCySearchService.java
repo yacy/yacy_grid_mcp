@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -40,7 +40,7 @@ import net.yacy.grid.io.index.Sort;
 import net.yacy.grid.io.index.WebDocument;
 import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.io.index.YaCyQuery;
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Service;
 import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.DateParser;
 
@@ -61,43 +61,43 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
     }
 
     @Override
-    public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
-        String callback = call.get("callback", "");
-        boolean jsonp = callback != null && callback.length() > 0;
-        boolean minified = call.get("minified", false);
-        boolean explain = call.get("explain", false);
-        String q = call.get("query", "");
-        Classification.ContentDomain contentdom =  Classification.ContentDomain.contentdomParser(call.get("contentdom", "all"));
+    public ServiceResponse serviceImpl(final Query call, final HttpServletResponse response) {
+        final String callback = call.get("callback", "");
+        final boolean jsonp = callback != null && callback.length() > 0;
+        final boolean minified = call.get("minified", false);
+        final boolean explain = call.get("explain", false);
+        final String q = call.get("query", "");
+        final Classification.ContentDomain contentdom =  Classification.ContentDomain.contentdomParser(call.get("contentdom", "all"));
         String collection = call.get("collection", ""); // important: call arguments may overrule parsed collection values if not empty. This can be used for authentified indexes!
         collection = collection.replace(',', '|'); // to be compatible with the site-operator of GSA, we use a vertical pipe symbol here to divide collections.
-        String[] collections = collection.length() == 0 ? new String[0] : collection.split("\\|");
-        int maximumRecords = call.get("maximumRecords", call.get("rows", call.get("num", 10)));
-        int startRecord = call.get("startRecord", call.get("start", 0));
+        final String[] collections = collection.length() == 0 ? new String[0] : collection.split("\\|");
+        final int maximumRecords = call.get("maximumRecords", call.get("rows", call.get("num", 10)));
+        final int startRecord = call.get("startRecord", call.get("start", 0));
         //int meanCount = call.get("meanCount", 5);
-        int timezoneOffset = call.get("timezoneOffset", -1);
+        final int timezoneOffset = call.get("timezoneOffset", -1);
         //String nav = call.get("nav", "");
         //String prefermaskfilter = call.get("prefermaskfilter", "");
         //String constraint = call.get("constraint", "");
-        int facetLimit = call.get("facetLimit", 10);
-        String facetFields = call.get("facetFields", YaCyQuery.FACET_DEFAULT_PARAMETER);
-        List<WebMapping> facetFieldMapping = new ArrayList<>();
-        for (String s: facetFields.split(",")) facetFieldMapping.add(WebMapping.valueOf(s));
-        Sort sort = new Sort(call.get("sort", ""));
-        
-        YaCyQuery yq = new YaCyQuery(q, collections, contentdom, timezoneOffset);
-        ElasticsearchClient ec = Data.gridIndex.getElasticClient();
-        HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getMapping().name()).preTags("").postTags("").fragmentSize(140);
-        ElasticsearchClient.Query query = ec.query(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+        final int facetLimit = call.get("facetLimit", 10);
+        final String facetFields = call.get("facetFields", YaCyQuery.FACET_DEFAULT_PARAMETER);
+        final List<WebMapping> facetFieldMapping = new ArrayList<>();
+        for (final String s: facetFields.split(",")) facetFieldMapping.add(WebMapping.valueOf(s));
+        final Sort sort = new Sort(call.get("sort", ""));
+
+        final YaCyQuery yq = new YaCyQuery(q, collections, contentdom, timezoneOffset);
+        final ElasticsearchClient ec = Service.instance.config.gridIndex.getElasticClient();
+        final HighlightBuilder hb = new HighlightBuilder().field(WebMapping.text_t.getMapping().name()).preTags("").postTags("").fragmentSize(140);
+        final ElasticsearchClient.Query query = ec.query(
+                Service.instance.config.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
                 yq.queryBuilder, null, sort, hb, timezoneOffset, startRecord, maximumRecords, facetLimit, explain,
                 facetFieldMapping.toArray(new WebMapping[facetFieldMapping.size()]));
 
-        JSONObject json = new JSONObject(true);
-        JSONArray channels = new JSONArray();
+        final JSONObject json = new JSONObject(true);
+        final JSONArray channels = new JSONArray();
         json.put("channels", channels);
-        JSONObject channel = new JSONObject(true);
+        final JSONObject channel = new JSONObject(true);
         channels.put(channel);
-        JSONArray items = new JSONArray();
+        final JSONArray items = new JSONArray();
         channel.put("title", "Search for " + q);
         channel.put("description", "Search for " + q);
         channel.put("startIndex", "" + startRecord);
@@ -105,27 +105,27 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
         channel.put("searchTerms", q);
         channel.put("totalResults", Integer.toString(query.hitCount));
         channel.put("items", items);
-        
-        List<Map<String, Object>> result = query.results;
-        List<String> explanations = query.explanations;
+
+        final List<Map<String, Object>> result = query.results;
+        final List<String> explanations = query.explanations;
         for (int hitc = 0; hitc < result.size(); hitc++) {
-            WebDocument doc = new WebDocument(result.get(hitc));
-            JSONObject hit = new JSONObject(true);
-            String titleString = doc.getTitle();
+            final WebDocument doc = new WebDocument(result.get(hitc));
+            final JSONObject hit = new JSONObject(true);
+            final String titleString = doc.getTitle();
             String link = doc.getLink();
             if (Classification.ContentDomain.IMAGE == contentdom) {
                 hit.put("url", link); // the url before we extract the link
-                link = doc.pickImage((String) link);
+                link = doc.pickImage(link);
                 hit.put("icon", link);
                 hit.put("image", link);
             }
-            String snippet = doc.getSnippet(query.highlights.get(hitc), yq);
-            Date last_modified_date = doc.getDate();
-            int size = doc.getSize();
-            int sizekb = size / 1024;
-            int sizemb = sizekb / 1024;
-            String size_string = sizemb > 0 ? (Integer.toString(sizemb) + " mbyte") : sizekb > 0 ? (Integer.toString(sizekb) + " kbyte") : (Integer.toString(size) + " byte");
-            String host = doc.getHost();
+            final String snippet = doc.getSnippet(query.highlights.get(hitc), yq);
+            final Date last_modified_date = doc.getDate();
+            final int size = doc.getSize();
+            final int sizekb = size / 1024;
+            final int sizemb = sizekb / 1024;
+            final String size_string = sizemb > 0 ? (Integer.toString(sizemb) + " mbyte") : sizekb > 0 ? (Integer.toString(sizekb) + " kbyte") : (Integer.toString(size) + " byte");
+            final String host = doc.getHost();
 	        hit.put("title", titleString);
             hit.put("link", link.toString());
             hit.put("description", snippet);
@@ -138,14 +138,14 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
             }
             items.put(hit);
         };
-        JSONArray navigation = new JSONArray();
+        final JSONArray navigation = new JSONArray();
         channel.put("navigation", navigation);
-        
-        Map<String, List<Map.Entry<String, Long>>> aggregations = query.aggregations;
-        for (Map.Entry<String, List<Map.Entry<String, Long>>> fe: aggregations.entrySet()) {
-            String facetname = fe.getKey();
-            WebMapping mapping = WebMapping.valueOf(facetname);
-            JSONObject facetobject = new JSONObject(true);
+
+        final Map<String, List<Map.Entry<String, Long>>> aggregations = query.aggregations;
+        for (final Map.Entry<String, List<Map.Entry<String, Long>>> fe: aggregations.entrySet()) {
+            final String facetname = fe.getKey();
+            final WebMapping mapping = WebMapping.valueOf(facetname);
+            final JSONObject facetobject = new JSONObject(true);
             facetobject.put("facetname", mapping.getMapping().getFacetname());
             facetobject.put("displayname", mapping.getMapping().getDisplayname());
             facetobject.put("type", mapping.getMapping().getFacettype());
@@ -153,10 +153,10 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
             facetobject.put("max", "0");
             facetobject.put("mean", "0");
             facetobject.put("count", fe.getValue().size());
-            JSONArray elements = new JSONArray();
+            final JSONArray elements = new JSONArray();
             facetobject.put("elements", elements);
-            for (Map.Entry<String, Long> element: fe.getValue()) {
-                JSONObject elementEntry = new JSONObject(true);
+            for (final Map.Entry<String, Long> element: fe.getValue()) {
+                final JSONObject elementEntry = new JSONObject(true);
                 elementEntry.put("name", element.getKey());
                 elementEntry.put("count", element.getValue().toString());
                 elementEntry.put("modifier", mapping.getMapping().getFacetmodifier() + ":" + element.getKey());
@@ -164,9 +164,9 @@ public class YaCySearchService extends ObjectAPIHandler implements APIHandler {
             }
             navigation.put(facetobject);
         }
-        
+
         if (jsonp) {
-            StringBuilder sb = new StringBuilder(1024);
+            final StringBuilder sb = new StringBuilder(1024);
             sb.append(callback).append("([").append(json.toString(minified ? 0 : 2)).append("]);");
             return new ServiceResponse(sb.toString());
         } else {

@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -28,7 +28,7 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Configuration;
 
 public class CrawlstartDocument extends Document {
 
@@ -36,52 +36,52 @@ public class CrawlstartDocument extends Document {
         super();
     }
 
-    public CrawlstartDocument(Map<String, Object> map) {
+    public CrawlstartDocument(final Map<String, Object> map) {
         super(map);
     }
 
-    public CrawlstartDocument(JSONObject obj) {
+    public CrawlstartDocument(final JSONObject obj) {
         super(obj);
     }
 
-    public static Map<String, CrawlstartDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
-        Map<String, JSONObject> jsonmap = index.queryBulk(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+    public static Map<String, CrawlstartDocument> loadBulk(final Configuration data, final Index index, final Collection<String> ids) throws IOException {
+        final Map<String, JSONObject> jsonmap = index.queryBulk(
+                data.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
                 ids);
-        Map<String, CrawlstartDocument> docmap = new HashMap<>();
+        final Map<String, CrawlstartDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> docmap.put(id, new CrawlstartDocument(doc)));
         return docmap;
     }
 
-    public static CrawlstartDocument load(Index index, String crawlid) throws IOException {
-        JSONObject json = index.query(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+    public static CrawlstartDocument load(final Configuration data, final Index index, final String crawlid) throws IOException {
+        final JSONObject json = index.query(
+                data.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
                 crawlid);
         if (json == null) throw new IOException("no crawl start with id " + crawlid + " in index");
         return new CrawlstartDocument(json);
     }
 
-    public static void storeBulk(Index index, Collection<CrawlstartDocument> documents) throws IOException {
+    public static void storeBulk(final Configuration data, final Index index, final Collection<CrawlstartDocument> documents) throws IOException {
         if (index == null) return;
-        Map<String, JSONObject> map = new HashMap<>();
+        final Map<String, JSONObject> map = new HashMap<>();
         documents.forEach(crawlstartDocument -> {
-            String id = crawlstartDocument.getCrawlID();
+            final String id = crawlstartDocument.getCrawlID();
             map.put(id, crawlstartDocument);
         });
         index.addBulk(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
-                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), map);
+                data.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), map);
     }
 
-    public CrawlstartDocument store(Index index) throws IOException {
-        String crawlid = getCrawlID();
+    public CrawlstartDocument store(final Configuration data, final Index index) throws IOException {
+        final String crawlid = getCrawlID();
         index.add(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
-                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), crawlid, this);
+                data.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), crawlid, this);
         return this;
     }
 
-    public CrawlstartDocument setCrawlID(String crawl_id) {
+    public CrawlstartDocument setCrawlID(final String crawl_id) {
         this.putString(CrawlstartMapping.crawl_id_s, crawl_id);
         return this;
     }
@@ -90,7 +90,7 @@ public class CrawlstartDocument extends Document {
         return this.getString(CrawlstartMapping.crawl_id_s, "");
     }
 
-    public CrawlstartDocument setMustmatch(String mustmatch) {
+    public CrawlstartDocument setMustmatch(final String mustmatch) {
         this.putString(CrawlstartMapping.mustmatch_s, mustmatch);
         return this;
     }
@@ -99,7 +99,7 @@ public class CrawlstartDocument extends Document {
         return this.getString(CrawlstartMapping.mustmatch_s, "");
     }
 
-    public CrawlstartDocument setCollections(Collection<String> collections) {
+    public CrawlstartDocument setCollections(final Collection<String> collections) {
         this.putStrings(CrawlstartMapping.collection_sxt, collections);
         return this;
     }
@@ -108,7 +108,7 @@ public class CrawlstartDocument extends Document {
         return this.getStrings(CrawlstartMapping.collection_sxt);
     }
 
-    public CrawlstartDocument setCrawlstartURL(String url) {
+    public CrawlstartDocument setCrawlstartURL(final String url) {
         this.putString(CrawlstartMapping.start_url_s, url);
         return this;
     }
@@ -117,7 +117,7 @@ public class CrawlstartDocument extends Document {
         return this.getString(CrawlstartMapping.start_url_s, "");
     }
 
-    public CrawlstartDocument setCrawlstartSSLD(String url) {
+    public CrawlstartDocument setCrawlstartSSLD(final String url) {
         this.putString(CrawlstartMapping.start_ssld_s, url);
         return this;
     }
@@ -126,7 +126,7 @@ public class CrawlstartDocument extends Document {
         return this.getString(CrawlstartMapping.start_ssld_s, "");
     }
 
-    public CrawlstartDocument setInitDate(Date date) {
+    public CrawlstartDocument setInitDate(final Date date) {
         this.putDate(CrawlstartMapping.init_date_dt, date);
         return this;
     }
@@ -135,7 +135,7 @@ public class CrawlstartDocument extends Document {
         return this.getDate(CrawlstartMapping.init_date_dt);
     }
 
-    public CrawlstartDocument setData(JSONObject data) {
+    public CrawlstartDocument setData(final JSONObject data) {
         this.putObject(CrawlstartMapping.data_o, data);
         return this;
     }

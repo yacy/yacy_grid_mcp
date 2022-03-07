@@ -45,7 +45,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import net.yacy.grid.io.index.ElasticsearchClient.BulkEntry;
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Configuration;
 import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.JSONList;
 import net.yacy.grid.tools.Logger;
@@ -67,7 +67,7 @@ public class ElasticIndexFactory implements IndexFactory {
 
         // create elasticsearch connection
         this.elasticsearchClient = new ElasticsearchClient(new String[]{this.elasticsearchAddress}, this.elasticsearchClusterName.length() == 0 ? null : this.elasticsearchClusterName);
-        Logger.info(this.getClass(), "Connected elasticsearch at " + Data.getHost(this.elasticsearchAddress));
+        Logger.info(this.getClass(), "Connected elasticsearch at " + Configuration.getHost(this.elasticsearchAddress));
 
         Path mappingsPath = Paths.get("conf","mappings");
         if (mappingsPath.toFile().exists()) {
@@ -235,7 +235,7 @@ public class ElasticIndexFactory implements IndexFactory {
 
     @Override
     public String getHost() {
-        return Data.getHost(this.elasticsearchAddress);
+        return Configuration.getHost(this.elasticsearchAddress);
     }
 
     @Override

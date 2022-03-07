@@ -26,9 +26,9 @@ import org.json.JSONObject;
 
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIHandler;
-import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.mcp.Service;
 import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.mcp.api.messages.AcknowledgeService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
@@ -40,11 +40,11 @@ import net.yacy.grid.tools.Logger;
 
 public class MCPQueueFactory implements QueueFactory<byte[]> {
 
-    private GridBroker broker;
-    private String server;
-    private int port;
+    private final GridBroker broker;
+    private final String server;
+    private final int port;
 
-    public MCPQueueFactory(GridBroker broker, String server, int port) {
+    public MCPQueueFactory(final GridBroker broker, final String server, final int port) {
         this.broker = broker;
         this.server = server;
         this.port = port;
@@ -71,7 +71,7 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
     }
 
     @Override
-    public Queue<byte[]> getQueue(String serviceQueueName) throws IOException {
+    public Queue<byte[]> getQueue(final String serviceQueueName) throws IOException {
         final int p = serviceQueueName.indexOf('_');
         if (p <= 0) return null;
         final JSONObject params = new JSONObject(true);
@@ -81,17 +81,17 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
 
             @Override
             public void checkConnection() throws IOException {
-                String protocolhostportstub = MCPQueueFactory.this.getConnectionURL();
-                APIHandler apiHandler = APIServer.getAPI(StatusService.NAME);
-                ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
+                final String protocolhostportstub = MCPQueueFactory.this.getConnectionURL();
+                final APIHandler apiHandler = Service.instance.config.getAPI(StatusService.NAME);
+                final ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
                 if (!sr.getObject().has("status")) throw new IOException("MCP does not respond properly");
                 available(); // check on service level again
             }
 
             @Override
-            public Queue<byte[]> send(byte[] message) throws IOException {
+            public Queue<byte[]> send(final byte[] message) throws IOException {
                 params.put("message", new String(message, StandardCharsets.UTF_8));
-                JSONObject response = getResponse(APIServer.getAPI(SendService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(SendService.NAME));
 
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
@@ -103,17 +103,17 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
             }
 
             @Override
-            public MessageContainer<byte[]> receive(long timeout, boolean autoAck) throws IOException {
+            public MessageContainer<byte[]> receive(final long timeout, final boolean autoAck) throws IOException {
                 params.put("timeout", Long.toString(timeout));
                 params.put("autoAck", Boolean.toString(autoAck));
-                JSONObject response = getResponse(APIServer.getAPI(ReceiveService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(ReceiveService.NAME));
 
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
                     if (response.has(ObjectAPIHandler.MESSAGE_KEY)) {
-                        String message = response.getString(ObjectAPIHandler.MESSAGE_KEY);
-                        long deliveryTag = response.optLong(ObjectAPIHandler.DELIVERY_TAG);
+                        final String message = response.getString(ObjectAPIHandler.MESSAGE_KEY);
+                        final long deliveryTag = response.optLong(ObjectAPIHandler.DELIVERY_TAG);
                         return new MessageContainer<byte[]>(MCPQueueFactory.this, message == null ? null : message.getBytes(StandardCharsets.UTF_8), deliveryTag);
                     }
                     throw new IOException("bad response from MCP: success but no message key");
@@ -123,9 +123,9 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
             }
 
             @Override
-            public void acknowledge(long deliveryTag) throws IOException {
+            public void acknowledge(final long deliveryTag) throws IOException {
                 params.put("deliveryTag", Long.toString(deliveryTag));
-                JSONObject response = getResponse(APIServer.getAPI(AcknowledgeService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(AcknowledgeService.NAME));
                 if (success(response)) {
                     connectMCP(response);
                 } else {
@@ -134,9 +134,9 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
             }
 
             @Override
-            public void reject(long deliveryTag) throws IOException {
+            public void reject(final long deliveryTag) throws IOException {
                 params.put("deliveryTag", Long.toString(deliveryTag));
-                JSONObject response = getResponse(APIServer.getAPI(RejectService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(RejectService.NAME));
                 if (success(response)) {
                     connectMCP(response);
                 } else {
@@ -146,7 +146,7 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
 
             @Override
             public void recover() throws IOException {
-                JSONObject response = getResponse(APIServer.getAPI(RecoverService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(RecoverService.NAME));
                 if (success(response)) {
                     connectMCP(response);
                 } else {
@@ -156,13 +156,13 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
 
             @Override
             public long available() throws IOException {
-                JSONObject response = getResponse(APIServer.getAPI(AvailableService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(AvailableService.NAME));
 
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
                     if (response.has(ObjectAPIHandler.AVAILABLE_KEY)) {
-                        int available = response.getInt(ObjectAPIHandler.AVAILABLE_KEY);
+                        final int available = response.getInt(ObjectAPIHandler.AVAILABLE_KEY);
                         return available;
                     }
                     throw new IOException("bad response from MCP: success but no message key");
@@ -170,17 +170,17 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                     throw handleError(response);
                 }
             }
-            private JSONObject getResponse(APIHandler handler) throws IOException {
-                String protocolhostportstub = MCPQueueFactory.this.getConnectionURL();
-                ServiceResponse sr = handler.serviceImpl(protocolhostportstub, params);
+            private JSONObject getResponse(final APIHandler handler) throws IOException {
+                final String protocolhostportstub = MCPQueueFactory.this.getConnectionURL();
+                final ServiceResponse sr = handler.serviceImpl(protocolhostportstub, params);
                 return sr.getObject();
             }
-            private boolean success(JSONObject response) {
+            private boolean success(final JSONObject response) {
                 return response.has(ObjectAPIHandler.SUCCESS_KEY) && response.getBoolean(ObjectAPIHandler.SUCCESS_KEY);
             }
-            private void connectMCP(JSONObject response) {
+            private void connectMCP(final JSONObject response) {
                 if (response.has(ObjectAPIHandler.SERVICE_KEY)) {
-                    String broker = response.getString(ObjectAPIHandler.SERVICE_KEY);
+                    final String broker = response.getString(ObjectAPIHandler.SERVICE_KEY);
                     if (MCPQueueFactory.this.broker.connectRabbitMQ(broker)) {
                         Logger.info(this.getClass(), "connected MCP broker at " + broker);
                     } else {
@@ -188,11 +188,15 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                     }
                 }
             }
-            private IOException handleError(JSONObject response) {
+            private IOException handleError(final JSONObject response) {
                 if (response.has(ObjectAPIHandler.COMMENT_KEY)) {
                     return new IOException("cannot connect to MCP: " + response.getString(ObjectAPIHandler.COMMENT_KEY));
                 }
                 return new IOException("bad response from MCP: no success and no comment key");
+            }
+
+            @Override
+            public void close() throws IOException {
             }
 
         };

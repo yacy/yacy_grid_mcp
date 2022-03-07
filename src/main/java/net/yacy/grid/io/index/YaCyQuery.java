@@ -47,7 +47,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import net.yacy.grid.io.index.BoostsFactory.Boosts;
-import net.yacy.grid.mcp.Data;
 import net.yacy.grid.tools.Classification;
 import net.yacy.grid.tools.DateParser;
 import net.yacy.grid.tools.Logger;
@@ -91,7 +90,7 @@ public class YaCyQuery {
         this.since = new Date(0);
         this.until = new Date(Long.MAX_VALUE);
         this.collections = collections;
-        this.boosts = Data.boostsFactory.getBoosts(); // creates a clone of a standard boost mapping
+        this.boosts = BoostsFactory.getBoosts(); // creates a clone of a standard boost mapping
         this.yacyModifiers = new HashSet<>();
         this.positiveBag = new HashSet<>();
         this.negativeBag = new HashSet<>();

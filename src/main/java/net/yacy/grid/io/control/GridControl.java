@@ -22,21 +22,16 @@ package net.yacy.grid.io.control;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.servlet.Servlet;
-
 import org.json.JSONObject;
 
-import net.yacy.grid.http.APIServer;
+import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
-import net.yacy.grid.mcp.MCP;
+import net.yacy.grid.mcp.Configuration;
 import net.yacy.grid.mcp.Service;
 import net.yacy.grid.mcp.api.control.LoaderThrottlingService;
 import net.yacy.grid.mcp.api.info.StatusService;
@@ -55,19 +50,19 @@ public class GridControl {
         this.mcp_port = 0;
     }
 
-    public GridControl(String server, int port) {
+    public GridControl(final String server, final int port) {
         this.mcp_host = server;
         this.mcp_port = port;
     }
 
-    public boolean connectMCP(String host, int port) {
+    public boolean connectMCP(final String host, final int port) {
         this.mcp_host = host;
         this.mcp_port = port;
         try {
             checkConnection();
             Logger.info(this.getClass(), "Index/Client: connected to MCP control at " + host + ":" + port);
             return true;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             return false;
         }
     }
@@ -86,20 +81,20 @@ public class GridControl {
 
     public void checkConnection() throws IOException {
         final Map<String, byte[]> params = new HashMap<>();
-        String protocolhostportstub = GridControl.this.getConnectionURL();
-        ServiceResponse sr = APIServer.getAPI(StatusService.NAME).serviceImpl(protocolhostportstub, params);
+        final String protocolhostportstub = GridControl.this.getConnectionURL();
+        final ServiceResponse sr = Service.instance.config.getAPI(StatusService.NAME).serviceImpl(protocolhostportstub, params);
         if (!sr.getObject().has("status")) throw new IOException("MCP does not respond properly");
     }
 
-    public static long computeThrottling(String id, String url, int depth, int crawlingDepth, boolean loaderHeadless, int priority) {
+    public static long computeThrottling(final String id, final String url, final int depth, final int crawlingDepth, final boolean loaderHeadless, final int priority) {
         MultiProtocolURL u;
         try {
             u = new MultiProtocolURL(url);
-        } catch (MalformedURLException e) {
+        } catch (final MalformedURLException e) {
             return 500;
         }
-        String host = u.getHost();
-        Long lastLoadTime = loaderAccess.get(host);
+        final String host = u.getHost();
+        final Long lastLoadTime = loaderAccess.get(host);
         if (lastLoadTime == null) {
             // the host was never loaded!
             loaderAccess.put(host, System.currentTimeMillis());
@@ -107,24 +102,24 @@ public class GridControl {
             return 0;
         }
         // compute access delta
-        long delta = lastLoadTime.longValue() - System.currentTimeMillis();
+        final long delta = lastLoadTime.longValue() - System.currentTimeMillis();
         if (delta < 0) {
             // the latest load time was in the past
             loaderAccess.put(host, System.currentTimeMillis());
-            long delay = Math.max(0, delta + 500); // in case that delta < -500, we don't need a throttling at all
+            final long delay = Math.max(0, delta + 500); // in case that delta < -500, we don't need a throttling at all
             if (delay > 0) Logger.info("GridControl.computeThrottling: past-loaded " + host + ", delay = " + delay + ", url = " + url);
             return delay;
         }
         // the latest load time will be loaded by another thread in the future
         // we must add another delay to this
-        long future = System.currentTimeMillis() + delta + 500;
-        long delay = future - System.currentTimeMillis();
+        final long future = System.currentTimeMillis() + delta + 500;
+        final long delay = future - System.currentTimeMillis();
         loaderAccess.put(host, future);
         Logger.info("GridControl.computeThrottling: future-loading " + host + ", delay = " + delay + ", url = " + url);
         return delay; // == delta + 500
     }
 
-    public long checkThrottling(String id, String url, int depth, int crawlingDepth, boolean loaderHeadless, int priority) throws IOException {
+    public long checkThrottling(final String id, final String url, final int depth, final int crawlingDepth, final boolean loaderHeadless, final int priority) throws IOException {
         final Map<String, byte[]> params = new HashMap<>();
         params.put("id", id.getBytes(StandardCharsets.UTF_8));
         params.put("url", url.getBytes(StandardCharsets.UTF_8));
@@ -132,11 +127,11 @@ public class GridControl {
         params.put("crawlingDepth", Integer.toString(crawlingDepth).getBytes(StandardCharsets.UTF_8));
         params.put("loaderHeadless", Boolean.toString(loaderHeadless).getBytes(StandardCharsets.UTF_8));
         params.put("priority", Integer.toString(priority).getBytes(StandardCharsets.UTF_8));
-        String protocolhostportstub = GridControl.this.getConnectionURL();
-        ServiceResponse sr = APIServer.getAPI(LoaderThrottlingService.NAME).serviceImpl(protocolhostportstub, params);
-        JSONObject response = sr.getObject();
+        final String protocolhostportstub = GridControl.this.getConnectionURL();
+        final ServiceResponse sr = Service.instance.config.getAPI(LoaderThrottlingService.NAME).serviceImpl(protocolhostportstub, params);
+        final JSONObject response = sr.getObject();
         if (response.has(ObjectAPIHandler.SUCCESS_KEY) && response.getBoolean(ObjectAPIHandler.SUCCESS_KEY)) {
-            long delay = response.getLong("delay");
+            final long delay = response.getLong("delay");
             //long time = response.getLong("time");
             return delay;
         } else {
@@ -144,20 +139,19 @@ public class GridControl {
         }
     }
 
-    public static void main(String args[]) {
+    public static void main(final String args[]) {
         // burn-in test
-        List<Class<? extends Servlet>> services = new ArrayList<>();
-        services.addAll(Arrays.asList(MCP.MCP_SERVICES));
-        Service.initEnvironment(MCP.MCP_SERVICE, services, MCP.DATA_PATH, true);
+        final Configuration data = new Configuration("data",  true, YaCyServices.mcp);
         final GridControl loaderThrottling = new GridControl("127.0.0.1", 8100);
         long delay = 1000;
         try {
             delay = loaderThrottling.checkThrottling("123", "http://yacy.net", 2, 7, true, 0);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             e.printStackTrace();
             delay = 1001;
         }
         System.out.println(delay);
+        data.close();
     }
 
 }

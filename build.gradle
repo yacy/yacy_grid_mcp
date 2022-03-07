@@ -41,7 +41,7 @@ shadowJar {
 
 dependencies {
     implementation 'com.hazelcast:hazelcast:4.2.+'
-    implementation 'com.rabbitmq:amqp-client:5.+'
+    implementation 'com.rabbitmq:amqp-client:5.14.+'
     implementation 'commons-net:commons-net:3.+'
     implementation 'io.minio:minio:8.3.+'
     implementation 'javax.servlet:javax.servlet-api:4.+'

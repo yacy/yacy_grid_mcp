@@ -19,27 +19,9 @@
 
 package net.yacy.grid.mcp;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
 import javax.servlet.Servlet;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import ai.susi.mind.SusiAction;
 import net.yacy.grid.YaCyServices;
-import net.yacy.grid.io.assets.Asset;
-import net.yacy.grid.io.index.CrawlerDocument;
-import net.yacy.grid.io.index.CrawlerDocument.Status;
-import net.yacy.grid.io.index.CrawlerMapping;
-import net.yacy.grid.io.index.GridIndex;
-import net.yacy.grid.io.index.WebMapping;
 import net.yacy.grid.mcp.api.admin.InquirySubmitService;
 import net.yacy.grid.mcp.api.assets.LoadService;
 import net.yacy.grid.mcp.api.assets.StoreService;
@@ -63,11 +45,10 @@ import net.yacy.grid.mcp.api.messages.PeekService;
 import net.yacy.grid.mcp.api.messages.ReceiveService;
 import net.yacy.grid.mcp.api.messages.RecoverService;
 import net.yacy.grid.mcp.api.messages.SendService;
-import net.yacy.grid.tools.DateParser;
+import net.yacy.grid.tools.CronBox;
+import net.yacy.grid.tools.CronBox.Telemetry;
 import net.yacy.grid.tools.GitTool;
-import net.yacy.grid.tools.JSONList;
 import net.yacy.grid.tools.Logger;
-import net.yacy.grid.tools.MultiProtocolURL;
 
 /**
  * The Master Connect Program
@@ -82,7 +63,7 @@ public class MCP {
 
     // define services
     @SuppressWarnings("unchecked")
-    public final static Class<? extends Servlet>[] MCP_SERVICES = new Class[]{
+    public final static Class<? extends Servlet>[] MCP_SERVLETS = new Class[]{
             // information services
             ServicesService.class,
             StatusService.class,
@@ -120,102 +101,73 @@ public class MCP {
             QueryService.class
     };
 
-    public static class IndexListener extends AbstractBrokerListener implements BrokerListener {
+    public static class Application implements CronBox.Application {
 
-       public IndexListener(YaCyServices service) {
-            super(service, Runtime.getRuntime().availableProcessors());
+        final Configuration config;
+        final Service service;
+        final IndexListener brokerApplication;
+        final CronBox.Application serviceApplication;
+
+        public Application() {
+            Logger.info("Starting MCP Application...");
+
+            // initialize storage
+            this.config = new Configuration(DATA_PATH, true, MCP_SERVICE, MCP_SERVLETS);
+
+            // initialize REST server with services
+            this.service = new Service(this.config);
+
+            // initiate broker application: listening to indexing requests at RabbitMQ
+            this.brokerApplication = new IndexListener(this.service.config, INDEXER_SERVICE);
+
+            // initiate service application: listening to REST request
+            this.serviceApplication = this.service.newServer(null);
         }
 
-       @Override
-       public ActionResult processAction(SusiAction action, JSONArray data, String processName, int processNumber) {
-           // find result of indexing with http://localhost:9200/web/crawler/_search?q=text_t:*
+        @Override
+        public void run() {
 
-           String sourceasset_path = action.getStringAttr("sourceasset");
-           if (sourceasset_path == null || sourceasset_path.length() == 0) return ActionResult.FAIL_IRREVERSIBLE;
+            Logger.info("Grid Name: " + this.brokerApplication.data.properties.get("grid.name"));
 
-           try {
-               // get the message with parsed documents
-               JSONList jsonlist = null;
-               if (action.hasAsset(sourceasset_path)) {
-                   jsonlist = action.getJSONListAsset(sourceasset_path);
-                  }
-               if (jsonlist == null || jsonlist.length() == 0) try {
-                   Asset<byte[]> asset = Data.gridStorage.load(sourceasset_path);
-                   byte[] source = asset.getPayload();
-                   jsonlist = new JSONList(new ByteArrayInputStream(source));
-               } catch (IOException e) {
-                   Logger.warn(this.getClass(), "MCP.processAction could not read asset from storage: " + sourceasset_path, e);
-                   return ActionResult.FAIL_IRREVERSIBLE;
-               }
+            // starting threads
+            new Thread(this.brokerApplication).start();
+            this.serviceApplication.run(); // SIC! the service application is running as the core element of this run() process. If we run it concurrently, this runnable will be "dead".
+        }
 
-               // for each document, write search index and crawler index
-               indexloop: for (int line = 0; line < jsonlist.length(); line++) try {
-                   JSONObject json = jsonlist.get(line);
-                   if (json.has("index")) continue indexloop; // this is an elasticsearch index directive, we just skip that
+        @Override
+        public void stop() {
+            Logger.info("Stopping MCP Application...");
+            this.serviceApplication.stop();
+            this.brokerApplication.stop();
+            this.service.stop();
+            this.service.close();
+            this.config.close();
+        }
 
-                   // write search index
-                   String date = null;
-                   if (date == null && json.has(WebMapping.last_modified.getMapping().name())) date = WebMapping.last_modified.getMapping().name();
-                   if (date == null && json.has(WebMapping.load_date_dt.getMapping().name())) date = WebMapping.load_date_dt.getMapping().name();
-                   if (date == null && json.has(WebMapping.fresh_date_dt.getMapping().name())) date = WebMapping.fresh_date_dt.getMapping().name();
-                   String url = json.getString(WebMapping.url_s.getMapping().name());
-                   String urlid = MultiProtocolURL.getDigest(url);
-                   boolean created = Data.gridIndex.getElasticClient().writeMap(
-                                       Data.config.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
-                                       Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
-                                       urlid, json.toMap());
-                   Logger.info(this.getClass(), "MCP.processAction indexed " + ((line + 1)/2)  + "/" + jsonlist.length()/2 + "(" + (created ? "created" : "updated")+ "): " + url);
-                   //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
-                   //bulk.add(be);
+        @Override
+        public Telemetry getTelemetry() {
+            return null;
+        }
 
-                   // write crawler index
-                   try {
-                       JSONObject updater = new JSONObject()
-                               .put(CrawlerMapping.status_s.getMapping().name(), Status.indexed.name())
-                               .put(CrawlerMapping.status_date_dt.getMapping().name(), DateParser.iso8601MillisFormat.format(new Date()));
-                       CrawlerDocument.update(Data.gridIndex, urlid, updater);
-                       // check with http://localhost:9200/crawler/_search?q=status_s:indexed
-                   } catch (IOException e) {
-                       // well that should not happen
-                       Logger.warn(this.getClass(), "could not write crawler index", e);
-                   }
-               } catch (JSONException je) {
-                   Logger.warn(this.getClass(), "", je);
-               }
-               //Data.index.writeMapBulk(GridIndex.WEB_INDEX_NAME, bulk);
-               Logger.info(this.getClass(), "MCP.processAction processed indexing message from queue: " + sourceasset_path);
-               return ActionResult.SUCCESS;
-           } catch (Throwable e) {
-               Logger.warn(this.getClass(), "MCP.processAction", e);
-               return ActionResult.FAIL_IRREVERSIBLE;
-           }
-       }
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         // initialize environment variables
         System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
 
-        // start server
-        List<Class<? extends Servlet>> services = new ArrayList<>();
-        services.addAll(Arrays.asList(MCP_SERVICES));
-        Service.initEnvironment(MCP_SERVICE, services, DATA_PATH, true);
-
-        // start listener
-        BrokerListener brokerListener = new IndexListener(INDEXER_SERVICE);
-        new Thread(brokerListener).start();
-
-        // start server
-        Logger.info("started MCP");
-        Logger.info("Grid Name: " + Data.config.get("grid.name"));
+        // prepare logging
+        Logger.info("MCP started!");
         Logger.info(new GitTool().toString());
         Logger.info("you can now search using the query api, i.e.:");
-        Logger.info("curl http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=test");
-        Service.runService(null);
+        Logger.info("curl \"http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=test\"");
 
-        // this line is reached if the server was shut down
-        Logger.info("terminating MCP");
-        brokerListener.terminate();
+        final long cycleDelay = Long.parseLong(System.getProperty("CYCLEDELAY", "" + Long.MAX_VALUE)); // by default, run only in one genesis thread
+        final int cycleRandom = Integer.parseInt(System.getProperty("CYCLERANDOM", "" + 1000 * 60 /*1 minute*/));
+        final CronBox cron = new CronBox(Application.class, cycleDelay, cycleRandom);
+        cron.cycle();
+
+        // this line is reached if the cron process was shut down
+        Logger.info("MCP terminated");
     }
 
 }

@@ -33,9 +33,9 @@ import org.json.JSONObject;
 
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIHandler;
-import net.yacy.grid.http.APIServer;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.mcp.Service;
 import net.yacy.grid.mcp.api.index.AddService;
 import net.yacy.grid.mcp.api.index.CheckService;
 import net.yacy.grid.mcp.api.index.CountService;
@@ -47,11 +47,11 @@ import net.yacy.grid.tools.Logger;
 
 public class MCPIndexFactory implements IndexFactory {
 
-    private GridIndex index;
-    private String server;
-    private int port;
+    private final GridIndex index;
+    private final String server;
+    private final int port;
 
-    public MCPIndexFactory(GridIndex index, String server, int port) {
+    public MCPIndexFactory(final GridIndex index, final String server, final int port) {
         this.index = index;
         this.server = server;
         this.port = port;
@@ -84,17 +84,17 @@ public class MCPIndexFactory implements IndexFactory {
 
         return new Index() {
 
-            private JSONObject getResponse(APIHandler handler) throws IOException {
-                String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
-                ServiceResponse sr = handler.serviceImpl(protocolhostportstub, params);
+            private JSONObject getResponse(final APIHandler handler) throws IOException {
+                final String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
+                final ServiceResponse sr = handler.serviceImpl(protocolhostportstub, params);
                 return sr.getObject();
             }
-            private boolean success(JSONObject response) {
+            private boolean success(final JSONObject response) {
                 return response.has(ObjectAPIHandler.SUCCESS_KEY) && response.getBoolean(ObjectAPIHandler.SUCCESS_KEY);
             }
-            private void connectMCP(JSONObject response) {
+            private void connectMCP(final JSONObject response) {
                 if (response.has(ObjectAPIHandler.SERVICE_KEY)) {
-                    String elastic = response.getString(ObjectAPIHandler.SERVICE_KEY);
+                    final String elastic = response.getString(ObjectAPIHandler.SERVICE_KEY);
                     if (MCPIndexFactory.this.index.connectElasticsearch(elastic)) {
                         Logger.info(this.getClass(), "connected MCP index at " + elastic);
                     } else {
@@ -102,7 +102,7 @@ public class MCPIndexFactory implements IndexFactory {
                     }
                 }
             }
-            private IOException handleError(JSONObject response) {
+            private IOException handleError(final JSONObject response) {
                 if (response.has(ObjectAPIHandler.COMMENT_KEY)) {
                     return new IOException("cannot connect to MCP: " + response.getString(ObjectAPIHandler.COMMENT_KEY));
                 }
@@ -111,10 +111,10 @@ public class MCPIndexFactory implements IndexFactory {
 
             @Override
             public IndexFactory checkConnection() throws IOException {
-                String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
-                APIHandler apiHandler = APIServer.getAPI(CheckService.NAME);
-                ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
-                JSONObject response = sr.getObject();
+                final String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
+                final APIHandler apiHandler = Service.instance.config.getAPI(CheckService.NAME);
+                final ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
+                final JSONObject response = sr.getObject();
                 if (success(response)) {
                     connectMCP(response);
                     return MCPIndexFactory.this;
@@ -124,12 +124,12 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public IndexFactory add(String indexName, String typeName, String id, JSONObject object) throws IOException {
+            public IndexFactory add(final String indexName, final String typeName, final String id, final JSONObject object) throws IOException {
                 params.put("index", indexName);
                 params.put("type", typeName);
                 params.put("id", id);
                 params.put("object", object.toString());
-                JSONObject response = getResponse(APIServer.getAPI(AddService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(AddService.NAME));
 
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
@@ -141,21 +141,21 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public IndexFactory addBulk(String indexName, String typeName, final Map<String, JSONObject> objects) throws IOException {
+            public IndexFactory addBulk(final String indexName, final String typeName, final Map<String, JSONObject> objects) throws IOException {
                 // We do not introduce a new protocol here. Instead we use the add method.
                 // This is not a bad design because grid clients will learn how to use
                 // the native elasticsearch interface to do this in a better way.
-                for (Map.Entry<String, JSONObject> entry: objects.entrySet()) {
+                for (final Map.Entry<String, JSONObject> entry: objects.entrySet()) {
                     add(indexName, typeName, entry.getKey(), entry.getValue());
                 }
                 return MCPIndexFactory.this;
             }
 
             @Override
-            public boolean exist(String indexName, String id) throws IOException {
+            public boolean exist(final String indexName, final String id) throws IOException {
                 params.put("index", indexName);
                 params.put("id", id);
-                JSONObject response = getResponse(APIServer.getAPI(ExistService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(ExistService.NAME));
 
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
@@ -167,23 +167,23 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public Set<String> existBulk(String indexName, Collection<String> ids) throws IOException {
+            public Set<String> existBulk(final String indexName, final Collection<String> ids) throws IOException {
                 // We do not introduce a new protocol here. Instead we use the exist method.
                 // This is not a bad design because grid clients will learn how to use
                 // the native elasticsearch interface to do this in a better way.
-                Set<String> exists = new HashSet<>();
-                for (String id: ids) {
+                final Set<String> exists = new HashSet<>();
+                for (final String id: ids) {
                     if (exist(indexName, id)) exists.add(id);
                 }
                 return exists;
             }
 
             @Override
-            public long count(String indexName, QueryLanguage language, String query) throws IOException {
+            public long count(final String indexName, final QueryLanguage language, final String query) throws IOException {
                 params.put("index", indexName);
                 params.put("language", language.name());
                 params.put("query", query);
-                JSONObject response = getResponse(APIServer.getAPI(CountService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(CountService.NAME));
 
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
@@ -195,16 +195,16 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public JSONObject query(String indexName, String id) throws IOException {
+            public JSONObject query(final String indexName, final String id) throws IOException {
                 params.put("index", indexName);
                 params.put("id", id);
-                JSONObject response = getResponse(APIServer.getAPI(QueryService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(QueryService.NAME));
 
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
                     if (!response.has("list")) return null;
-                    JSONArray list = response.getJSONArray("list");
+                    final JSONArray list = response.getJSONArray("list");
                     if (list.length() == 0) return null;
                     return list.getJSONObject(0);
                 } else {
@@ -213,33 +213,33 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public Map<String, JSONObject> queryBulk(String indexName, Collection<String> ids) throws IOException {
+            public Map<String, JSONObject> queryBulk(final String indexName, final Collection<String> ids) throws IOException {
                 // We do not introduce a new protocol here. Instead we use the query method.
                 // This is not a bad design because grid clients will learn how to use
                 // the native elasticsearch interface to do this in a better way.
-                Map<String, JSONObject> result = new HashMap<>();
-                for (String id: ids) {
+                final Map<String, JSONObject> result = new HashMap<>();
+                for (final String id: ids) {
                     try {
-                        JSONObject j = query(indexName, id);
+                        final JSONObject j = query(indexName, id);
                         result.put(id, j);
-                    } catch (IOException e) {}
+                    } catch (final IOException e) {}
                 }
                 return result;
             }
 
             @Override
-            public JSONList query(String indexName, QueryLanguage language, String query, int start, int count) throws IOException {
+            public JSONList query(final String indexName, final QueryLanguage language, final String query, final int start, final int count) throws IOException {
                 params.put("index", indexName);
                 params.put("language", language.name());
                 params.put("query", query);
-                JSONObject response = getResponse(APIServer.getAPI(QueryService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(QueryService.NAME));
 
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
                     connectMCP(response);
-                    JSONList list = new JSONList();
+                    final JSONList list = new JSONList();
                     if (!response.has("list")) return list;
-                    JSONArray l = response.getJSONArray("list");
+                    final JSONArray l = response.getJSONArray("list");
                     if (l.length() == 0) return list;
                     for (int i = 0; i < l.length(); i++) list.add(l.getJSONObject(i));
                     return list;
@@ -249,16 +249,16 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public JSONObject query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException {
+            public JSONObject query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, final int timezoneOffset, final int from, final int resultCount, final int aggregationLimit, final boolean explain, final WebMapping... aggregationFields) throws IOException {
                 throw new IOException("method not implemented"); // TODO implement this!
             }
 
             @Override
-            public boolean delete(String indexName, String typeName, String id) throws IOException {
+            public boolean delete(final String indexName, final String typeName, final String id) throws IOException {
                 params.put("index", indexName);
                 params.put("type", typeName);
                 params.put("id", id);
-                JSONObject response = getResponse(APIServer.getAPI(DeleteService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(DeleteService.NAME));
 
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
@@ -270,11 +270,11 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public long delete(String indexName, QueryLanguage language, String query) throws IOException {
+            public long delete(final String indexName, final QueryLanguage language, final String query) throws IOException {
                 params.put("index", indexName);
                 params.put("language", language.name());
                 params.put("query", query);
-                JSONObject response = getResponse(APIServer.getAPI(DeleteService.NAME));
+                final JSONObject response = getResponse(Service.instance.config.getAPI(DeleteService.NAME));
 
                 // read the broker to store the service definition of the remote queue, if exists
                 if (success(response)) {
@@ -286,10 +286,10 @@ public class MCPIndexFactory implements IndexFactory {
             }
 
             @Override
-            public void refresh(String indexName) {
+            public void refresh(final String indexName) {
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException e) {}
+                } catch (final InterruptedException e) {}
             }
 
             @Override

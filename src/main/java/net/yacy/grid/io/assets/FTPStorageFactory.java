@@ -22,20 +22,14 @@ package net.yacy.grid.io.assets;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.servlet.Servlet;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 
-import net.yacy.grid.mcp.Data;
-import net.yacy.grid.mcp.MCP;
-import net.yacy.grid.mcp.Service;
+import net.yacy.grid.YaCyServices;
+import net.yacy.grid.mcp.Configuration;
 import net.yacy.grid.tools.Logger;
 
 public class FTPStorageFactory implements StorageFactory<byte[]> {
@@ -47,7 +41,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
     private Storage<byte[]> ftpClient;
     private boolean deleteafterread, active;
 
-    public FTPStorageFactory(String server, int port, String username, String password, boolean deleteafterread, boolean active) throws IOException {
+    public FTPStorageFactory(final String server, final int port, final String username, final String password, final boolean deleteafterread, final boolean active) throws IOException {
         this.server = server;
         this.username = username == null ? "" : username;
         this.password = password == null ? "" : password;
@@ -90,7 +84,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             }
 
             @Override
-            public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
+            public StorageFactory<byte[]> store(final String path, final byte[] asset) throws IOException {
                 final long t0 = System.currentTimeMillis();
                 final FTPClient ftp = this.initConnection();
                 try {
@@ -152,7 +146,7 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
             public void close() {
             }
 
-            private String cdPath(FTPClient ftp, String path) throws IOException {
+            private String cdPath(final FTPClient ftp, String path) throws IOException {
                 final int success_code = ftp.cwd("/");
                 if (success_code >= 300) throw new IOException("cannot cd into " + path + ": " + success_code);
                 if (path.length() == 0 || path.equals("/")) return "";
@@ -212,20 +206,19 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
         this.ftpClient.close();
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         try {
-            final List<Class<? extends Servlet>> services = new ArrayList<>(Arrays.asList(MCP.MCP_SERVICES));
-            Service.initEnvironment(MCP.MCP_SERVICE, services, MCP.DATA_PATH, true);
+            final Configuration data = new Configuration("data",  true, YaCyServices.mcp);
 
             //Data.init(new File("data"), new HashMap<String, String>(), true);
             final FTPStorageFactory ftpc = new FTPStorageFactory("brain.local", 2121, "admin", "admin", true, true);
             final Storage<byte[]> storage = ftpc.getStorage();
             final String path = "test/file";
-            final String data = "123";
-            storage.store(path, data.getBytes());
+            final String pl = "123";
+            storage.store(path, pl.getBytes());
             final Asset<byte[]> b = storage.load(path);
             System.out.println(new String(b.getPayload()));
-            Data.close();
+            data.close();
         } catch (final IOException e) {
             e.printStackTrace();
         }

@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -32,21 +32,21 @@ import net.yacy.grid.Services;
  */
 public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]> {
 
-    private File basePath;
+    private final File basePath;
     private Map<Services, QueueFactory<byte[]>> clientConnector;
-    
-    public PeerBroker(File basePath) {
+
+    public PeerBroker(final File basePath) {
         this.basePath = basePath;
         this.clientConnector = new ConcurrentHashMap<>();
     }
-    
+
     /**
      * take a connector from a cached map of connectors.
      * The connectors are created on-the-fly and they hold a database handle for the embedded db
      * @param service
      * @return a queue factory for the mapdb instance of the queue
      */
-    private QueueFactory<byte[]> getConnector(Services service) throws IOException {
+    private QueueFactory<byte[]> getConnector(final Services service) throws IOException {
         if (this.basePath == null) throw new IOException("no local queue supported (to fix this on a non-mcp peer: run a mcp)");
         QueueFactory<byte[]> c = this.clientConnector.get(service);
         if (c != null)  return c;
@@ -55,7 +55,7 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
             c = this.clientConnector.get(service);
             if (c != null)  return c;
             // create a mapdb for this queue. The db is now the queue
-            File clientPath = new File(this.basePath, service.name());
+            final File clientPath = new File(this.basePath, service.name());
             clientPath.mkdirs();
             c = new MapDBStackQueueFactory(clientPath);
             this.clientConnector.put(service, c);
@@ -64,58 +64,60 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
     }
 
     @Override
-    public QueueFactory<byte[]> send(Services service, GridQueue queueName, byte[] message) throws IOException {
-        QueueFactory<byte[]> factory = getConnector(service);
+    public QueueFactory<byte[]> send(final Services service, final GridQueue queueName, final byte[] message) throws IOException {
+        final QueueFactory<byte[]> factory = getConnector(service);
         factory.getQueue(queueName.name()).send(message);
         return factory;
     }
 
     @Override
-    public MessageContainer<byte[]> receive(Services service, GridQueue queueName, long timeout, boolean autoAck) throws IOException {
-        QueueFactory<byte[]> factory = getConnector(service);
-        Queue<byte[]> mq = factory.getQueue(queueName.name());
+    public MessageContainer<byte[]> receive(final Services service, final GridQueue queueName, final long timeout, final boolean autoAck) throws IOException {
+        final QueueFactory<byte[]> factory = getConnector(service);
+        final Queue<byte[]> mq = factory.getQueue(queueName.name());
         return mq.receive(timeout, autoAck);
     }
 
     @Override
-    public QueueFactory<byte[]> acknowledge(Services service, GridQueue queueName, long deliveryTag) throws IOException {
-        QueueFactory<byte[]> factory = getConnector(service);
+    public QueueFactory<byte[]> acknowledge(final Services service, final GridQueue queueName, final long deliveryTag) throws IOException {
+        final QueueFactory<byte[]> factory = getConnector(service);
         factory.getQueue(queueName.name()).acknowledge(deliveryTag);
         return factory;
     }
 
     @Override
-    public QueueFactory<byte[]> reject(Services service, GridQueue queueName, long deliveryTag) throws IOException {
-        QueueFactory<byte[]> factory = getConnector(service);
+    public QueueFactory<byte[]> reject(final Services service, final GridQueue queueName, final long deliveryTag) throws IOException {
+        final QueueFactory<byte[]> factory = getConnector(service);
         factory.getQueue(queueName.name()).reject(deliveryTag);
         return factory;
     }
 
     @Override
-    public QueueFactory<byte[]> recover(Services service, GridQueue queueName) throws IOException {
-        QueueFactory<byte[]> factory = getConnector(service);
+    public QueueFactory<byte[]> recover(final Services service, final GridQueue queueName) throws IOException {
+        final QueueFactory<byte[]> factory = getConnector(service);
         factory.getQueue(queueName.name()).recover();
         return factory;
     }
 
     @Override
-    public AvailableContainer available(Services service, GridQueue queueName) throws IOException {
-        QueueFactory<byte[]> factory = getConnector(service);
+    public AvailableContainer available(final Services service, final GridQueue queueName) throws IOException {
+        final QueueFactory<byte[]> factory = getConnector(service);
         return new AvailableContainer(factory, queueName.name, getConnector(service).getQueue(queueName.name()).available());
     }
 
     @Override
-    public QueueFactory<byte[]> clear(Services service, GridQueue queueName) throws IOException {
-        QueueFactory<byte[]> factory = getConnector(service);
+    public QueueFactory<byte[]> clear(final Services service, final GridQueue queueName) throws IOException {
+        final QueueFactory<byte[]> factory = getConnector(service);
         factory.getQueue(queueName.name()).clear();
         return factory;
     }
 
     @Override
     public void close() {
-        this.clientConnector.values().forEach(connector -> {
-            try {connector.close();} catch (Throwable e) {}
+        this.clientConnector.values().forEach(queue -> {
+            try {queue.close();} catch (final Throwable e) {}
         });
+        this.clientConnector.clear();
+        this.clientConnector = null;
     }
-    
+
 }

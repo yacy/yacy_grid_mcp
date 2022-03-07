@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -27,7 +27,7 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Configuration;
 
 public class QueryDocument extends Document {
 
@@ -35,32 +35,32 @@ public class QueryDocument extends Document {
         super();
     }
 
-    public QueryDocument(Map<String, Object> map) {
+    public QueryDocument(final Map<String, Object> map) {
         super(map);
     }
 
-    public QueryDocument(JSONObject obj) {
+    public QueryDocument(final JSONObject obj) {
         super(obj);
     }
 
-    public static void storeBulk(Index index, Collection<QueryDocument> documents) throws IOException {
+    public static void storeBulk(final Configuration data, final Index index, final Collection<QueryDocument> documents) throws IOException {
         if (index == null) return;
-        Map<String, JSONObject> map = new HashMap<>();
+        final Map<String, JSONObject> map = new HashMap<>();
         documents.forEach(queryDocument -> {
-            String id = Long.toString(System.currentTimeMillis());
+            final String id = Long.toString(System.currentTimeMillis());
             map.put(id, queryDocument);
         });
         index.addBulk(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.query", GridIndex.DEFAULT_INDEXNAME_QUERY),
-                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                data.properties.getOrDefault("grid.elasticsearch.indexName.query", GridIndex.DEFAULT_INDEXNAME_QUERY),
+                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
                 map);
     }
 
-    public QueryDocument store(Index index) throws IOException {
-        String id = Long.toString(System.currentTimeMillis());
+    public QueryDocument store(final Configuration data, final Index index) throws IOException {
+        final String id = Long.toString(System.currentTimeMillis());
         index.add(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.query", GridIndex.DEFAULT_INDEXNAME_QUERY),
-                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                data.properties.getOrDefault("grid.elasticsearch.indexName.query", GridIndex.DEFAULT_INDEXNAME_QUERY),
+                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
                 id, this);
         return this;
     }
@@ -82,9 +82,9 @@ public class QueryDocument extends Document {
     last_modified_dts(MappingType.date, true, true, true, false, true, "the document dates of the search hits"),
     size_val(MappingType.num_integer, true, true, true, false, false, "size of the documents of the search hits");
      */
-    public QueryDocument addDocument(List<Map<String, Object>> searchresult) {
+    public QueryDocument addDocument(final List<Map<String, Object>> searchresult) {
         for (int hitc = 0; hitc < searchresult.size(); hitc++) {
-            Document doc = new Document(searchresult.get(hitc));
+            final Document doc = new Document(searchresult.get(hitc));
         }
         return this;
     }

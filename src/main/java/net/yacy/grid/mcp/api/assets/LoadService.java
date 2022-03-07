@@ -28,7 +28,7 @@ import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.assets.Asset;
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Service;
 import net.yacy.grid.tools.Logger;
 
 /**
@@ -48,14 +48,14 @@ public class LoadService extends ObjectAPIHandler implements APIHandler {
     }
 
     @Override
-    public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
-        String path = call.get("path", "");
+    public ServiceResponse serviceImpl(final Query call, final HttpServletResponse response) {
+        final String path = call.get("path", "");
         byte[] a = null;
         if (path.length() > 0) {
             try {
-                Asset<byte[]> asset = Data.gridStorage.load(path);
+                final Asset<byte[]> asset = Service.instance.config.gridStorage.load(path);
                 a = asset.getPayload();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Logger.error(this.getClass(), e.getMessage(), e);
             }
         }

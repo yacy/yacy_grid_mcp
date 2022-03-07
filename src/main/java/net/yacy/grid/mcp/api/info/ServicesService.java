@@ -30,7 +30,6 @@ import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
-import net.yacy.grid.mcp.Data;
 import net.yacy.grid.mcp.Service;
 import net.yacy.grid.tools.Logger;
 
@@ -49,13 +48,13 @@ public class ServicesService extends ObjectAPIHandler implements APIHandler {
     }
 
     @Override
-    public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
+    public ServiceResponse serviceImpl(final Query call, final HttpServletResponse response) {
 
         // generate json
         JSONArray json = new JSONArray();
         try {
-            json = Data.peerJsonDB.export(YaCyServices.mcp.name(), Service.Services.name());
-        } catch (IOException e) {
+            json = Service.instance.config.peerJsonDB.export(YaCyServices.mcp.name(), "Service");
+        } catch (final IOException e) {
             Logger.error(this.getClass(), "ServicesService fail", e);
         }
         return new ServiceResponse(json);

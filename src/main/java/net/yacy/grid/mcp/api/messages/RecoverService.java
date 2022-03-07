@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -31,7 +31,7 @@ import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.messages.GridQueue;
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Service;
 
 /**
  * test: call
@@ -41,22 +41,22 @@ public class RecoverService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578478303031749879L;
     public static final String NAME = "recover";
-    
+
     @Override
     public String getAPIPath() {
         return "/yacy/grid/mcp/messages/" + NAME + ".json";
     }
-    
+
     @Override
-    public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
-        String serviceName = call.get("serviceName", "");
-        String queueName = call.get("queueName", "");
-        JSONObject json = new JSONObject(true);
+    public ServiceResponse serviceImpl(final Query call, final HttpServletResponse response) {
+        final String serviceName = call.get("serviceName", "");
+        final String queueName = call.get("queueName", "");
+        final JSONObject json = new JSONObject(true);
         if (serviceName.length() > 0 && queueName.length() > 0) {
             try {
-                Data.gridBroker.recover(YaCyServices.valueOf(serviceName), new GridQueue(queueName));
+                Service.instance.config.gridBroker.recover(YaCyServices.valueOf(serviceName), new GridQueue(queueName));
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 json.put(ObjectAPIHandler.SUCCESS_KEY, false);
                 json.put(ObjectAPIHandler.COMMENT_KEY, e.getMessage());
             }

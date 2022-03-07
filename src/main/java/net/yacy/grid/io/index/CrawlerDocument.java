@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -25,9 +25,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.json.JSONObject;
 
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Configuration;
 import net.yacy.grid.tools.Digest;
 
 public class CrawlerDocument extends Document {
@@ -47,39 +48,39 @@ public class CrawlerDocument extends Document {
         super();
     }
 
-    public CrawlerDocument(Map<String, Object> map) {
+    public CrawlerDocument(final Map<String, Object> map) {
         super(map);
     }
 
-    public CrawlerDocument(JSONObject obj) {
+    public CrawlerDocument(final JSONObject obj) {
         super(obj);
     }
 
-    public static Map<String, CrawlerDocument> loadBulk(Index index, Collection<String> ids) throws IOException {
-        Map<String, JSONObject> jsonmap = index.queryBulk(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
+    public static Map<String, CrawlerDocument> loadBulk(final Configuration data, final Index index, final Collection<String> ids) throws IOException {
+        final Map<String, JSONObject> jsonmap = index.queryBulk(
+                data.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
                 ids);
-        Map<String, CrawlerDocument> docmap = new HashMap<>();
+        final Map<String, CrawlerDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> {
-            if (doc != null) docmap.put(id, new CrawlerDocument(doc)); 
+            if (doc != null) docmap.put(id, new CrawlerDocument(doc));
         });
         return docmap;
     }
 
-    public static CrawlerDocument load(Index index, String id) throws IOException {
+    public static CrawlerDocument load(final Configuration data, final Index index, final String id) throws IOException {
         JSONObject json = null;
-        String crawlerIndexName = Data.config.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER);
+        final String crawlerIndexName = data.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER);
         try {
             // first try
             json = index.query(crawlerIndexName, id);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             // this might fail because the object was not yet present in the index
             // we try to fix this with a refresh
             index.refresh(crawlerIndexName);
             try {
                 // second try
                 json = index.query(crawlerIndexName, id);
-            } catch (IOException ee) {
+            } catch (final IOException ee) {
                 // fail
                 throw ee;
             }
@@ -88,9 +89,9 @@ public class CrawlerDocument extends Document {
         return new CrawlerDocument(json);
     }
 
-    public static void storeBulk(Index index, Map<String, CrawlerDocument> documents) throws IOException {
+    public static void storeBulk(final Configuration data, final Index index, final Map<String, CrawlerDocument> documents) throws IOException {
         if (index == null) return;
-        Map<String, JSONObject> map = new HashMap<>();
+        final Map<String, JSONObject> map = new HashMap<>();
         documents.forEach((id, crawlerDocument) -> {
             if (crawlerDocument != null) {
                 map.put(id, crawlerDocument);
@@ -99,35 +100,35 @@ public class CrawlerDocument extends Document {
             }
         });
         index.addBulk(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
-                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), map);
+                data.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
+                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), map);
     }
 
-    public static void update(Index index, String objectid, JSONObject changes) throws IOException {
-        CrawlerDocument crawlerDocument = load(index, objectid);
-        for (String key: changes.keySet()) crawlerDocument.put(key, changes.get(key));
-        crawlerDocument.store(index, objectid);
+    public static void update(final Configuration data, final Index index, final String objectid, final JSONObject changes) throws IOException {
+        final CrawlerDocument crawlerDocument = load(data, index, objectid);
+        for (final String key: changes.keySet()) crawlerDocument.put(key, changes.get(key));
+        crawlerDocument.store(data, index, objectid);
     }
 
-    public CrawlerDocument store(Index index, String objectid) throws IOException {
+    public CrawlerDocument store(final Configuration data, final Index index, final String objectid) throws IOException {
         if (index != null) index.add(
-                Data.config.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
-                Data.config.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), objectid, this);
+                data.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
+                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), objectid, this);
         return this;
     }
 
-    public CrawlerDocument store(Index index) throws IOException {
-        String url = getURL();
+    public CrawlerDocument store(final Configuration data, final Index index) throws IOException {
+        final String url = getURL();
         if (url != null && url.length() > 0) {
-            String id = Digest.encodeMD5Hex(url);
-            store(index, id);
+            final String id = Digest.encodeMD5Hex(url);
+            store(data, index, id);
         } else {
             assert false : "url not set / store";
         }
         return this;
     }
 
-    public CrawlerDocument setCrawlID(String crawlId) {
+    public CrawlerDocument setCrawlID(final String crawlId) {
         this.putString(CrawlerMapping.crawl_id_s, crawlId);
         return this;
     }
@@ -136,7 +137,7 @@ public class CrawlerDocument extends Document {
         return this.getString(CrawlerMapping.crawl_id_s, "");
     }
 
-    public CrawlerDocument setMustmatch(String mustmatch) {
+    public CrawlerDocument setMustmatch(final String mustmatch) {
         this.putString(CrawlerMapping.mustmatch_s, mustmatch.replace("\\", "\\\\"));
         return this;
     }
@@ -145,7 +146,7 @@ public class CrawlerDocument extends Document {
         return this.getString(CrawlerMapping.mustmatch_s, "").replace("\\\\", "\\");
     }
 
-    public CrawlerDocument setCollections(Collection<String> collections) {
+    public CrawlerDocument setCollections(final Collection<String> collections) {
         this.putStrings(CrawlerMapping.collection_sxt, collections);
         return this;
     }
@@ -154,7 +155,7 @@ public class CrawlerDocument extends Document {
         return this.getStrings(CrawlerMapping.collection_sxt);
     }
 
-    public CrawlerDocument setCrawlstartURL(String url) {
+    public CrawlerDocument setCrawlstartURL(final String url) {
         this.putString(CrawlerMapping.start_url_s, url);
         return this;
     }
@@ -163,7 +164,7 @@ public class CrawlerDocument extends Document {
         return this.getString(CrawlerMapping.start_url_s, "");
     }
 
-    public CrawlerDocument setCrawlstartSSLD(String url) {
+    public CrawlerDocument setCrawlstartSSLD(final String url) {
         this.putString(CrawlerMapping.start_ssld_s, url);
         return this;
     }
@@ -172,7 +173,7 @@ public class CrawlerDocument extends Document {
         return this.getString(CrawlerMapping.start_ssld_s, "");
     }
 
-    public CrawlerDocument setInitDate(Date date) {
+    public CrawlerDocument setInitDate(final Date date) {
         this.putDate(CrawlerMapping.init_date_dt, date);
         return this;
     }
@@ -181,7 +182,7 @@ public class CrawlerDocument extends Document {
         return this.getDate(CrawlerMapping.init_date_dt);
     }
 
-    public CrawlerDocument setStatusDate(Date date) {
+    public CrawlerDocument setStatusDate(final Date date) {
         this.putDate(CrawlerMapping.status_date_dt, date);
         return this;
     }
@@ -190,17 +191,17 @@ public class CrawlerDocument extends Document {
         return this.getDate(CrawlerMapping.status_date_dt);
     }
 
-    public CrawlerDocument setStatus(Status status) {
+    public CrawlerDocument setStatus(final Status status) {
         this.putString(CrawlerMapping.status_s, status.name());
         return this;
     }
 
     public Status getStatus() {
-        String status = this.getString(CrawlerMapping.status_s, "");
+        final String status = this.getString(CrawlerMapping.status_s, "");
         return Status.valueOf(status);
     }
 
-    public CrawlerDocument setURL(String url) {
+    public CrawlerDocument setURL(final String url) {
         this.putString(CrawlerMapping.url_s, url);
         return this;
     }
@@ -209,7 +210,7 @@ public class CrawlerDocument extends Document {
         return this.getString(CrawlerMapping.url_s, "");
     }
 
-    public CrawlerDocument setComment(String comment) {
+    public CrawlerDocument setComment(final String comment) {
         this.putString(CrawlerMapping.comment_t, comment);
         return this;
     }

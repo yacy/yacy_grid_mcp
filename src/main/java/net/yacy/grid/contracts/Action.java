@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -22,7 +22,7 @@ package net.yacy.grid.contracts;
 import org.json.JSONObject;
 
 import net.yacy.grid.http.APIHandler;
-import net.yacy.grid.http.APIServer;
+import net.yacy.grid.mcp.Service;
 
 /**
  * An action is the request to a YaCy Grid service to process the Contract with the specific
@@ -34,23 +34,23 @@ public class Action {
     private final static String KEY_SERVLET  = "servlet";
     private final static String KEY_QUERY    = "query";
 
-    private JSONObject json;
+    private final JSONObject json;
 
     public Action() {
         this.json = new JSONObject();
     }
 
-    public Action(JSONObject json) {
+    public Action(final JSONObject json) {
         this.json = json;
     }
 
     public JSONObject toJSONClone() {
-        JSONObject j = new JSONObject(true);
+        final JSONObject j = new JSONObject(true);
         this.json.keySet().forEach(key -> j.put(key, this.json.get(key))); // make a clone
         return j;
     }
 
-    public Action setServletName(String name) {
+    public Action setServletName(final String name) {
         this.json.put(KEY_SERVLET, name);
         return this;
     }
@@ -62,22 +62,23 @@ public class Action {
 
     public APIHandler getServlet() {
         if (!this.json.has(KEY_SERVLET)) return null;
-        APIHandler handler = APIServer.getAPI(this.json.getString(KEY_SERVLET));
+        final APIHandler handler = Service.instance.config.getAPI(this.json.getString(KEY_SERVLET));
         return handler;
     }
 
-    public Action setQuery(JSONObject query) {
+    public Action setQuery(final JSONObject query) {
         this.json.put(KEY_QUERY, query);
         return this;
     }
 
     public JSONObject getQuery() {
         if (this.json.has(KEY_QUERY)) return this.json.getJSONObject(KEY_QUERY);
-        JSONObject q = new JSONObject(true);
+        final JSONObject q = new JSONObject(true);
         this.json.put(KEY_QUERY, q);
         return q;
     }
 
+    @Override
     public String toString() {
         return toJSONClone().toString();
     }

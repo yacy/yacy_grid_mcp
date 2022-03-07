@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -30,7 +30,7 @@ import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.Query;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.io.index.Index;
-import net.yacy.grid.mcp.Data;
+import net.yacy.grid.mcp.Service;
 
 /*
  * test:
@@ -41,27 +41,27 @@ public class ExistService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 84232349879L;
     public static final String NAME = "exist";
-    
+
     @Override
     public String getAPIPath() {
         return "/yacy/grid/mcp/index/" + NAME + ".json";
     }
-    
+
     @Override
-    public ServiceResponse serviceImpl(Query call, HttpServletResponse response) {
+    public ServiceResponse serviceImpl(final Query call, final HttpServletResponse response) {
         //String indexName, String typeName, final String id, JSONObject object
-        String indexName = call.get("index", "");
-        String id = call.get("id", "");
-        JSONObject json = new JSONObject(true);
+        final String indexName = call.get("index", "");
+        final String id = call.get("id", "");
+        final JSONObject json = new JSONObject(true);
         if (indexName.length() > 0 && id.length() > 0) {
             try {
-                Index index = Data.gridIndex.getElasticIndex();
-                String url = index.checkConnection().getConnectionURL();
-                boolean exists = index.exist(indexName, id);
+                final Index index = Service.instance.config.gridIndex.getElasticIndex();
+                final String url = index.checkConnection().getConnectionURL();
+                final boolean exists = index.exist(indexName, id);
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 json.put("exists", exists);
                 if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 json.put(ObjectAPIHandler.SUCCESS_KEY, false);
                 json.put(ObjectAPIHandler.COMMENT_KEY, e.getMessage());
             }

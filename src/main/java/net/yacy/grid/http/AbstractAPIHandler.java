@@ -58,49 +58,49 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
         return path;
     }
 
-    private void setCORS(HttpServletResponse response) {
+    private void setCORS(final HttpServletResponse response) {
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "POST");
         response.setHeader("Access-Control-Allow-Headers", "accept, content-type");
     }
 
     @Override
-    protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doOptions(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
         super.doOptions(request, response);
         setCORS(response); // required by angular framework; detailed CORS can be set within the servlet
     }
 
     @Override
-    protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doHead(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
         super.doHead(request, response);
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        Query post = RemoteAccess.evaluate(request);
+    protected void doGet(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
+        final Query post = RemoteAccess.evaluate(request);
         process(request, response, post);
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        Query query = RemoteAccess.evaluate(request);
+    protected void doPost(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
+        final Query query = RemoteAccess.evaluate(request);
         query.initPOST(RemoteAccess.getPostMap(request));
         process(request, response, query);
     }
 
-    private void process(HttpServletRequest request, HttpServletResponse response, Query query) throws ServletException, IOException {
+    private void process(final HttpServletRequest request, final HttpServletResponse response, final Query query) throws ServletException, IOException {
 
-        long startTime = System.currentTimeMillis();
+        final long startTime = System.currentTimeMillis();
 
         // extract standard query attributes
-        String callback = query.get("callback", "");
-        boolean jsonp = callback.length() > 0;
-        boolean minified = query.get("minified", false);
+        final String callback = query.get("callback", "");
+        final boolean jsonp = callback.length() > 0;
+        final boolean minified = query.get("minified", false);
 
         try {
-            ServiceResponse serviceResponse = serviceImpl(query, response);
+            final ServiceResponse serviceResponse = serviceImpl(query, response);
             if  (serviceResponse == null) {
-                String message = "your request does not contain the required data";
+                final String message = "your request does not contain the required data";
                 logClient(startTime, query, 400, message);
                 response.sendError(400, message);
                 return;
@@ -113,16 +113,16 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
             query.setResponse(response, serviceResponse.getMimeType());
             response.setCharacterEncoding("UTF-8");
             if (serviceResponse.isObject() || serviceResponse.isArray()) {
-                PrintWriter sos = response.getWriter();
+                final PrintWriter sos = response.getWriter();
                 if (jsonp) sos.print(callback + "(");
-                String out = serviceResponse.toString(minified);
+                final String out = serviceResponse.toString(minified);
                 sos.print(out);
                 if (jsonp) sos.println(");");
                 sos.println();
                 logClient(startTime, query, 200, "ok: " + (minified ? out : serviceResponse.toString(true)));
             } else if (serviceResponse.isString()) {
-                PrintWriter sos = response.getWriter();
-                String out = serviceResponse.toString(false);
+                final PrintWriter sos = response.getWriter();
+                final String out = serviceResponse.toString(false);
                 sos.print(out);
                 logClient(startTime, query, 200, "ok: " + out);
             } else if (serviceResponse.isByteArray()) {
@@ -130,8 +130,8 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
                 response.setHeader("Access-Control-Allow-Origin", "*");
                 logClient(startTime, query, 200, "ok (ByteArray)");
             }
-        } catch (APIException e) {
-            String message = e.getMessage();
+        } catch (final APIException e) {
+            final String message = e.getMessage();
             logClient(startTime, query, e.getStatusCode(), message);
             response.sendError(e.getStatusCode(), message);
             return;
@@ -139,18 +139,18 @@ public abstract class AbstractAPIHandler extends HttpServlet implements APIHandl
     }
 
     public void logClient(
-            long startTime,
-            Query query,
-            int httpResponseCode,
+            final long startTime,
+            final Query query,
+            final int httpResponseCode,
             String message) {
-        String host = query.getClientHost();
+        final String host = query.getClientHost();
         String q = query.toString(512);
         if (q.length() > 512) q = q.substring(0, 512) + "...";
-        long t = System.currentTimeMillis() - startTime;
+        final long t = System.currentTimeMillis() - startTime;
         String path = getAPIPath();
         if (q.length() > 0) path = path + "?" + q;
         if (message.length() > 512) message = message.substring(0, 512) + "...";
-        String m = host + " - " + httpResponseCode + " - " + t + "ms - " + path + " - " + message;
+        final String m = host + " - " + httpResponseCode + " - " + t + "ms - " + path + " - " + message;
         Logger.info(this.getClass(), m);
     }
 }
