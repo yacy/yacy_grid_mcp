@@ -126,6 +126,27 @@ public class Configuration {
             e1.printStackTrace();
         }
 
+        // init boosts from configuration
+        final Map<String, String> defaultBoosts = readDoubleProps("boost.properties");
+        this.boostsFactory = new BoostsFactory(defaultBoosts);
+
+        // start hazelcast service
+        final Config hazelcastconfig = new Config().setClusterName("YaCyGrid").setInstanceName("Services");
+        this.hazelcast = Hazelcast.newHazelcastInstance(hazelcastconfig);
+        final String uuid = this.hazelcast.getCluster().getLocalMember().getUuid().toString();
+        this.hazelcast.getMap("status").put(uuid, StatusService.status());
+
+        // initialize serviceMap for server
+        this.servlets = new ArrayList<>();
+        this.serviceMap = new ConcurrentHashMap<>();
+        for (final Class<? extends Servlet> servlet: servlets) addServlet(servlet);
+    }
+
+    /**
+     * Connect services that are required to operate the grid.
+     * This can only be initiated after the server has started because it requires configured connections.
+     */
+    public void connectBackend() {
         // connect outside services
         // first try to connect to the configured MCPs.
         // if that fails, try to make all connections self
@@ -223,21 +244,6 @@ public class Configuration {
 
         // find connections first here before concurrent threads try to make their own connection concurrently
         try { this.gridIndex.checkConnection(); } catch (final IOException e) { Logger.error("no connection to MCP", e); }
-
-        // init boosts from configuration
-        final Map<String, String> defaultBoosts = readDoubleProps("boost.properties");
-        this.boostsFactory = new BoostsFactory(defaultBoosts);
-
-        // start hazelcast service
-        final Config hazelcastconfig = new Config().setClusterName("YaCyGrid").setInstanceName("Services");
-        this.hazelcast = Hazelcast.newHazelcastInstance(hazelcastconfig);
-        final String uuid = this.hazelcast.getCluster().getLocalMember().getUuid().toString();
-        this.hazelcast.getMap("status").put(uuid, StatusService.status());
-
-        // initialize serviceMap for server
-        this.servlets = new ArrayList<>();
-        this.serviceMap = new ConcurrentHashMap<>();
-        for (final Class<? extends Servlet> servlet: servlets) addServlet(servlet);
     }
 
     /**
