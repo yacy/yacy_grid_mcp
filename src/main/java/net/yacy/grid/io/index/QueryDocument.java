@@ -43,7 +43,7 @@ public class QueryDocument extends Document {
         super(obj);
     }
 
-    public static void storeBulk(final Configuration data, final Index index, final Collection<QueryDocument> documents) throws IOException {
+    public static void storeBulk(final Configuration config, final Index index, final Collection<QueryDocument> documents) throws IOException {
         if (index == null) return;
         final Map<String, JSONObject> map = new HashMap<>();
         documents.forEach(queryDocument -> {
@@ -51,16 +51,16 @@ public class QueryDocument extends Document {
             map.put(id, queryDocument);
         });
         index.addBulk(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.query", GridIndex.DEFAULT_INDEXNAME_QUERY),
-                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                config.properties.getOrDefault("grid.elasticsearch.indexName.query", GridIndex.DEFAULT_INDEXNAME_QUERY),
+                config.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
                 map);
     }
 
-    public QueryDocument store(final Configuration data, final Index index) throws IOException {
+    public QueryDocument store(final Configuration config, final Index index) throws IOException {
         final String id = Long.toString(System.currentTimeMillis());
         index.add(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.query", GridIndex.DEFAULT_INDEXNAME_QUERY),
-                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                config.properties.getOrDefault("grid.elasticsearch.indexName.query", GridIndex.DEFAULT_INDEXNAME_QUERY),
+                config.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
                 id, this);
         return this;
     }

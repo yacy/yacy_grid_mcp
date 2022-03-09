@@ -141,7 +141,7 @@ public class GridControl {
 
     public static void main(final String args[]) {
         // burn-in test
-        final Configuration data = new Configuration("data",  true, YaCyServices.mcp);
+        final Configuration config = new Configuration("data",  true, YaCyServices.mcp);
         final GridControl loaderThrottling = new GridControl("127.0.0.1", 8100);
         long delay = 1000;
         try {
@@ -151,7 +151,7 @@ public class GridControl {
             delay = 1001;
         }
         System.out.println(delay);
-        data.close();
+        config.close();
     }
 
 }

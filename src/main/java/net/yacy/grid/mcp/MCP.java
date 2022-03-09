@@ -19,6 +19,8 @@
 
 package net.yacy.grid.mcp;
 
+import java.util.Properties;
+
 import javax.servlet.Servlet;
 
 import net.yacy.grid.YaCyServices;
@@ -111,7 +113,7 @@ public class MCP {
         public Application() {
             Logger.info("Starting MCP Application...");
 
-            // initialize storage
+            // initialize configuration
             this.config = new Configuration(DATA_PATH, true, MCP_SERVICE, MCP_SERVLETS);
 
             // initialize REST server with services
@@ -127,7 +129,7 @@ public class MCP {
         @Override
         public void run() {
 
-            Logger.info("Grid Name: " + this.brokerApplication.data.properties.get("grid.name"));
+            Logger.info("Grid Name: " + this.brokerApplication.config.properties.get("grid.name"));
 
             // starting threads
             new Thread(this.brokerApplication).start();
@@ -152,17 +154,24 @@ public class MCP {
     }
 
     public static void main(final String[] args) {
-        // initialize environment variables
+        // run in headless mode
         System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
 
-        // prepare logging
+        // prepare configuration
+        final Properties sysprops = System.getProperties(); // system properties
+        System.getenv().forEach((k,v) -> {
+            if (k.startsWith("YACYGRID_")) sysprops.put(k.substring(9).replace('_', '.'), v);
+        }); // add also environment variables
+
+        // first greeting
         Logger.info("MCP started!");
         Logger.info(new GitTool().toString());
         Logger.info("you can now search using the query api, i.e.:");
         Logger.info("curl \"http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=test\"");
 
-        final long cycleDelay = Long.parseLong(System.getProperty("CYCLEDELAY", "" + Long.MAX_VALUE)); // by default, run only in one genesis thread
-        final int cycleRandom = Integer.parseInt(System.getProperty("CYCLERANDOM", "" + 1000 * 60 /*1 minute*/));
+        // run application with cron
+        final long cycleDelay = Long.parseLong(System.getProperty("YACYGRID_MCP_CYCLEDELAY", "" + Long.MAX_VALUE)); // by default, run only in one genesis thread
+        final int cycleRandom = Integer.parseInt(System.getProperty("YACYGRID_MCP_CYCLERANDOM", "" + 1000 * 60 /*1 minute*/));
         final CronBox cron = new CronBox(Application.class, cycleDelay, cycleRandom);
         cron.cycle();
 

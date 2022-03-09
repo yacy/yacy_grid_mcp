@@ -48,40 +48,40 @@ public class WebDocument extends Document {
         super(obj.toMap());
     }
 
-    public static Map<String, WebDocument> loadBulk(final Configuration data, final Index index, final Collection<String> ids) throws IOException {
+    public static Map<String, WebDocument> loadBulk(final Configuration config, final Index index, final Collection<String> ids) throws IOException {
         final Map<String, JSONObject> jsonmap = index.queryBulk(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+                config.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
                 ids);
         final Map<String, WebDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> docmap.put(id, new WebDocument(doc)));
         return docmap;
     }
 
-    public static WebDocument load(final Configuration data, final Index index, final String id) throws IOException {
+    public static WebDocument load(final Configuration config, final Index index, final String id) throws IOException {
         final JSONObject json = index.query(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+                config.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
                 id);
         if (json == null) throw new IOException("no document with id " + id + " in index");
         return new WebDocument(json);
     }
 
-    public static void storeBulk(final Configuration data, final Index index, final Collection<WebDocument> documents) throws IOException {
+    public static void storeBulk(final Configuration config, final Index index, final Collection<WebDocument> documents) throws IOException {
         if (index == null) return;
         final Map<String, JSONObject> map = new HashMap<>();
         documents.forEach(webDocument -> {
             map.put(webDocument.getId(), webDocument);
         });
         index.addBulk(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
-                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                config.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+                config.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
                 map);
     }
 
-    public WebDocument store(final Configuration data, final Index index) throws IOException {
+    public WebDocument store(final Configuration config, final Index index) throws IOException {
         if (index == null) return this;
         index.add(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
-                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                config.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+                config.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
                 getId(), this);
         return this;
     }

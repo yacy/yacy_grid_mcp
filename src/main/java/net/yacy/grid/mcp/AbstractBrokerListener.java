@@ -45,15 +45,15 @@ import net.yacy.grid.tools.Memory;
 public abstract class AbstractBrokerListener implements BrokerListener {
 
     public boolean shallRun;
-    public final Configuration data;
+    public final Configuration config;
     private final Services service;
     private final GridQueue[] sourceQueues;
     private final int threadCount;
     private final List<QueueListener> threads;
     private final AtomicInteger targetFill;
 
-    public AbstractBrokerListener(final Configuration data, final Services service, final int threadCount) {
-        this.data = data;
+    public AbstractBrokerListener(final Configuration config, final Services service, final int threadCount) {
+        this.config = config;
         this.service = service;
         this.sourceQueues = service.getSourceQueues();
         this.threadCount = threadCount;
@@ -71,7 +71,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         // recover unacknowledged entries - possibly from last start
         for (final GridQueue queue: this.sourceQueues) {
             try {
-                this.data.gridBroker.recover(AbstractBrokerListener.this.service, queue);
+                this.config.gridBroker.recover(AbstractBrokerListener.this.service, queue);
             } catch (final IOException e) {
                 Logger.error(this.getClass(), "Service " + this.service.name() + ": recover not possible: " + e.getMessage(), e);
             }
@@ -79,7 +79,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
 
         // print out some stats about the queues
         try {
-            final AvailableContainer[] ac = this.data.gridBroker.available(AbstractBrokerListener.this.service, this.sourceQueues);
+            final AvailableContainer[] ac = this.config.gridBroker.available(AbstractBrokerListener.this.service, this.sourceQueues);
             for (int i = 0; i < ac.length; i++) {
                 Logger.info(this.getClass(), "Service " + this.service.name() + ", queue " + ac[i].getQueue() + ": " + ac[i].getAvailable() + " entries.");
             }
@@ -92,7 +92,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         Logger.info(this.getClass(), "Broker Listener: starting " + threadsPerQueue + " threads for each of the " + this.sourceQueues.length + " queues");
         for (final GridQueue queue: this.sourceQueues) {
             for (int qc = 0; qc < threadsPerQueue; qc++) {
-                final QueueListener listener = new QueueListener(queue, qc, this.data.gridBroker.isAutoAck(), this.data.gridBroker.getQueueThrottling());
+                final QueueListener listener = new QueueListener(queue, qc, this.config.gridBroker.isAutoAck(), this.config.gridBroker.getQueueThrottling());
                 listener.start();
                 this.threads.add(listener);
                 Logger.info(this.getClass(), "Broker Listener for service " + this.service.name() + ", queue " + queue + " started thread " + qc);
@@ -137,7 +137,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 int targetQueueAggregator = 0;
                 for (final Services targetService: AbstractBrokerListener.this.service.getTargetServices()) {
                     for (final GridQueue targetQueue: targetService.getSourceQueues()) try {
-                        final AvailableContainer a = AbstractBrokerListener.this.data.gridBroker.available(targetService, targetQueue);
+                        final AvailableContainer a = AbstractBrokerListener.this.config.gridBroker.available(targetService, targetQueue);
                         targetQueueAggregator += a.getAvailable();
                     } catch (final IOException e) {}
                 }
@@ -172,14 +172,14 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         @Override
         public void run() {
             try {
-                final AvailableContainer a = AbstractBrokerListener.this.data.gridBroker.available(AbstractBrokerListener.this.service, this.queueName);
+                final AvailableContainer a = AbstractBrokerListener.this.config.gridBroker.available(AbstractBrokerListener.this.service, this.queueName);
                 Logger.info(this.getClass(), "Started QueueListener for Queue " + a.getQueue() + ", thread " + this.threadCounter + ": " + a.getAvailable() + " entries.");
             } catch (final IOException e) {
                 Logger.error(this.getClass(), "Could not load AvailableContainer for Queue " + this.queueName + ": " + e.getMessage(), e);
             }
 
             while (AbstractBrokerListener.this.shallRun) {
-                if (AbstractBrokerListener.this.data.gridBroker == null) {
+                if (AbstractBrokerListener.this.config.gridBroker == null) {
                     try {Thread.sleep(1000);} catch (final InterruptedException ee) {}
                     continue; // wait until initialization complete
                 }
@@ -190,7 +190,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     // check short memory status
                     if (Memory.shortStatus()) {
                         Logger.info(this.getClass(), "AbstractBrokerListener.QueueListener short memory status: assigned = " + Memory.assigned() + ", used = " + Memory.used());
-                        AbstractBrokerListener.this.data.clearCaches();
+                        AbstractBrokerListener.this.config.clearCaches();
                     }
 
                     // check target throttling
@@ -208,7 +208,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     }
 
                     // wait until message arrives
-                    mc = AbstractBrokerListener.this.data.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000, this.autoAck);
+                    mc = AbstractBrokerListener.this.config.gridBroker.receive(AbstractBrokerListener.this.service, this.queueName, 10000, this.autoAck);
                     if (mc != null && mc.getPayload() != null && mc.getPayload().length > 0) {
                         result = handleMessage(mc, this.queueName.name(), this.threadCounter);
                         // track number of handles messages
@@ -232,7 +232,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                         if (!this.autoAck && mc != null && mc.getDeliveryTag() > 0) {
                             // reject the message
                             try {
-                                AbstractBrokerListener.this.data.gridBroker.reject(AbstractBrokerListener.this.service, this.queueName, mc.getDeliveryTag());
+                                AbstractBrokerListener.this.config.gridBroker.reject(AbstractBrokerListener.this.service, this.queueName, mc.getDeliveryTag());
                             } catch (final IOException ee) {
                                 Logger.warn(this.getClass(), "QueueListener: cannot acknowledge queue: " + ee.getMessage(), ee);
                             }
@@ -242,7 +242,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     if (!this.autoAck && mc != null && mc.getDeliveryTag() > 0) {
                         // acknowledge the message
                         try {
-                            AbstractBrokerListener.this.data.gridBroker.acknowledge(AbstractBrokerListener.this.service, this.queueName, mc.getDeliveryTag());
+                            AbstractBrokerListener.this.config.gridBroker.acknowledge(AbstractBrokerListener.this.service, this.queueName, mc.getDeliveryTag());
                         } catch (final IOException e) {
                             Logger.warn(this.getClass(), "QueueListener: cannot acknowledge queue: " + e.getMessage(), e);
                         }
@@ -332,7 +332,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                 .put("data", json)
                 .put("actions", new JSONArray().put(action.toJSONClone()));
         final byte[] b = nextProcess.toString(2).getBytes(StandardCharsets.UTF_8);
-        this.data.gridBroker.send(YaCyServices.valueOf(type), new GridQueue(queue), b);
+        this.config.gridBroker.send(YaCyServices.valueOf(type), new GridQueue(queue), b);
     }
 
     @Override

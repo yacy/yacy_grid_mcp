@@ -43,8 +43,8 @@ import net.yacy.grid.tools.MultiProtocolURL;
 
 public class IndexListener extends AbstractBrokerListener implements BrokerListener {
 
-    public IndexListener(final Configuration data, final YaCyServices service) {
-         super(data, service, Runtime.getRuntime().availableProcessors());
+    public IndexListener(final Configuration Configuration, final YaCyServices service) {
+         super(Configuration, service, Runtime.getRuntime().availableProcessors());
      }
 
     @Override
@@ -61,7 +61,7 @@ public class IndexListener extends AbstractBrokerListener implements BrokerListe
                 jsonlist = action.getJSONListAsset(sourceasset_path);
                }
             if (jsonlist == null || jsonlist.length() == 0) try {
-                final Asset<byte[]> asset = this.data.gridStorage.load(sourceasset_path);
+                final Asset<byte[]> asset = this.config.gridStorage.load(sourceasset_path);
                 final byte[] source = asset.getPayload();
                 jsonlist = new JSONList(new ByteArrayInputStream(source));
             } catch (final IOException e) {
@@ -81,9 +81,9 @@ public class IndexListener extends AbstractBrokerListener implements BrokerListe
                 if (date == null && json.has(WebMapping.fresh_date_dt.getMapping().name())) date = WebMapping.fresh_date_dt.getMapping().name();
                 final String url = json.getString(WebMapping.url_s.getMapping().name());
                 final String urlid = MultiProtocolURL.getDigest(url);
-                final boolean created = this.data.gridIndex.getElasticClient().writeMap(
-                                    this.data.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
-                                    this.data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
+                final boolean created = this.config.gridIndex.getElasticClient().writeMap(
+                                    this.config.properties.getOrDefault("grid.elasticsearch.indexName.web", GridIndex.DEFAULT_INDEXNAME_WEB),
+                                    this.config.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME),
                                     urlid, json.toMap());
                 Logger.info(this.getClass(), "MCP.processAction indexed " + ((line + 1)/2)  + "/" + jsonlist.length()/2 + "(" + (created ? "created" : "updated")+ "): " + url);
                 //BulkEntry be = new BulkEntry(json.getString("url_s"), "crawler", date, null, json.toMap());
@@ -94,7 +94,7 @@ public class IndexListener extends AbstractBrokerListener implements BrokerListe
                     final JSONObject updater = new JSONObject()
                             .put(CrawlerMapping.status_s.getMapping().name(), Status.indexed.name())
                             .put(CrawlerMapping.status_date_dt.getMapping().name(), DateParser.iso8601MillisFormat.format(new Date()));
-                    CrawlerDocument.update(this.data, this.data.gridIndex, urlid, updater);
+                    CrawlerDocument.update(this.config, this.config.gridIndex, urlid, updater);
                     // check with http://localhost:9200/crawler/_search?q=status_s:indexed
                 } catch (final IOException e) {
                     // well that should not happen
@@ -103,7 +103,7 @@ public class IndexListener extends AbstractBrokerListener implements BrokerListe
             } catch (final JSONException je) {
                 Logger.warn(this.getClass(), "", je);
             }
-            //Data.index.writeMapBulk(GridIndex.WEB_INDEX_NAME, bulk);
+            //Configuration.index.writeMapBulk(GridIndex.WEB_INDEX_NAME, bulk);
             Logger.info(this.getClass(), "MCP.processAction processed indexing message from queue: " + sourceasset_path);
             return ActionResult.SUCCESS;
         } catch (final Throwable e) {

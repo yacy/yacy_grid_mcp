@@ -44,24 +44,24 @@ public class CrawlstartDocument extends Document {
         super(obj);
     }
 
-    public static Map<String, CrawlstartDocument> loadBulk(final Configuration data, final Index index, final Collection<String> ids) throws IOException {
+    public static Map<String, CrawlstartDocument> loadBulk(final Configuration config, final Index index, final Collection<String> ids) throws IOException {
         final Map<String, JSONObject> jsonmap = index.queryBulk(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+                config.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
                 ids);
         final Map<String, CrawlstartDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> docmap.put(id, new CrawlstartDocument(doc)));
         return docmap;
     }
 
-    public static CrawlstartDocument load(final Configuration data, final Index index, final String crawlid) throws IOException {
+    public static CrawlstartDocument load(final Configuration config, final Index index, final String crawlid) throws IOException {
         final JSONObject json = index.query(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+                config.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
                 crawlid);
         if (json == null) throw new IOException("no crawl start with id " + crawlid + " in index");
         return new CrawlstartDocument(json);
     }
 
-    public static void storeBulk(final Configuration data, final Index index, final Collection<CrawlstartDocument> documents) throws IOException {
+    public static void storeBulk(final Configuration config, final Index index, final Collection<CrawlstartDocument> documents) throws IOException {
         if (index == null) return;
         final Map<String, JSONObject> map = new HashMap<>();
         documents.forEach(crawlstartDocument -> {
@@ -69,15 +69,15 @@ public class CrawlstartDocument extends Document {
             map.put(id, crawlstartDocument);
         });
         index.addBulk(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
-                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), map);
+                config.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+                config.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), map);
     }
 
-    public CrawlstartDocument store(final Configuration data, final Index index) throws IOException {
+    public CrawlstartDocument store(final Configuration config, final Index index) throws IOException {
         final String crawlid = getCrawlID();
         index.add(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
-                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), crawlid, this);
+                config.properties.getOrDefault("grid.elasticsearch.indexName.crawlstart", GridIndex.DEFAULT_INDEXNAME_CRAWLSTART),
+                config.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), crawlid, this);
         return this;
     }
 

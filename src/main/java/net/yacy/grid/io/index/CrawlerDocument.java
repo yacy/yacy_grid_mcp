@@ -56,10 +56,9 @@ public class CrawlerDocument extends Document {
         super(obj);
     }
 
-    public static Map<String, CrawlerDocument> loadBulk(final Configuration data, final Index index, final Collection<String> ids) throws IOException {
+    public static Map<String, CrawlerDocument> loadBulk(final Configuration config, final Index index, final Collection<String> ids) throws IOException {
         final Map<String, JSONObject> jsonmap = index.queryBulk(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
-                ids);
+                config.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER), ids);
         final Map<String, CrawlerDocument> docmap = new HashMap<>();
         jsonmap.forEach((id, doc) -> {
             if (doc != null) docmap.put(id, new CrawlerDocument(doc));
@@ -67,9 +66,9 @@ public class CrawlerDocument extends Document {
         return docmap;
     }
 
-    public static CrawlerDocument load(final Configuration data, final Index index, final String id) throws IOException {
+    public static CrawlerDocument load(final Configuration config, final Index index, final String id) throws IOException {
         JSONObject json = null;
-        final String crawlerIndexName = data.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER);
+        final String crawlerIndexName = config.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER);
         try {
             // first try
             json = index.query(crawlerIndexName, id);
@@ -89,7 +88,7 @@ public class CrawlerDocument extends Document {
         return new CrawlerDocument(json);
     }
 
-    public static void storeBulk(final Configuration data, final Index index, final Map<String, CrawlerDocument> documents) throws IOException {
+    public static void storeBulk(final Configuration config, final Index index, final Map<String, CrawlerDocument> documents) throws IOException {
         if (index == null) return;
         final Map<String, JSONObject> map = new HashMap<>();
         documents.forEach((id, crawlerDocument) -> {
@@ -100,8 +99,8 @@ public class CrawlerDocument extends Document {
             }
         });
         index.addBulk(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
-                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), map);
+                config.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
+                config.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), map);
     }
 
     public static void update(final Configuration data, final Index index, final String objectid, final JSONObject changes) throws IOException {
@@ -110,18 +109,18 @@ public class CrawlerDocument extends Document {
         crawlerDocument.store(data, index, objectid);
     }
 
-    public CrawlerDocument store(final Configuration data, final Index index, final String objectid) throws IOException {
+    public CrawlerDocument store(final Configuration config, final Index index, final String objectid) throws IOException {
         if (index != null) index.add(
-                data.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
-                data.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), objectid, this);
+                config.properties.getOrDefault("grid.elasticsearch.indexName.crawler", GridIndex.DEFAULT_INDEXNAME_CRAWLER),
+                config.properties.getOrDefault("grid.elasticsearch.typeName", GridIndex.DEFAULT_TYPENAME), objectid, this);
         return this;
     }
 
-    public CrawlerDocument store(final Configuration data, final Index index) throws IOException {
+    public CrawlerDocument store(final Configuration config, final Index index) throws IOException {
         final String url = getURL();
         if (url != null && url.length() > 0) {
             final String id = Digest.encodeMD5Hex(url);
-            store(data, index, id);
+            store(config, index, id);
         } else {
             assert false : "url not set / store";
         }

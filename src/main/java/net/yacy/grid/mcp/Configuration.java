@@ -1,5 +1,5 @@
 /**
- *  Data
+ *  Configuration
  *  Copyright 14.01.2017 by Michael Peter Christen, @orbiterlab
  *
  *  This library is free software; you can redistribute it and/or
@@ -30,8 +30,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.Servlet;
-
-import org.apache.log4j.BasicConfigurator;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -69,18 +67,12 @@ public class Configuration {
     public final List<Class<? extends Servlet>> servlets;
     public final Map<String, APIHandler> serviceMap;
 
-    //public Data(final File serviceData, final Service service, final boolean localStorage) {
+    //public Configuration(final File serviceData, final Service service, final boolean localStorage) {
     public Configuration(
             final String data_path,  // this is usually "data"
             final boolean localStorage,
             final YaCyServices serviceType,
             final Class<? extends Servlet>... servlets) {
-
-        // run in headless mode
-        System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
-
-        // configure logging
-        BasicConfigurator.configure();
 
         // load the config file(s);
         // what we are doing here is a bootstraping of configuration file(s): first we load the system configuration

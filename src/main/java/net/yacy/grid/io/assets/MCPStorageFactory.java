@@ -154,7 +154,7 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
 
     public static void main(final String args[]) {
         // burn-in test
-        final Configuration data = new Configuration("data", true, YaCyServices.mcp);
+        final Configuration config = new Configuration("data", true, YaCyServices.mcp);
         final int threads = 16;
         final MCPStorageFactory storage = new MCPStorageFactory(null, "127.0.0.1", 8100, true);
         final Random random = new Random(System.currentTimeMillis());
@@ -186,7 +186,7 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
             } catch (final InterruptedException e) {
                 e.printStackTrace();
             }
-        data.close();
+        config.close();
     }
 
 }
