@@ -156,7 +156,8 @@ public class Service {
             this.server.setHandler(handlerlist2);
             this.server.start();
         } catch (final Throwable e) {
-            throw new IOException(e.getMessage());
+            if (e instanceof IOException) throw (IOException) e;
+            throw new IOException(e.getMessage(), e);
         }
     }
 
