@@ -250,11 +250,13 @@ public class Service {
                         try {Thread.sleep(1000);} catch (final InterruptedException e) {}
                     }
                     Service.this.stop();
+                    Logger.info("server kill termination requested");
+                    System.exit(1); // not soo nixe because it goes around the CronBox, but that is stateless so just exit here.
                 } else {
                     // something with the pid file creation did not work; fail-over to normal operation waiting for a kill command
                     Service.this.join();
                 }
-                Logger.info("server nominal termination requested");
+                Logger.info("server nominal termination");
             } catch (final IOException e) {
                 Logger.error("Main fail", e);
             } finally {
