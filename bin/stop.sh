@@ -9,8 +9,8 @@ if [ -f "$KILLFILE" ];
 then
    rm $KILLFILE
    echo "termination requested, waiting.."
-   # this can take 10 seconds..
-   sleep 10
+   # this can take a bit..
+   sleep 5
 fi
 
 # second method to terminate the process
