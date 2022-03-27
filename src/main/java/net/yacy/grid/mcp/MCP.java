@@ -44,6 +44,7 @@ import net.yacy.grid.mcp.api.messages.AcknowledgeService;
 import net.yacy.grid.mcp.api.messages.AvailableService;
 import net.yacy.grid.mcp.api.messages.ClearService;
 import net.yacy.grid.mcp.api.messages.PeekService;
+import net.yacy.grid.mcp.api.messages.QueuesService;
 import net.yacy.grid.mcp.api.messages.ReceiveService;
 import net.yacy.grid.mcp.api.messages.RecoverService;
 import net.yacy.grid.mcp.api.messages.SendService;
@@ -80,6 +81,7 @@ public class MCP {
             AvailableService.class,
             ClearService.class,
             PeekService.class,
+            QueuesService.class,
             ReceiveService.class,
             RecoverService.class,
             SendService.class,

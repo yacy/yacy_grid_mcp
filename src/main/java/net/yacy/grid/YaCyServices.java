@@ -19,6 +19,9 @@
 
 package net.yacy.grid;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import net.yacy.grid.io.messages.GridQueue;
 
 /**
@@ -74,16 +77,17 @@ public enum YaCyServices implements Services {
     rabbitmq(5672),                 // a rabbitmq message queue server to be used for global messages, queues and stacks
     elastic(9300);                  // an elasticsearch server or main cluster address for global database storage
 
-    private int default_port;
-    private GridQueue[] sourceQueues;
-    private String[] targetServices; // we cannot use "Services" here as type because that would require a circular declaration
+    private final int default_port;
+    private final GridQueue[] sourceQueues;
+    private final String[] targetServices; // we cannot use "Services" here as type because that would require a circular declaration
 
-    private YaCyServices(int default_port) {
+    private YaCyServices(final int default_port) {
         this.default_port = default_port;
         this.sourceQueues = null;
+        this.targetServices = null;
     }
 
-    private YaCyServices(int default_port, GridQueue[] sourceQueues, String[] targetServices) {
+    private YaCyServices(final int default_port, final GridQueue[] sourceQueues, final String[] targetServices) {
         this.default_port = default_port;
         this.sourceQueues = sourceQueues;
         this.targetServices = targetServices;
@@ -101,9 +105,20 @@ public enum YaCyServices implements Services {
 
     @Override
     public Services[] getTargetServices() {
-        Services[] services = new Services[this.targetServices.length];
+        final Services[] services = new Services[this.targetServices.length];
         for (int i = 0; i < this.targetServices.length; i++) services[i] = YaCyServices.valueOf(this.targetServices[i]);
         return services;
+    }
+
+    public static Map<String, String[]> getServiceQueueArrayMap() {
+        final LinkedHashMap<String, String[]> map = new LinkedHashMap<>();
+        for (final YaCyServices service: YaCyServices.values()) {
+            if (service.sourceQueues == null || service.sourceQueues.length == 0) continue;
+            final String[] source = new String[service.sourceQueues.length];
+            for (int i = 0; i < source.length; i++) source[i] = service.sourceQueues[i].name();
+            map.put(service.name(), source);
+        }
+        return map;
     }
 
 }

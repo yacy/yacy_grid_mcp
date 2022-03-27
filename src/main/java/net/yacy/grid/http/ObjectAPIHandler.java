@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -39,12 +39,13 @@ public abstract class ObjectAPIHandler extends AbstractAPIHandler implements API
     public static final String SUCCESS_KEY   = "success";
     public static final String SERVICE_KEY   = "service";
     public static final String COMMENT_KEY   = "comment";
-    
+
     // for messages
     public static final String MESSAGE_KEY   = "message";
+    public static final String MESSAGES_KEY  = "messages";
     public static final String DELIVERY_TAG  = "deliveryTag";
     public static final String AVAILABLE_KEY = "available";
-    
+
     /**
      * helper method to implement serviceImpl
      * @param params
@@ -52,11 +53,11 @@ public abstract class ObjectAPIHandler extends AbstractAPIHandler implements API
      * @throws IOException
      */
     public static String json2url(final JSONObject params) throws IOException {
-        StringBuilder query = new StringBuilder();
+        final StringBuilder query = new StringBuilder();
         if (params != null) {
-            Iterator<String> i = params.keys(); int c = 0;
+            final Iterator<String> i = params.keys(); int c = 0;
             while (i.hasNext()) {
-                String key = i.next();
+                final String key = i.next();
                 query.append(c == 0 ? '?' : '&');
                 query.append(key);
                 query.append('=');
@@ -66,53 +67,55 @@ public abstract class ObjectAPIHandler extends AbstractAPIHandler implements API
         }
         return query.toString();
     }
-    
+
     public static Map<String, byte[]> json2map(final JSONObject params) throws IOException {
-        HashMap<String, byte[]> map = new HashMap<>();
+        final HashMap<String, byte[]> map = new HashMap<>();
         if (params != null) {
-            Iterator<String> i = params.keys();
+            final Iterator<String> i = params.keys();
             while (i.hasNext()) {
-                String key = i.next();
+                final String key = i.next();
                 map.put(key, params.get(key).toString().getBytes(StandardCharsets.UTF_8));
             }
         }
         return map;
     }
-    
+
     /**
      * POST request
      */
-    public ServiceResponse serviceImpl(final String protocolhostportstub, JSONObject params) throws IOException {
+    @Override
+    public ServiceResponse serviceImpl(final String protocolhostportstub, final JSONObject params) throws IOException {
         /*
         String urlstring = protocolhostportstub + this.getAPIPath() + json2url(params);
         ClientConnection connection = new ClientConnection(urlstring);
         return doConnection(connection);
         */
-        String urlstring = protocolhostportstub + this.getAPIPath();
-        ClientConnection connection = new ClientConnection(urlstring, json2map(params));
+        final String urlstring = protocolhostportstub + this.getAPIPath();
+        final ClientConnection connection = new ClientConnection(urlstring, json2map(params));
         return doConnection(connection);
     }
-    
+
     /**
      * POST request
      */
-    public ServiceResponse serviceImpl(final String protocolhostportstub, Map<String, byte[]> params) throws IOException {
-        String urlstring = protocolhostportstub + this.getAPIPath();
-        ClientConnection connection = new ClientConnection(urlstring, params);
+    @Override
+    public ServiceResponse serviceImpl(final String protocolhostportstub, final Map<String, byte[]> params) throws IOException {
+        final String urlstring = protocolhostportstub + this.getAPIPath();
+        final ClientConnection connection = new ClientConnection(urlstring, params);
         return doConnection(connection);
     }
-    
-    private ServiceResponse doConnection(ClientConnection connection) throws IOException {
-        Charset charset = connection.getContentType().getCharset();
-        String mime = connection.getContentType().getMimeType(); //application/javascript, application/octet-stream
-        byte[] b = connection.load();
+
+    private ServiceResponse doConnection(final ClientConnection connection) throws IOException {
+        final Charset charset = connection.getContentType().getCharset();
+        final String mime = connection.getContentType().getMimeType(); //application/javascript, application/octet-stream
+        final byte[] b = connection.load();
         if (b.length == 0) throw new IOException("response empty");
         if (mime.indexOf("javascript") >= 0) {
             if (b.length > 0 && b[0] == (byte) '[') {
-                JSONArray json = new JSONArray(new JSONTokener(new String(b, charset == null ? StandardCharsets.UTF_8 : charset)));
+                final JSONArray json = new JSONArray(new JSONTokener(new String(b, charset == null ? StandardCharsets.UTF_8 : charset)));
                 return new ServiceResponse(json);
             } else {
-                JSONObject json = new JSONObject(new JSONTokener(new String(b, charset == null ? StandardCharsets.UTF_8 : charset)));
+                final JSONObject json = new JSONObject(new JSONTokener(new String(b, charset == null ? StandardCharsets.UTF_8 : charset)));
                 return new ServiceResponse(json);
             }
         } else {
@@ -120,5 +123,5 @@ public abstract class ObjectAPIHandler extends AbstractAPIHandler implements API
             return new ServiceResponse(b);
         }
     }
-    
+
 }
