@@ -58,7 +58,7 @@ public class SendService extends ObjectAPIHandler implements APIHandler {
         final JSONObject json = new JSONObject(true);
         if (serviceName.length() > 0 && queueName.length() > 0 && message.length() > 0) {
             try {
-                final QueueFactory<byte[]> factory = Service.instance.config.gridBroker.send(YaCyServices.valueOf(serviceName), new GridQueue(queueName), message.getBytes(StandardCharsets.UTF_8));
+                final QueueFactory factory = Service.instance.config.gridBroker.send(YaCyServices.valueOf(serviceName), new GridQueue(queueName), message.getBytes(StandardCharsets.UTF_8));
                 final String url = factory.getConnectionURL();
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);

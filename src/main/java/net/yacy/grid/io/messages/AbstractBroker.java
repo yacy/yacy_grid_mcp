@@ -29,9 +29,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.yacy.grid.Services;
+import net.yacy.grid.YaCyServices;
 import net.yacy.grid.tools.Logger;
 
-public abstract class AbstractBroker<A> implements Broker<A> {
+public abstract class AbstractBroker implements Broker {
 
     private final static Random random = new Random();
     private final Map<Services, AtomicInteger> roundRobinLookup = new ConcurrentHashMap<>();
@@ -42,21 +43,21 @@ public abstract class AbstractBroker<A> implements Broker<A> {
     public abstract void close() throws IOException;
 
     @Override
-    public abstract QueueFactory<A> send(final Services service, final GridQueue queue, final byte[] message) throws IOException;
+    public abstract QueueFactory send(final Services service, final GridQueue queue, final byte[] message) throws IOException;
 
     @Override
-    public QueueFactory<A> send(final Services service, final GridQueue[] queues, final ShardingMethod shardingMethod, int[] priorityDimensions, int priority, final String hashingKey, final byte[] message) throws IOException {
+    public QueueFactory send(final Services service, final GridQueue[] queues, final ShardingMethod shardingMethod, final int[] priorityDimensions, final int priority, final String hashingKey, final byte[] message) throws IOException {
         return send(service, queueName(service, queues, shardingMethod, priorityDimensions, priority, hashingKey), message);
     }
 
     @Override
-    public GridQueue queueName(final Services service, final GridQueue[] queues, final ShardingMethod shardingMethod, int[] priorityDimensions, int priority, final String hashingKey) throws IOException {
+    public GridQueue queueName(final Services service, final GridQueue[] queues, final ShardingMethod shardingMethod, final int[] priorityDimensions, final int priority, final String hashingKey) throws IOException {
         if (queues.length == 1) return queues[0];
         assert priorityDimensions.length > priority;
         int queuesBeforeCurrentDimension = 0;
         for (int i = 0; i < priority; i++) queuesBeforeCurrentDimension += priorityDimensions[i];
-        int priorityDimension = priorityDimensions[priority];
-        GridQueue[] psq = new GridQueue[priorityDimension];
+        final int priorityDimension = priorityDimensions[priority];
+        final GridQueue[] psq = new GridQueue[priorityDimension];
         System.arraycopy(queues, queuesBeforeCurrentDimension, psq, 0, priorityDimension);
         int idx = 0;
         switch (shardingMethod) {
@@ -92,18 +93,18 @@ public abstract class AbstractBroker<A> implements Broker<A> {
 
 
     @Override
-    public abstract MessageContainer<A> receive(final Services service, final GridQueue queue, long timeout, boolean autoAck) throws IOException;
+    public abstract MessageContainer receive(final Services service, final GridQueue queue, long timeout, boolean autoAck) throws IOException;
 
     @Override
     public abstract AvailableContainer available(final Services service, final GridQueue queue) throws IOException;
 
-    private Map<String, AvailableContainer> acbuffers = new ConcurrentHashMap<>();
-    private Map<String, Long> actime = new ConcurrentHashMap<>();
+    private final Map<String, AvailableContainer> acbuffers = new ConcurrentHashMap<>();
+    private final Map<String, Long> actime = new ConcurrentHashMap<>();
     public AvailableContainer bufferedAvailable(final Services service, final GridQueue queue) throws IOException {
-        String bkey = service.name() + "_" + queue.name();
-        Long lacc = this.actime.get(bkey);
-        long laccl = lacc == null ? 0 : lacc.longValue();
-        long now = System.currentTimeMillis();
+        final String bkey = service.name() + "_" + queue.name();
+        final Long lacc = this.actime.get(bkey);
+        final long laccl = lacc == null ? 0 : lacc.longValue();
+        final long now = System.currentTimeMillis();
         AvailableContainer ac = this.acbuffers.get(bkey);
         if (ac == null || now - laccl > 10000) {
             ac = available(service, queue);
@@ -115,11 +116,38 @@ public abstract class AbstractBroker<A> implements Broker<A> {
 
     @Override
     public AvailableContainer[] available(final Services service, final GridQueue[] queues) throws IOException {
-        AvailableContainer[] ac = new AvailableContainer[queues.length];
+        final AvailableContainer[] ac = new AvailableContainer[queues.length];
         for (int i = 0; i < queues.length; i++) {
             ac[i] = bufferedAvailable(service, queues[i]);
         }
         return ac;
+    }
+
+    @Override
+    public List<MessageContainer> peek(final YaCyServices service, final GridQueue queue, int count) {
+        final List<MessageContainer> messages = new ArrayList<>();
+        fetch: while (count-- > 0) {
+            MessageContainer message = null;
+            try {
+                message = receive(service, queue, 3000, true);
+            } catch (final IOException e) {
+                break fetch;
+            }
+
+            // message can be null if a timeout occurred or no more messages are in the queue
+            if (message == null) break fetch;
+            messages.add(message);
+        }
+        // send messages again to queue asap!
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            try {
+                send(service, queue, messages.get(i).getPayload());
+            } catch (final IOException e) {
+                // this is bad
+                e.printStackTrace();
+            }
+        }
+        return messages;
     }
 
     private int roundRobin(final Services service, final GridQueue[] queues) throws IOException {
@@ -141,11 +169,11 @@ public abstract class AbstractBroker<A> implements Broker<A> {
      * @return
      * @throws IOException
      */
-    private int leastFilled(AvailableContainer[] ac) throws IOException {
+    private int leastFilled(final AvailableContainer[] ac) throws IOException {
         if (ac.length == 1) return 0;
         int index = random.nextInt(ac.length);
         long leastAvailable = Long.MAX_VALUE;
-        List<Integer> zeroCandidates = new ArrayList<>();
+        final List<Integer> zeroCandidates = new ArrayList<>();
         for (int i = 0; i < ac.length; i++) {
             if (ac[i].getAvailable() == 0) zeroCandidates.add(i);
             if (ac[i].getAvailable() < leastAvailable) {
@@ -172,7 +200,7 @@ public abstract class AbstractBroker<A> implements Broker<A> {
         }
         Integer lookupIndex = lookupMap.get(hashingKey);
         if (lookupIndex == null) {
-            AvailableContainer[] available = available(service, queues);
+            final AvailableContainer[] available = available(service, queues);
             lookupIndex = leastFilled(available);
             lookupMap.put(hashingKey, lookupIndex);
         }
@@ -187,10 +215,10 @@ public abstract class AbstractBroker<A> implements Broker<A> {
             this.leastFilledLookup.put(service, lookupMap);
         }
         Integer lookupIndex = lookupMap.get(hashingKey);
-        AvailableContainer[] available = available(service, queues);
+        final AvailableContainer[] available = available(service, queues);
         // because this available object comes from a buffered object which may be outdated right now already it is important to pick random elements out of it!
         assert available.length == queues.length;
-        int leastFilled = leastFilled(available);
+        final int leastFilled = leastFilled(available);
         assert leastFilled < queues.length;
         if (lookupIndex == null) {
             // find a new queue with least entries

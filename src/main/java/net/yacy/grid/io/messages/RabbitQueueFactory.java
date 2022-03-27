@@ -49,7 +49,7 @@ import net.yacy.grid.tools.Logger;
  * http://127.0.0.1:15672/
  * and log with admin/admin
  */
-public class RabbitQueueFactory implements QueueFactory<byte[]> {
+public class RabbitQueueFactory implements QueueFactory {
 
     private static int DEFAULT_PORT = 5672;
     private static String DEFAULT_EXCHANGE = "";
@@ -60,7 +60,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     private final int port;
     private final ConnectionFactory connectionFactory;
     private Connection connection;
-    private Map<String, Queue<byte[]>> queues;
+    private Map<String, Queue> queues;
     private final AtomicBoolean lazy;
     private final AtomicInteger queueLimit;
 
@@ -133,9 +133,9 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
     }
 
     @Override
-    public Queue<byte[]> getQueue(final String queueName) throws IOException {
+    public Queue getQueue(final String queueName) throws IOException {
         if (this.queues == null) return null;
-        Queue<byte[]> queue = this.queues.get(queueName);
+        Queue queue = this.queues.get(queueName);
         if (queue != null) return queue;
         synchronized (this) {
             queue = this.queues.get(queueName);
@@ -146,7 +146,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
     }
 
-    private class RabbitMessageQueue extends AbstractQueue<byte[]> implements Queue<byte[]> {
+    private class RabbitMessageQueue extends AbstractQueue implements Queue {
         private final String queueName;
         private final SortedMap<Long, BlockingQueue<Boolean>> unconfirmedSet;
         private Channel channel;
@@ -230,7 +230,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
 
         @Override
-        public Queue<byte[]> send(final byte[] message) throws IOException {
+        public Queue send(final byte[] message) throws IOException {
             try {
                 return sendInternal(message);
             } catch (final IOException e) {
@@ -241,7 +241,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                 return sendInternal(message);
             }
         }
-        private Queue<byte[]> sendInternal(final byte[] message) throws IOException {
+        private Queue sendInternal(final byte[] message) throws IOException {
             final BlockingQueue<Boolean> semaphore = new ArrayBlockingQueue<>(1);
             final long seqNo = this.channel.getNextPublishSeqNo();
             this.unconfirmedSet.put(seqNo, semaphore);
@@ -259,7 +259,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
         }
 
         @Override
-        public MessageContainer<byte[]> receive(long timeout, final boolean autoAck) throws IOException {
+        public MessageContainer receive(long timeout, final boolean autoAck) throws IOException {
             if (timeout <= 0) timeout = Long.MAX_VALUE;
             final long termination = timeout <= 0 || timeout == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeout;
             Throwable ee = null;
@@ -271,7 +271,7 @@ public class RabbitQueueFactory implements QueueFactory<byte[]> {
                         final Envelope envelope = response.getEnvelope();
                         final long deliveryTag = envelope.getDeliveryTag();
                         //channel.basicAck(deliveryTag, false);
-                        return new MessageContainer<byte[]>(RabbitQueueFactory.this, response.getBody(), deliveryTag);
+                        return new MessageContainer(RabbitQueueFactory.this, response.getBody(), deliveryTag);
                     }
                     //Logger.warn(this.getClass(), "receive failed: response empty");
                 } catch (final Throwable e) {

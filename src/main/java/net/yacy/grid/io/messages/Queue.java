@@ -24,7 +24,7 @@ import java.io.IOException;
 /**
  * Interface for a Message Queue
  */
-public interface Queue<A> {
+public interface Queue {
 
     /**
      * check the connection
@@ -38,7 +38,7 @@ public interface Queue<A> {
      * @return the Queue
      * @throws IOException
      */
-    public Queue<A> send(A message) throws IOException;
+    public Queue send(byte[] message) throws IOException;
 
     /**
      * receive a message from the queue. The method blocks until a message is available
@@ -48,7 +48,7 @@ public interface Queue<A> {
      * @return the message or null if a timeout occurred
      * @throws IOException
      */
-    public MessageContainer<A> receive(long timeout, boolean autoAck) throws IOException;
+    public MessageContainer receive(long timeout, boolean autoAck) throws IOException;
 
     /**
      * acknowledge a message. This MUST be used to remove a message from the broker if

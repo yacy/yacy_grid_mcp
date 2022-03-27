@@ -184,7 +184,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     continue; // wait until initialization complete
                 }
                 final String payload = "";
-                MessageContainer<byte[]> mc = null;
+                MessageContainer mc = null;
                 ActionResult result = ActionResult.SUCCESS;
                 try {
                     // check short memory status
@@ -252,7 +252,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         }
     }
 
-    private ActionResult handleMessage(final MessageContainer<byte[]> mc, final String processName, final int processNumber) {
+    private ActionResult handleMessage(final MessageContainer mc, final String processName, final int processNumber) {
         Thread.currentThread().setName(processName + "-" + processNumber + "-running");
 
         final String payload = new String(mc.getPayload(), StandardCharsets.UTF_8);

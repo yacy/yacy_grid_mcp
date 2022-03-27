@@ -1,5 +1,5 @@
 /**
- *  CordQueueFactory
+ *  S3QueueFactory
  *  Copyright 07.11.2021 by Michael Peter Christen, @oribterlab
  *
  *  This library is free software; you can redistribute it and/or
@@ -36,7 +36,7 @@ import eu.searchlab.storage.io.IOPath;
 import eu.searchlab.storage.io.S3IO;
 import eu.searchlab.storage.json.PersistentCord;
 
-public class S3QueueFactory extends PersistentCord implements QueueFactory<byte[]> {
+public class S3QueueFactory extends PersistentCord implements QueueFactory {
 
     private URL url;
     private final String endpointURL;
@@ -102,8 +102,8 @@ public class S3QueueFactory extends PersistentCord implements QueueFactory<byte[
     }
 
     @Override
-    public Queue<byte[]> getQueue(final String queueName) throws IOException {
-        return new Queue<byte[]>() {
+    public Queue getQueue(final String queueName) throws IOException {
+        return new Queue() {
 
             @Override
             public void checkConnection() throws IOException {
@@ -112,15 +112,15 @@ public class S3QueueFactory extends PersistentCord implements QueueFactory<byte[
             }
 
             @Override
-            public Queue<byte[]> send(final byte[] message) throws IOException {
+            public Queue send(final byte[] message) throws IOException {
                 S3QueueFactory.this.append(message2json(message));
                 return this;
             }
 
             @Override
-            public MessageContainer<byte[]> receive(final long timeout, final boolean autoAck) throws IOException {
+            public MessageContainer receive(final long timeout, final boolean autoAck) throws IOException {
                 final JSONObject json = S3QueueFactory.this.getFirst();
-                return new MessageContainer<byte[]>(S3QueueFactory.this, json2message(json), 0 /* delivery tag */);
+                return new MessageContainer(S3QueueFactory.this, json2message(json), 0 /* delivery tag */);
             }
 
             @Override

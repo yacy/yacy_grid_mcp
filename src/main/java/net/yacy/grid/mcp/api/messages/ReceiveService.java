@@ -58,7 +58,7 @@ public class ReceiveService extends ObjectAPIHandler implements APIHandler {
         final JSONObject json = new JSONObject(true);
         if (serviceName.length() > 0 && queueName.length() > 0) {
             try {
-                final MessageContainer<byte[]> message = Service.instance.config.gridBroker.receive(YaCyServices.valueOf(serviceName), new GridQueue(queueName), timeout, autoAck);
+                final MessageContainer message = Service.instance.config.gridBroker.receive(YaCyServices.valueOf(serviceName), new GridQueue(queueName), timeout, autoAck);
                 // message can be null if a timeout occurred
                 if (message == null) {
                     json.put(ObjectAPIHandler.SUCCESS_KEY, false);

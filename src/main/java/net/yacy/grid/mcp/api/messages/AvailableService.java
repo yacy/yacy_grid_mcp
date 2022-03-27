@@ -37,6 +37,14 @@ import net.yacy.grid.mcp.Service;
 /**
  * test: call
  * http://127.0.0.1:8100/yacy/grid/mcp/messages/available.json?serviceName=crawler&queueName=webcrawler_00
+ *
+ * Names of queues can be found in YaCyServices:
+ * crawler_webcrawler_00 - 07
+ * indexer_elasticsearch_00
+ * loader_webloader_00 - 31
+ * parser_yacyparser_00
+ *
+ * compare with http://localhost:15672/#/queues
  */
 public class AvailableService extends ObjectAPIHandler implements APIHandler {
 

@@ -55,7 +55,7 @@ public class ClearService extends ObjectAPIHandler implements APIHandler {
         final JSONObject json = new JSONObject(true);
         if (serviceName.length() > 0 && queueName.length() > 0) {
             try {
-                final QueueFactory<byte[]> qf = Service.instance.config.gridBroker.clear(YaCyServices.valueOf(serviceName), new GridQueue(queueName));
+                final QueueFactory qf = Service.instance.config.gridBroker.clear(YaCyServices.valueOf(serviceName), new GridQueue(queueName));
                 final String url = qf.getConnectionURL();
                 json.put(ObjectAPIHandler.SUCCESS_KEY, true);
                 if (url != null) json.put(ObjectAPIHandler.SERVICE_KEY, url);

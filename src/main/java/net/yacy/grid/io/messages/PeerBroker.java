@@ -30,10 +30,10 @@ import net.yacy.grid.Services;
  * Peer Broker implementation of the broker function.
  * This implements a locally running queue broker based on mapdb tables.
  */
-public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]> {
+public class PeerBroker extends AbstractBroker implements Broker {
 
     private final File basePath;
-    private Map<Services, QueueFactory<byte[]>> clientConnector;
+    private Map<Services, QueueFactory> clientConnector;
 
     public PeerBroker(final File basePath) {
         this.basePath = basePath;
@@ -46,9 +46,9 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
      * @param service
      * @return a queue factory for the mapdb instance of the queue
      */
-    private QueueFactory<byte[]> getConnector(final Services service) throws IOException {
+    private QueueFactory getConnector(final Services service) throws IOException {
         if (this.basePath == null) throw new IOException("no local queue supported (to fix this on a non-mcp peer: run a mcp)");
-        QueueFactory<byte[]> c = this.clientConnector.get(service);
+        QueueFactory c = this.clientConnector.get(service);
         if (c != null)  return c;
         synchronized (this) {
             // to overcome synchronization issues, check map entry again
@@ -64,49 +64,49 @@ public class PeerBroker extends AbstractBroker<byte[]> implements Broker<byte[]>
     }
 
     @Override
-    public QueueFactory<byte[]> send(final Services service, final GridQueue queueName, final byte[] message) throws IOException {
-        final QueueFactory<byte[]> factory = getConnector(service);
+    public QueueFactory send(final Services service, final GridQueue queueName, final byte[] message) throws IOException {
+        final QueueFactory factory = getConnector(service);
         factory.getQueue(queueName.name()).send(message);
         return factory;
     }
 
     @Override
-    public MessageContainer<byte[]> receive(final Services service, final GridQueue queueName, final long timeout, final boolean autoAck) throws IOException {
-        final QueueFactory<byte[]> factory = getConnector(service);
-        final Queue<byte[]> mq = factory.getQueue(queueName.name());
+    public MessageContainer receive(final Services service, final GridQueue queueName, final long timeout, final boolean autoAck) throws IOException {
+        final QueueFactory factory = getConnector(service);
+        final Queue mq = factory.getQueue(queueName.name());
         return mq.receive(timeout, autoAck);
     }
 
     @Override
-    public QueueFactory<byte[]> acknowledge(final Services service, final GridQueue queueName, final long deliveryTag) throws IOException {
-        final QueueFactory<byte[]> factory = getConnector(service);
+    public QueueFactory acknowledge(final Services service, final GridQueue queueName, final long deliveryTag) throws IOException {
+        final QueueFactory factory = getConnector(service);
         factory.getQueue(queueName.name()).acknowledge(deliveryTag);
         return factory;
     }
 
     @Override
-    public QueueFactory<byte[]> reject(final Services service, final GridQueue queueName, final long deliveryTag) throws IOException {
-        final QueueFactory<byte[]> factory = getConnector(service);
+    public QueueFactory reject(final Services service, final GridQueue queueName, final long deliveryTag) throws IOException {
+        final QueueFactory factory = getConnector(service);
         factory.getQueue(queueName.name()).reject(deliveryTag);
         return factory;
     }
 
     @Override
-    public QueueFactory<byte[]> recover(final Services service, final GridQueue queueName) throws IOException {
-        final QueueFactory<byte[]> factory = getConnector(service);
+    public QueueFactory recover(final Services service, final GridQueue queueName) throws IOException {
+        final QueueFactory factory = getConnector(service);
         factory.getQueue(queueName.name()).recover();
         return factory;
     }
 
     @Override
     public AvailableContainer available(final Services service, final GridQueue queueName) throws IOException {
-        final QueueFactory<byte[]> factory = getConnector(service);
+        final QueueFactory factory = getConnector(service);
         return new AvailableContainer(factory, queueName.name, getConnector(service).getQueue(queueName.name()).available());
     }
 
     @Override
-    public QueueFactory<byte[]> clear(final Services service, final GridQueue queueName) throws IOException {
-        final QueueFactory<byte[]> factory = getConnector(service);
+    public QueueFactory clear(final Services service, final GridQueue queueName) throws IOException {
+        final QueueFactory factory = getConnector(service);
         factory.getQueue(queueName.name()).clear();
         return factory;
     }

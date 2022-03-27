@@ -38,7 +38,7 @@ import net.yacy.grid.mcp.api.messages.RejectService;
 import net.yacy.grid.mcp.api.messages.SendService;
 import net.yacy.grid.tools.Logger;
 
-public class MCPQueueFactory implements QueueFactory<byte[]> {
+public class MCPQueueFactory implements QueueFactory {
 
     private final GridBroker broker;
     private final String server;
@@ -71,13 +71,13 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
     }
 
     @Override
-    public Queue<byte[]> getQueue(final String serviceQueueName) throws IOException {
+    public Queue getQueue(final String serviceQueueName) throws IOException {
         final int p = serviceQueueName.indexOf('_');
         if (p <= 0) return null;
         final JSONObject params = new JSONObject(true);
         params.put("serviceName", serviceQueueName.substring(0, p));
         params.put("queueName", serviceQueueName.substring(p + 1));
-        return new AbstractQueue<byte[]>() {
+        return new AbstractQueue() {
 
             @Override
             public void checkConnection() throws IOException {
@@ -89,7 +89,7 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
             }
 
             @Override
-            public Queue<byte[]> send(final byte[] message) throws IOException {
+            public Queue send(final byte[] message) throws IOException {
                 params.put("message", new String(message, StandardCharsets.UTF_8));
                 final JSONObject response = getResponse(Service.instance.config.getAPI(SendService.NAME));
 
@@ -103,7 +103,7 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
             }
 
             @Override
-            public MessageContainer<byte[]> receive(final long timeout, final boolean autoAck) throws IOException {
+            public MessageContainer receive(final long timeout, final boolean autoAck) throws IOException {
                 params.put("timeout", Long.toString(timeout));
                 params.put("autoAck", Boolean.toString(autoAck));
                 final JSONObject response = getResponse(Service.instance.config.getAPI(ReceiveService.NAME));
@@ -114,7 +114,7 @@ public class MCPQueueFactory implements QueueFactory<byte[]> {
                     if (response.has(ObjectAPIHandler.MESSAGE_KEY)) {
                         final String message = response.getString(ObjectAPIHandler.MESSAGE_KEY);
                         final long deliveryTag = response.optLong(ObjectAPIHandler.DELIVERY_TAG);
-                        return new MessageContainer<byte[]>(MCPQueueFactory.this, message == null ? null : message.getBytes(StandardCharsets.UTF_8), deliveryTag);
+                        return new MessageContainer(MCPQueueFactory.this, message == null ? null : message.getBytes(StandardCharsets.UTF_8), deliveryTag);
                     }
                     throw new IOException("bad response from MCP: success but no message key");
                 } else {

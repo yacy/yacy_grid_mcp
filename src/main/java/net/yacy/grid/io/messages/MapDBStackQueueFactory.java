@@ -34,16 +34,16 @@ import net.yacy.grid.tools.Logger;
 /**
  * Factory for a queue using a stack
  */
-public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
+public class MapDBStackQueueFactory implements QueueFactory {
 
-    private File location;
-    private Map<String, StackQueue> queues;
+    private final File location;
+    private final Map<String, StackQueue> queues;
 
     /**
      * initialize a stack factory based on a file stack
      * @param storageLocationPath the path where the stacks shall be stored
      */
-    public MapDBStackQueueFactory(File storageLocationPath) {
+    public MapDBStackQueueFactory(final File storageLocationPath) {
         this.location = storageLocationPath;
         this.location.mkdirs();
         this.queues = new ConcurrentHashMap<>();
@@ -78,7 +78,7 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
      * @throws IOException
      */
     @Override
-    public Queue<byte[]> getQueue(String queueName) throws IOException {
+    public Queue getQueue(final String queueName) throws IOException {
         StackQueue queue = this.queues.get(queueName);
         if (queue != null) return queue;
         synchronized (this) {
@@ -98,12 +98,12 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
         this.queues.values().forEach(queue -> queue.close());
     }
 
-    public class StackQueue extends AbstractQueue<byte[]> implements Queue<byte[]> {
+    public class StackQueue extends AbstractQueue implements Queue {
 
-        private Stack<byte[]> stack;
-        private Semaphore semaphore;
+        private final Stack<byte[]> stack;
+        private final Semaphore semaphore;
 
-        public StackQueue(Stack<byte[]> backedStack) throws IOException {
+        public StackQueue(final Stack<byte[]> backedStack) throws IOException {
             this.stack = backedStack;
             this.semaphore = new Semaphore(this.stack.size(), true);
         }
@@ -114,34 +114,34 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
         }
 
         @Override
-        public Queue<byte[]> send(byte[] message) throws IOException {
+        public Queue send(final byte[] message) throws IOException {
             this.stack.push(message);
             this.semaphore.release();
             return this;
         }
 
         @Override
-        public MessageContainer<byte[]> receive(long timeout, boolean autoAck) throws IOException {
+        public MessageContainer receive(final long timeout, final boolean autoAck) throws IOException {
             try {
                 if (timeout > 0) {
                     if (!this.semaphore.tryAcquire(timeout, TimeUnit.MILLISECONDS)) return null;
                 } else {
                     this.semaphore.acquire();
                 }
-                return new MessageContainer<byte[]>(MapDBStackQueueFactory.this, this.stack.pot(), 0);
-            } catch (InterruptedException e) {
+                return new MessageContainer(MapDBStackQueueFactory.this, this.stack.pot(), 0);
+            } catch (final InterruptedException e) {
                 Logger.debug(this.getClass(), "StackQueue: receive interrupted", e);
             }
             return null;
         }
 
         @Override
-        public void acknowledge(long deliveryTag) throws IOException {
+        public void acknowledge(final long deliveryTag) throws IOException {
             // do nothing, this class does not provide a message acknowledge function
         }
 
         @Override
-        public void reject(long deliveryTag) throws IOException {
+        public void reject(final long deliveryTag) throws IOException {
             // do nothing, this class does not provide a message reject function
         }
 
@@ -155,10 +155,11 @@ public class MapDBStackQueueFactory implements QueueFactory<byte[]> {
             return this.semaphore.availablePermits();
         }
 
+        @Override
         public void close() {
             try {
                 this.stack.close();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Logger.debug(this.getClass(), "StackQueue: close error", e);
             }
         }

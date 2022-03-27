@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -21,19 +21,21 @@ package net.yacy.grid.io.messages;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 
 import net.yacy.grid.Services;
+import net.yacy.grid.YaCyServices;
 
 /**
  * Grid-Service Broker Interface for grid-wide messages.
- * 
+ *
  * This interface is implemented by
  * - the GridBroker: this class uses a locally connected RabbitMQ or an connection to another MCP
  * - the PeerBroker: this class implements a queue based on a local database in the peer.
- * 
+ *
  * @param <A> the object passed to and from the broker
  */
-public interface Broker<A> extends Closeable {
+public interface Broker extends Closeable {
 
     /**
      * send a message to the broker
@@ -43,7 +45,7 @@ public interface Broker<A> extends Closeable {
      * @return the Queue Factory which was used to create this broker
      * @throws IOException
      */
-    public QueueFactory<A> send(Services service, GridQueue queue, byte[] message) throws IOException;
+    public QueueFactory send(Services service, GridQueue queue, byte[] message) throws IOException;
 
     /**
      * send a message to the broker
@@ -57,7 +59,7 @@ public interface Broker<A> extends Closeable {
      * @return the Queue Factory which was used to create this broker
      * @throws IOException
      */
-    public QueueFactory<A> send(Services service, GridQueue[] queues, ShardingMethod shardingMethod, int[] priorityDimensions, int priority, String hashingKey, byte[] message) throws IOException;
+    public QueueFactory send(Services service, GridQueue[] queues, ShardingMethod shardingMethod, int[] priorityDimensions, int priority, String hashingKey, byte[] message) throws IOException;
 
     /**
      * get the best queue for a given sharding method, service, queues and a hashing key
@@ -80,7 +82,7 @@ public interface Broker<A> extends Closeable {
      * @return the message inside a message container
      * @throws IOException
      */
-    public MessageContainer<A> receive(Services service, GridQueue queue, long timeout, boolean autoAck) throws IOException;
+    public MessageContainer receive(Services service, GridQueue queue, long timeout, boolean autoAck) throws IOException;
 
     /**
      * acknowledge a message. This MUST be used to remove a message from the broker if
@@ -91,7 +93,7 @@ public interface Broker<A> extends Closeable {
      * @return the Queue Factory which was used to create this broker
      * @throws IOException
      */
-    public QueueFactory<A> acknowledge(Services service, GridQueue queue, long deliveryTag) throws IOException;
+    public QueueFactory acknowledge(Services service, GridQueue queue, long deliveryTag) throws IOException;
 
     /**
      * reject a message. This MUST be used to return a message to the broker if
@@ -102,7 +104,7 @@ public interface Broker<A> extends Closeable {
      * @return the Queue Factory which was used to create this broker
      * @throws IOException
      */
-    public QueueFactory<A> reject(Services service, GridQueue queue, long deliveryTag) throws IOException;
+    public QueueFactory reject(Services service, GridQueue queue, long deliveryTag) throws IOException;
 
     /**
      * Messages which had been received with autoAck=false but were not acknowledged with
@@ -114,7 +116,7 @@ public interface Broker<A> extends Closeable {
      * @return the Queue Factory which was used to create this broker
      * @throws IOException
      */
-    public QueueFactory<A> recover(Services service, GridQueue queue) throws IOException;
+    public QueueFactory recover(Services service, GridQueue queue) throws IOException;
 
     /**
      * count the number of available messages on the broker
@@ -128,11 +130,22 @@ public interface Broker<A> extends Closeable {
     /**
      * count the number of available messages on the broker
      * @param service the name of the grid service
-     * @param queues the queues of the service
+     * @param queue the queues of the service
      * @return an array of the number of pending messages which can be received inside a container
      * @throws IOException
      */
-    public AvailableContainer[] available(Services service, GridQueue[] queues) throws IOException;
+    public AvailableContainer[] available(Services service, GridQueue[] queue) throws IOException;
+
+    /**
+     * Peek into message queue and get a given nummer of messages.
+     * Messages are possibly taken out of the queue and inserted again.
+     * It cannot be ensured that after this operation the same order of messages is preserved.
+     * @param service the name of the grid service
+     * @param queue the queues of the service
+     * @param count number of wanted messages. If the actual number of messages in the queue is less, less entries are returned.
+     * @return the (at this point) next messages in the queue
+     */
+    public List<MessageContainer> peek(final YaCyServices service, final GridQueue queue, int count);
 
     /**
      * send a message to the broker
@@ -144,6 +157,6 @@ public interface Broker<A> extends Closeable {
      * @return the Queue Factory which was used to create this broker
      * @throws IOException
      */
-    public QueueFactory<A> clear(Services service, GridQueue queue) throws IOException;
+    public QueueFactory clear(Services service, GridQueue queue) throws IOException;
 
 }
