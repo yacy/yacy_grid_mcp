@@ -129,7 +129,7 @@ public abstract class AbstractBroker implements Broker {
         fetch: while (count-- > 0) {
             MessageContainer message = null;
             try {
-                message = receive(service, queue, 3000, true);
+                message = receive(service, queue, 3000, true); // if there are no more messages, this simply runs into a time-out
             } catch (final IOException e) {
                 break fetch;
             }

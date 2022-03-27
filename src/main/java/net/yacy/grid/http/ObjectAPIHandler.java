@@ -43,6 +43,7 @@ public abstract class ObjectAPIHandler extends AbstractAPIHandler implements API
     // for messages
     public static final String MESSAGE_KEY   = "message";
     public static final String MESSAGES_KEY  = "messages";
+    public static final String COUNT_KEY     = "count";
     public static final String DELIVERY_TAG  = "deliveryTag";
     public static final String AVAILABLE_KEY = "available";
 
