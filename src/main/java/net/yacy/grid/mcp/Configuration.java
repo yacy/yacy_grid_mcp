@@ -63,7 +63,7 @@ public class Configuration {
     public final Map<String, String> properties;
     public final BoostsFactory boostsFactory;
     public final YaCyServices type;
-    public final HazelcastInstance hazelcast;
+    public HazelcastInstance hazelcast;
     public final List<Class<? extends Servlet>> servlets;
     public final Map<String, APIHandler> serviceMap;
 
@@ -130,16 +130,23 @@ public class Configuration {
         final Map<String, String> defaultBoosts = readDoubleProps("boost.properties");
         this.boostsFactory = new BoostsFactory(defaultBoosts);
 
-        // start hazelcast service
-        final Config hazelcastconfig = new Config().setClusterName("YaCyGrid").setInstanceName("Services");
-        this.hazelcast = Hazelcast.newHazelcastInstance(hazelcastconfig);
-        final String uuid = this.hazelcast.getCluster().getLocalMember().getUuid().toString();
-        this.hazelcast.getMap("status").put(uuid, StatusService.status());
-
         // initialize serviceMap for server
         this.servlets = new ArrayList<>();
         this.serviceMap = new ConcurrentHashMap<>();
         for (final Class<? extends Servlet> servlet: servlets) addServlet(servlet);
+
+        // start hazelcast service concurrently (that sometimes takes time)
+        this.hazelcast = null;
+        final Thread hazelcastStarter = new Thread() {
+            @Override
+            public void run() {
+                final Config hazelcastconfig = new Config().setClusterName("YaCyGrid").setInstanceName("Services");
+                Configuration.this.hazelcast = Hazelcast.newHazelcastInstance(hazelcastconfig);
+                final String uuid = Configuration.this.hazelcast.getCluster().getLocalMember().getUuid().toString();
+                Configuration.this.hazelcast.getMap("status").put(uuid, StatusService.status());
+            }
+        };
+        hazelcastStarter.start();
     }
 
     /**

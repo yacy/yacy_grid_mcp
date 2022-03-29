@@ -57,25 +57,26 @@ public class StatusService extends ObjectAPIHandler implements APIHandler {
         final JSONObject systemStatus = new JSONObject(true);
         systemStatus.putAll(new JSONObject(status()));
         final JSONArray members = new JSONArray();
+        if (Service.instance.config.hazelcast != null) {
         for (final Member member: Service.instance.config.hazelcast.getCluster().getMembers()) {
-            final JSONObject m = new JSONObject(true);
-            final String uuid = member.getUuid().toString();
-            m.put("uuid", uuid);
-            m.put("host", member.getAddress().getHost());
-            try {m.put("ip", member.getAddress().getInetAddress().getHostAddress());} catch (JSONException | UnknownHostException e) {}
-            m.put("port", member.getAddress().getPort());
-            m.put("isLite", member.isLiteMember());
-            m.put("isLocal", member.localMember());
-            @SuppressWarnings("unchecked")
-            final
-            Map<String, Object> status = (Map<String, Object>) Service.instance.config.hazelcast.getMap("status").get(uuid);
-            m.put("status", status);
-            members.put(m);
+                final JSONObject m = new JSONObject(true);
+                final String uuid = member.getUuid().toString();
+                m.put("uuid", uuid);
+                m.put("host", member.getAddress().getHost());
+                try {m.put("ip", member.getAddress().getInetAddress().getHostAddress());} catch (JSONException | UnknownHostException e) {}
+                m.put("port", member.getAddress().getPort());
+                m.put("isLite", member.isLiteMember());
+                m.put("isLocal", member.localMember());
+                @SuppressWarnings("unchecked")
+                final Map<String, Object> status = (Map<String, Object>) Service.instance.config.hazelcast.getMap("status").get(uuid);
+                m.put("status", status);
+                members.put(m);
+            }
+            systemStatus.put("hazelcast_cluster_name", Service.instance.config.hazelcast.getConfig().getClusterName());
+            systemStatus.put("hazelcast_instance_name", Service.instance.config.hazelcast.getConfig().getInstanceName());
+            systemStatus.put("hazelcast_members", members);
+            systemStatus.put("hazelcast_members_count", members.length());
         }
-        systemStatus.put("hazelcast_cluster_name", Service.instance.config.hazelcast.getConfig().getClusterName());
-        systemStatus.put("hazelcast_instance_name", Service.instance.config.hazelcast.getConfig().getInstanceName());
-        systemStatus.put("hazelcast_members", members);
-        systemStatus.put("hazelcast_members_count", members.length());
 
         final JSONObject client_info = new JSONObject(true);
         final JSONObject request_header = new JSONObject(true);
