@@ -91,7 +91,7 @@ public class GridControl {
         try {
             u = new MultiProtocolURL(url);
         } catch (final MalformedURLException e) {
-            return 500;
+            return 250;
         }
         final String host = u.getHost();
         final Long lastLoadTime = loaderAccess.get(host);
@@ -106,17 +106,17 @@ public class GridControl {
         if (delta < 0) {
             // the latest load time was in the past
             loaderAccess.put(host, System.currentTimeMillis());
-            final long delay = Math.max(0, delta + 500); // in case that delta < -500, we don't need a throttling at all
+            final long delay = Math.max(0, delta + 250); // in case that delta < -250, we don't need a throttling at all
             if (delay > 0) Logger.info("GridControl.computeThrottling: past-loaded " + host + ", delay = " + delay + ", url = " + url);
             return delay;
         }
         // the latest load time will be loaded by another thread in the future
         // we must add another delay to this
-        final long future = System.currentTimeMillis() + delta + 500;
+        final long future = System.currentTimeMillis() + delta + 250;
         final long delay = future - System.currentTimeMillis();
         loaderAccess.put(host, future);
         Logger.info("GridControl.computeThrottling: future-loading " + host + ", delay = " + delay + ", url = " + url);
-        return delay; // == delta + 500
+        return delay; // == delta + 250
     }
 
     public long checkThrottling(final String id, final String url, final int depth, final int crawlingDepth, final boolean loaderHeadless, final int priority) throws IOException {
@@ -135,7 +135,7 @@ public class GridControl {
             //long time = response.getLong("time");
             return delay;
         } else {
-            return 500;
+            return 250;
         }
     }
 
