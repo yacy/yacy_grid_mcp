@@ -6,12 +6,12 @@
  *  modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
  *  version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  *  This library is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program in the file lgpl21.txt
  *  If not, see <http://www.gnu.org/licenses/>.
@@ -22,6 +22,7 @@ package net.yacy.grid.io.index;
 public enum CrawlerMapping implements MappingDeclaration {
 
     crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
+	user_id_s(MappingType.string, true, true, false, true, true, "id of the user of the crawl start", true),
     mustmatch_s(MappingType.string, true, true, false, true, true, "must-match pattern string of the crawl start", true),
     collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation", false, "collections", "Collections", "String", "collection"),
     start_url_s(MappingType.string, true, true, false, true, true, "The start URL", true),

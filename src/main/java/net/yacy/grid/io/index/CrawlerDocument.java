@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
+import net.yacy.grid.contracts.User;
 import net.yacy.grid.mcp.Configuration;
 import net.yacy.grid.tools.Digest;
 
@@ -134,6 +135,15 @@ public class CrawlerDocument extends Document {
 
     public String getCrawlID() {
         return this.getString(CrawlerMapping.crawl_id_s, "");
+    }
+
+    public CrawlerDocument setUserlID(final String userId) {
+        this.putString(CrawlerMapping.user_id_s, userId);
+        return this;
+    }
+
+    public String getUserID() {
+        return this.getString(CrawlerMapping.user_id_s, User.ANONYMOUS_ID);
     }
 
     public CrawlerDocument setMustmatch(final String mustmatch) {
