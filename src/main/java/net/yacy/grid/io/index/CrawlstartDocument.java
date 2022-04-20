@@ -90,6 +90,11 @@ public class CrawlstartDocument extends Document {
         return this.getString(CrawlstartMapping.crawl_id_s, "");
     }
 
+    public CrawlstartDocument setUserID(final String user_id) {
+        this.putString(CrawlstartMapping.user_id_s, user_id);
+        return this;
+    }
+
     public String getUserID() {
         return this.getString(CrawlstartMapping.user_id_s, "");
     }
