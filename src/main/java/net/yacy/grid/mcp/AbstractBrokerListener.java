@@ -81,7 +81,7 @@ public abstract class AbstractBrokerListener implements BrokerListener {
         try {
             final AvailableContainer[] ac = this.config.gridBroker.available(AbstractBrokerListener.this.service, this.sourceQueues);
             for (int i = 0; i < ac.length; i++) {
-                Logger.info(this.getClass(), "Service " + this.service.name() + ", queue " + ac[i].getQueue() + ": " + ac[i].getAvailable() + " entries.");
+                Logger.info(this.getClass(), "Broker " + this.config.gridBroker.connectedHost() + ", Service " + this.service.name() + ", queue " + ac[i].getQueue() + ": " + ac[i].getAvailable() + " entries.");
             }
         } catch (final IOException e) {
             Logger.error(this.getClass(), "Service " + this.service.name() + ": AvailableContainer not available: " + e.getMessage(), e);

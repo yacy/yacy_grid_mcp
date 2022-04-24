@@ -70,6 +70,10 @@ public class GridBroker extends PeerBroker implements Broker {
         this.queueThrottling = queueThrottling;
     }
 
+    public String connectedHost() {
+    	return this.rabbitMQ_host;
+    }
+
     public boolean isAutoAck() {
         return this.autoAck;
     }
