@@ -63,36 +63,37 @@ public class Logger {
         }
 
         @Override
-        public void publish(LogRecord record) {
+        public void publish(final LogRecord record) {
             super.publish(record);
             super.flush();
         }
     }
 
     public static class LineFormatter extends Formatter {
+    	private static final String format = "%1$-7s [%2$s] %3$-48s \"%4$s\"%5$s%n";
 
         // format string for printing the log record
-        private static final String format = "%1$-7s %2$s [%3$s] \"%4$s\"%5$s%n";
         private final Date dat = new Date();
 
         @Override
-        public synchronized String format(LogRecord record) {
+        public synchronized String format(final LogRecord record) {
             this.dat.setTime(record.getMillis());
-            String source;
+            StringBuilder source = null;
             if (record.getSourceClassName() != null) {
-                source = record.getSourceClassName();
+                source = new StringBuilder(record.getSourceClassName());
                 if (record.getSourceMethodName() != null) {
-                   source += "." + record.getSourceMethodName();
+                   source.append('.').append(record.getSourceMethodName());
                 }
             } else {
-                source = record.getLoggerName();
+                source = new StringBuilder(record.getLoggerName());
             }
-            String message = this.formatMessage(record);
+            String message = formatMessage(record);
             final int p = message.indexOf('$');
             if (p >= 0) {
-                source = message.substring(0, p);
+                source = new StringBuilder(message.substring(0, p));
                 message = message.substring(p + 1);
             }
+
             String throwable = "";
             if (record.getThrown() != null) {
                 final StringWriter sw = new StringWriter();
@@ -103,21 +104,23 @@ public class Logger {
                 throwable = sw.toString();
             }
             final String levelname = record.getLevel().getName();
-            final String line = String.format(format,
+            synchronized(DateParser.iso8601MillisFormat) {
+            	final String line = String.format(format,
                     levelname,
-                    source,
-                    DateParser.formatRFC1123(this.dat),
+                    DateParser.iso8601MillisFormat.format(this.dat),
+                    source.toString(),
                     message,
                     throwable);
-            return line;
+            	return line;
+            }
         }
     }
 
-    public static void setMaxLines(int m) {
+    public static void setMaxLines(final int m) {
         maxlines = m;
     }
 
-    public static ArrayList<String> getLines(int max) {
+    public static ArrayList<String> getLines(final int max) {
         final Object[] a = lines.toArray();
         final ArrayList<String> l = new ArrayList<>();
         final int start = Math.max(0, a.length - max);
@@ -125,7 +128,7 @@ public class Logger {
         return l;
     }
 
-    private static void append(String line) {
+    private static void append(final String line) {
         if (line != null) lines.add(line);
         if (a.incrementAndGet() % 100 == 0) {
             clean(maxlines);
@@ -133,7 +136,7 @@ public class Logger {
         }
     }
 
-    public static void clean(int remaining) {
+    public static void clean(final int remaining) {
         int c = lines.size() - remaining;
         while (c-- > 0) lines.poll();
     }
@@ -158,127 +161,128 @@ public class Logger {
             final StackTraceElement ste = stElements[i];
             final String cn = ste.getClassName();
             if (!cn.equals(loggerClassName) && cn.indexOf("java.lang") < 0) {
-                return cn + ":" + ste.getLineNumber();
+            	final int p = cn.indexOf('$');
+                return p < 0 ? cn : cn.substring(0, p);
             }
         }
         return null;
     }
 
-    private static void debug(String className, String msg) {
+    private static void debug(final String className, final String msg) {
         getLogger(className).debug(className + '$' + msg);
         append(msg);
     }
 
-    private static void debug(String className, String msg, Throwable t) {
+    private static void debug(final String className, final String msg, final Throwable t) {
         getLogger(className).debug(className + '$' + msg, t);
         append(msg);
     }
 
-    public static void debug(String msg) {
+    public static void debug(final String msg) {
         debug(getCallerClassName(), msg);
     }
 
-    public static void debug(Throwable t) {
+    public static void debug(final Throwable t) {
         debug(getCallerClassName(), "", t);
     }
 
-    public static void debug(String msg, Throwable t) {
+    public static void debug(final String msg, final Throwable t) {
         debug(getCallerClassName(), msg, t);
     }
 
-    public static void debug(Class<?> cls, String msg) {
+    public static void debug(final Class<?> cls, final String msg) {
         debug(cls.getCanonicalName(), msg);
     }
 
-    public static void debug(Class<?> cls, Throwable t) {
+    public static void debug(final Class<?> cls, final Throwable t) {
         debug(cls.getCanonicalName(), "", t);
     }
 
-    public static void debug(Class<?> cls, String msg, Throwable t) {
+    public static void debug(final Class<?> cls, final String msg, final Throwable t) {
         debug(cls.getCanonicalName(), msg, t);
     }
 
 
-    private static void info(String className, String msg) {
+    private static void info(final String className, final String msg) {
         getLogger(className).info(className + '$' + msg);
         append(msg);
     }
 
-    public static void info(String msg) {
+    public static void info(final String msg) {
         info(getCallerClassName(), msg);
     }
 
-    public static void info(Class<?> cls, String msg) {
+    public static void info(final Class<?> cls, final String msg) {
         info(cls.getCanonicalName(), msg);
     }
 
 
-    private static void warn(String className, String msg) {
+    private static void warn(final String className, final String msg) {
         getLogger(className).warn(className + '$' + msg);
         append(msg);
     }
 
-    private static void warn(String className, String msg, Throwable t) {
+    private static void warn(final String className, final String msg, final Throwable t) {
         getLogger(className).warn(className + '$' + msg, t);
         append(msg);
     }
 
-    public static void warn(String msg) {
+    public static void warn(final String msg) {
         warn(getCallerClassName(), msg);
     }
 
-    public static void warn(Throwable t) {
+    public static void warn(final Throwable t) {
         warn(getCallerClassName(), "", t);
     }
 
-    public static void warn(String msg, Throwable t) {
+    public static void warn(final String msg, final Throwable t) {
         warn(getCallerClassName(), msg, t);
     }
 
-    public static void warn(Class<?> cls, String msg) {
+    public static void warn(final Class<?> cls, final String msg) {
         warn(cls.getCanonicalName(), msg);
     }
 
-    public static void warn(Class<?> cls, Throwable t) {
+    public static void warn(final Class<?> cls, final Throwable t) {
         warn(cls.getCanonicalName(), "", t);
     }
 
-    public static void warn(Class<?> cls, String msg, Throwable t) {
+    public static void warn(final Class<?> cls, final String msg, final Throwable t) {
         warn(cls.getCanonicalName(), msg, t);
     }
 
 
-    private static void error(String className, String msg) {
+    private static void error(final String className, final String msg) {
         getLogger(className).error(className + '$' + msg);
         append(msg);
     }
 
-    private static void error(String className, String msg, Throwable t) {
+    private static void error(final String className, final String msg, final Throwable t) {
         getLogger(className).error(className + '$' + msg, t);
         append(msg);
     }
 
-    public static void error(String msg) {
+    public static void error(final String msg) {
         error(getCallerClassName(), msg);
     }
 
-    public static void error(Throwable t) {
+    public static void error(final Throwable t) {
         error(getCallerClassName(), "", t);
     }
 
-    public static void error(String msg, Throwable t) {
+    public static void error(final String msg, final Throwable t) {
         error(getCallerClassName(), msg, t);
     }
 
-    public static void error(Class<?> cls, String msg) {
+    public static void error(final Class<?> cls, final String msg) {
         error(cls.getCanonicalName(), msg);
     }
 
-    public static void error(Class<?> cls, Throwable t) {
+    public static void error(final Class<?> cls, final Throwable t) {
         error(cls.getCanonicalName(), "", t);
     }
 
-    public static void error(Class<?> cls, String msg, Throwable t) {
+    public static void error(final Class<?> cls, final String msg, final Throwable t) {
         error(cls.getCanonicalName(), msg, t);
     }
 

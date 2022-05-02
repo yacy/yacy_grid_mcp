@@ -54,4 +54,5 @@ dependencies {
     implementation 'org.mapdb:mapdb:3.+'
     implementation 'org.slf4j:log4j-over-slf4j:1.7.+'
     implementation 'org.slf4j:slf4j-jdk14:1.7.+'
+    implementation 'org.apache.logging.log4j:log4j-to-slf4j:2.17.+'
 }
