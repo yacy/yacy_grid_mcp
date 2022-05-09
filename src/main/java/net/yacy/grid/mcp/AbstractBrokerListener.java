@@ -142,8 +142,10 @@ public abstract class AbstractBrokerListener implements BrokerListener {
                     } catch (final IOException e) {}
                 }
                 AbstractBrokerListener.this.targetFill.set(targetQueueAggregator);
-                Logger.info(this.getClass(), "BrokerListener operates with " + AbstractBrokerListener.this.messagesPerMinute() + " messages per minute; target queues size: " + targetQueueAggregator);
-
+                int mpm = AbstractBrokerListener.this.messagesPerMinute();
+                if (mpm > 0) {
+                    Logger.info(this.getClass(), "BrokerListener operates with " + mpm + " messages per minute; target queues size: " + targetQueueAggregator);
+                }
                 // wait a bit
                 try {Thread.sleep(60000);} catch (final InterruptedException ee) {}
             }
