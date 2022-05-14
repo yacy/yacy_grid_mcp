@@ -22,9 +22,9 @@ package net.yacy.grid.io.assets;
 import java.io.IOException;
 import java.util.List;
 
+import eu.searchlab.storage.io.AWSS3IO;
 import eu.searchlab.storage.io.GenericIO;
 import eu.searchlab.storage.io.IOPath;
-import eu.searchlab.storage.io.S3IO;
 
 public class S3StorageFactory  implements StorageFactory<byte[]> {
 
@@ -33,10 +33,10 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
     private final Storage<byte[]> s3client;
     private boolean deleteafterread;
 
-    public S3StorageFactory(String bucket_endpoint, int port, final String accessKey, final String secretKey, boolean deleteafterread) throws IOException {
+    public S3StorageFactory(final String bucket_endpoint, final int port, final String accessKey, final String secretKey, final boolean deleteafterread) throws IOException {
         // we expect that the server is constructed as <bucket>.<endpointHost>
         // so we deconstruct the bucket and endpoint information from the given server
-        int p = bucket_endpoint.indexOf('.');
+        final int p = bucket_endpoint.indexOf('.');
         if (p < 0) throw new IOException("server must be <bucket>.<endpointHost>");
         this.bucket = bucket_endpoint.substring(0, p);
         this.endpoint = bucket_endpoint.substring(p + 1);
@@ -50,9 +50,9 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
             private GenericIO io = null;
 
             private GenericIO initConnection() throws IOException {
-                String endpointURL = (port == 443 ? "https://" : "http://") + S3StorageFactory.this.endpoint + (S3StorageFactory.this.port == 80 || S3StorageFactory.this.port == 443 ? "" : ":" + S3StorageFactory.this.port);
-                S3IO s3io = new S3IO(endpointURL, S3StorageFactory.this.accessKey, S3StorageFactory.this.secretKey);
-                List<String> buckets = s3io.listBuckets();
+                final String endpointURL = (port == 443 ? "https://" : "http://") + S3StorageFactory.this.endpoint + (S3StorageFactory.this.port == 80 || S3StorageFactory.this.port == 443 ? "" : ":" + S3StorageFactory.this.port);
+                final GenericIO s3io = new AWSS3IO(endpointURL, S3StorageFactory.this.accessKey, S3StorageFactory.this.secretKey);
+                final List<String> buckets = s3io.listBuckets();
                 // find or create bucket
                 if (buckets == null || buckets.size() == 0 || !buckets.contains(S3StorageFactory.this.bucket)) {
                     s3io.makeBucket(S3StorageFactory.this.bucket);
@@ -63,7 +63,7 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
             @Override
             public void checkConnection() throws IOException {
                 if (this.io == null) this.io = initConnection();
-                List<String> buckets = this.io.listBuckets();
+                final List<String> buckets = this.io.listBuckets();
                 // there must be at least one bucket
                 if (buckets == null || buckets.size() == 0) throw new IOException("connection to s3:" + S3StorageFactory.this.endpoint + " is possible, but no buckets are available");
                 // the list must also contain the addressed bucket
@@ -71,12 +71,12 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
             }
 
             @Override
-            public StorageFactory<byte[]> store(String path, byte[] asset) throws IOException {
+            public StorageFactory<byte[]> store(final String path, final byte[] asset) throws IOException {
                 if (this.io == null) this.io = initConnection();
-                IOPath iop = new IOPath(S3StorageFactory.this.bucket, path);
+                final IOPath iop = new IOPath(S3StorageFactory.this.bucket, path);
                 try {
                     this.io.write(iop, asset);
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     // try again with fresh connection
                     this.io = initConnection();
                     this.io.write(iop, asset);
@@ -85,13 +85,13 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
             }
 
             @Override
-            public Asset<byte[]> load(String path) throws IOException {
+            public Asset<byte[]> load(final String path) throws IOException {
                 if (this.io == null) this.io = initConnection();
-                IOPath iop = new IOPath(S3StorageFactory.this.bucket, path);
+                final IOPath iop = new IOPath(S3StorageFactory.this.bucket, path);
                 byte[] b = null;
                 try {
                     b = this.io.readAll(iop);
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     // try again
                     this.io = initConnection();
                     b = this.io.readAll(iop);
@@ -100,7 +100,7 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
                 if (S3StorageFactory.this.deleteafterread) {
                     this.io.remove(iop);
                 }
-                return new Asset<byte[]>(S3StorageFactory.this, b);
+                return new Asset<>(S3StorageFactory.this, b);
             }
 
             @Override

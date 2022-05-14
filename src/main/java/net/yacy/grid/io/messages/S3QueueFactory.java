@@ -30,10 +30,11 @@ import java.util.Base64;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import eu.searchlab.storage.io.AWSS3IO;
 import eu.searchlab.storage.io.FileIO;
 import eu.searchlab.storage.io.GenericIO;
 import eu.searchlab.storage.io.IOPath;
-import eu.searchlab.storage.io.S3IO;
+import eu.searchlab.storage.io.MinioS3IO;
 import eu.searchlab.storage.json.PersistentCord;
 
 public class S3QueueFactory extends PersistentCord implements QueueFactory {
@@ -45,14 +46,19 @@ public class S3QueueFactory extends PersistentCord implements QueueFactory {
 
     public S3QueueFactory(final GenericIO io, final IOPath iop) {
         super(io, iop);
-        this.endpointURL = (io instanceof S3IO) ? ((S3IO) io).getEndpointURL() : null;
+        this.endpointURL = (io instanceof AWSS3IO) ? ((AWSS3IO) io).getEndpointURL() : (io instanceof MinioS3IO) ? ((MinioS3IO) io).getEndpointURL() : null;
         try {
             this.url = new URL(this.endpointURL);
         } catch (final MalformedURLException e) {
             this.url = null;
         }
         try {
-            this.io = (io instanceof S3IO) ? new S3IO(this.endpointURL, ((S3IO) io).getAccessKey(), ((S3IO) io).getSecretKey()) : new FileIO(new File("data"));
+            this.io =
+                    (io instanceof AWSS3IO) ?
+                            new AWSS3IO(this.endpointURL, ((AWSS3IO) io).getAccessKey(), ((AWSS3IO) io).getSecretKey()) :
+                                (io instanceof MinioS3IO) ?
+                                        new MinioS3IO(this.endpointURL, ((MinioS3IO) io).getAccessKey(), ((MinioS3IO) io).getSecretKey()) :
+                                            new FileIO(new File("data"));
         } catch (final IOException e) {
             e.printStackTrace();
         }
