@@ -83,6 +83,14 @@ public interface GenericIO {
     public void write(final IOPath iop, final byte[] object) throws IOException;
 
     /**
+     * write an object gzipped from a byte array
+     * @param iop
+     * @param object
+     * @throws IOException
+     */
+    public void writeGZIP(final IOPath iop, final byte[] object) throws IOException;
+
+    /**
      * write to an object until given PipedOutputStream is closed
      * @param bucketName
      * @param objectName
@@ -162,6 +170,14 @@ public interface GenericIO {
     public InputStream read(final IOPath iop) throws IOException;
 
     /**
+     * reading of a compressed object into a stream
+     * @param iop
+     * @return whole object as byte[]
+     * @throws IOException
+     */
+    public InputStream readGZIP(final IOPath iop) throws IOException;
+
+    /**
      * reading of an object beginning with an offset
      * @param iop
      * @param offset
@@ -194,7 +210,7 @@ public interface GenericIO {
      * @return list of object names
      * @throws IOException
      */
-    public List<String> list(final String bucketName, final String prefix) throws IOException;
+    public List<IOMeta> list(final String bucketName, final String prefix) throws IOException;
 
 
     /**
