@@ -1,0 +1,1 @@
+docker run -d --restart=unless-stopped --name yacy-grid-mcp -p 127.0.0.1:8100:8100 --link yacy-grid-minio --link yacy-grid-rabbitmq --link yacy-grid-elasticsearch -e YACYGRID_GRID_S3_ADDRESS=admin:12345678@yacy-grid-minio:9000 -e YACYGRID_GRID_BROKER_ADDRESS=guest:guest@yacy-grid-rabbitmq:5672 -e YACYGRID_GRID_ELASTICSEARCH_ADDRESS=yacy-grid-elasticsearch:9300 yacy_grid_mcp
