@@ -1,1 +1,1 @@
-docker stop yacy-grid-elasticsearch
+docker stop yacy_grid_elasticsearch
