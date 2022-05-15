@@ -58,7 +58,7 @@ public class StatusService extends ObjectAPIHandler implements APIHandler {
         systemStatus.putAll(new JSONObject(status()));
         final JSONArray members = new JSONArray();
         if (Service.instance.config.hazelcast != null) {
-        for (final Member member: Service.instance.config.hazelcast.getCluster().getMembers()) {
+            for (final Member member: Service.instance.config.hazelcast.getCluster().getMembers()) {
                 final JSONObject m = new JSONObject(true);
                 final String uuid = member.getUuid().toString();
                 m.put("uuid", uuid);

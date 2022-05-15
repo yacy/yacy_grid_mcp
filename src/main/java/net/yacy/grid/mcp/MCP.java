@@ -159,8 +159,13 @@ public class MCP {
         // run in headless mode
         System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
 
+        // Debug Info
+        boolean assertionenabled = false;
+        assert (assertionenabled = true) == true; // compare to true to remove warning: "Possible accidental assignement"
+        if (assertionenabled) Logger.info("Asserts are enabled");
+
         // first greeting
-        Logger.info("MCP started!");
+        Logger.info("YaCy Grid MCP started!");
         Logger.info(new GitTool().toString());
         Logger.info("you can now search using the query api, i.e.:");
         Logger.info("curl \"http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=test\"");
@@ -172,7 +177,7 @@ public class MCP {
         cron.cycle();
 
         // this line is reached if the cron process was shut down
-        Logger.info("MCP terminated");
+        Logger.info("YaCy Grid MCP terminated");
     }
 
 }
