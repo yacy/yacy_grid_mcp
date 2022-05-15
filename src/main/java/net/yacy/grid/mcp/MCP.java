@@ -19,8 +19,6 @@
 
 package net.yacy.grid.mcp;
 
-import java.util.Properties;
-
 import javax.servlet.Servlet;
 
 import net.yacy.grid.YaCyServices;
@@ -56,7 +54,6 @@ import net.yacy.grid.tools.Logger;
 /**
  * The Master Connect Program
  *
- * URL for RabbitMQ: http://searchlab.eu:15672/
  */
 public class MCP {
 
@@ -161,12 +158,6 @@ public class MCP {
     public static void main(final String[] args) {
         // run in headless mode
         System.setProperty("java.awt.headless", "true"); // no awt used here so we can switch off that stuff
-
-        // prepare configuration
-        final Properties sysprops = System.getProperties(); // system properties
-        System.getenv().forEach((k,v) -> {
-            if (k.startsWith("YACYGRID_")) sysprops.put(k.substring(9).replace('_', '.'), v);
-        }); // add also environment variables
 
         // first greeting
         Logger.info("MCP started!");

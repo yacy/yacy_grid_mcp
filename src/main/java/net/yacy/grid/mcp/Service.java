@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.servlet.Servlet;
@@ -72,18 +74,41 @@ public class Service {
     public Service(final Configuration config) {
 
         this.config = config;
-        this.fields = new LinkedHashSet<String>();
+        this.fields = new LinkedHashSet<>();
         for (final String field: servicesList) this.fields.add(field);
 
-        // overwrite the config with environment variables. Because a '.' (dot) is not allowed in system environments
-        // the dot can be replaced by "_" (underscore), i.e. like:
-        // grid_broker_address="anonymous:yacy@127.0.0.1:5672" java -jar build/libs/yacy_grid_mcp-0.0.1-SNAPSHOT.jar
-        final String[] keys = this.config.properties.keySet().toArray(new String[this.config.properties.size()]); // create a clone of the keys to prevent a ConcurrentModificationException
-        for (final String key: keys) if (System.getenv().containsKey(key.replace('.', '_'))) this.config.properties.put(key, System.getenv().get(key.replace('.', '_')));
+        // create a clone of the keys to prevent a ConcurrentModificationException
+        final String[] keys = this.config.properties.keySet().toArray(new String[this.config.properties.size()]);
 
-        // the config can further be overwritten by System Properties, i.e. like:
-        // java -jar -Dgrid.broker.address="anonymous:yacy@127.0.0.1:5672" build/libs/yacy_grid_mcp-0.0.1-SNAPSHOT.jar
-        for (final String key: keys) if (System.getProperties().containsKey(key)) this.config.properties.put(key, System.getProperties().getProperty(key));
+        // add system/environment variable settings
+        final Properties sysprops = System.getProperties(); // system properties
+        final Map<String, String> sysenv = System.getenv();
+        for (final String key: keys) {
+
+            // overwrite the config with environment variables. Because a '.' (dot) is not allowed in system environments
+            // the dot can be replaced by "_" (underscore), i.e. like:
+            // grid_broker_address="anonymous:yacy@127.0.0.1:5672" java -jar build/libs/yacy_grid_mcp-0.0.1-SNAPSHOT.jar
+            final String envkey0 = key.replace('.', '_');
+            final String envkey1 = "YACYGRID_" + envkey0.toUpperCase();
+            final String envval0 = sysenv.get(envkey0);
+            final String envval1 = sysenv.get(envkey1);
+            if (envval0 != null) {
+                Logger.info("OVERWRITING CONFIG '" + key + "' with environment value '" + envval0 + "'");
+                this.config.properties.put(key, envval0);
+            }
+            if (envval1 != null) {
+                Logger.info("OVERWRITING CONFIG '" + key + "' with environment value '" + envval1 + "'");
+                this.config.properties.put(key, envval1);
+            }
+
+            // the config can be overwritten by System Properties, i.e. like:
+            // java -jar -Dgrid.broker.address="anonymous:yacy@127.0.0.1:5672" build/libs/yacy_grid_mcp-0.0.1-SNAPSHOT.jar
+            final String sysval = sysprops.getProperty(key, null);
+            if (sysval != null) {
+                Logger.info("OVERWRITING CONFIG '" + key + "' with property value '" + sysval + "'");
+                this.config.properties.put(key, sysval);
+            }
+        }
 
         // start server
         final QueuedThreadPool pool = new QueuedThreadPool();
