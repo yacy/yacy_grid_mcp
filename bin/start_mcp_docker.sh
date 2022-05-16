@@ -9,14 +9,10 @@ imagename=${containername}
 
 usage() { echo "usage: $0 [-p | --production]" 1>&2; exit 1; }
 
-args=$(getopt -q -o ph -l production,help -- "$@")
-if [ $? != 0 ]; then usage; fi
-set -- $args
-while true; do
+while [[ $# -gt 0 ]]; do
   case "$1" in
-    -h | --help ) usage;;
-    -p | --production ) bindhost="127.0.0.1"; callhost="localhost"; imagename="yacy/${imagename}:latest"; shift 1;;
-    --) break;;
+    -p | --production ) bindhost="127.0.0.1"; callhost="localhost"; imagename="yacy/${imagename//-/_}:latest"; shift 1;;
+    -h | --help | -* | --* | * ) usage;;
   esac
 done
 
