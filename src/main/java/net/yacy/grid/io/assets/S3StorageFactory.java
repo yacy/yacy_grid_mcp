@@ -37,6 +37,7 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
     public S3StorageFactory(final String bucket_endpoint, final int port, final String accessKey, final String secretKey, final boolean deleteafterread) throws IOException {
         // we expect that the server is constructed as <bucket>.<endpointHost>
         // so we deconstruct the bucket and endpoint information from the given server
+        Logger.info("creating S3StorageFactory with bucket_endpoint " + bucket_endpoint);
         final int p = bucket_endpoint.indexOf('.');
         if (p < 0) throw new IOException("server must be <bucket>.<endpointHost>");
         this.bucket = bucket_endpoint.substring(0, p);
@@ -52,6 +53,7 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
 
             private GenericIO initConnection() throws IOException {
                 final String endpointURL = (port == 443 ? "https://" : "http://") + S3StorageFactory.this.endpoint + (S3StorageFactory.this.port == 80 || S3StorageFactory.this.port == 443 ? "" : ":" + S3StorageFactory.this.port);
+                Logger.info("intializing S3 connection with endpointURL " + endpointURL);
                 final GenericIO s3io = new AWSS3IO(endpointURL, S3StorageFactory.this.accessKey, S3StorageFactory.this.secretKey);
                 final List<String> buckets = s3io.listBuckets();
                 // find or create bucket
