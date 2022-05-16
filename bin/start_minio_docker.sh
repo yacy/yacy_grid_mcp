@@ -3,8 +3,8 @@ cd "`dirname $0`"
 
 bindhost="0.0.0.0"
 callhost=`hostname`.local
-containerRuns=$(docker ps | grep -i "yacy_grid_minio" | wc -l ) 
-containerExists=$(docker ps -a | grep -i "yacy_grid_minio" | wc -l ) 
+appname=MinIO
+containername=yacy-grid-minio
 
 usage() { echo "usage: $0 [-p | --production]" 1>&2; exit 1; }
 
@@ -19,13 +19,21 @@ while true; do
   esac
 done
 
+containerRuns=$(docker ps | grep -i "${containername}" | wc -l ) 
+containerExists=$(docker ps -a | grep -i "${containername}" | wc -l ) 
 if [ ${containerRuns} -gt 0 ]; then
-  echo "MinIO container is already running"
+  echo "${appname} container is already running"
 elif [ ${containerExists} -gt 0 ]; then
-  docker start yacy_grid_minio
-  echo "MinIO container re-started"
+  docker start ${containername}
+  echo "${appname} container re-started"
 else
-  docker run -d --restart=unless-stopped --name yacy_grid_minio -e "MINIO_ROOT_USER=admin" -e "MINIO_ROOT_PASSWORD=12345678" -v yacy_grid_minio:/data -p ${bindhost}:9000:9000 -p ${bindhost}:9001:9001 quay.io/minio/minio server /data --console-address ":9001"
-  echo "Minio started."
+    docker run -d --restart=unless-stopped -p ${bindhost}:9000:9000 -p ${bindhost}:9001:9001 \
+           -e "MINIO_ROOT_USER=admin" \
+           -e "MINIO_ROOT_PASSWORD=12345678" \
+           -v ${containername}:/data \
+           --name ${containername} quay.io/minio/minio server /data --console-address ":9001"
+  echo "${appname} started."
 fi
+./dockerps.sh
+
 echo "Open http://${callhost}:9001 and log in with admin:12345678"
