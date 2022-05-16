@@ -88,7 +88,7 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
             public StorageFactory<byte[]> checkConnection() throws IOException {
                 final Map<String, byte[]> params = new HashMap<>();
                 final String protocolhostportstub = MCPStorageFactory.this.getConnectionURL();
-                final APIHandler apiHandler = Service.instance.config.getAPI(net.yacy.grid.mcp.api.assets.CheckService.NAME);
+                final APIHandler apiHandler = Service.instance.config.getAPI(net.yacy.grid.mcp.api.assets.AssetsService.NAME);
                 final ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
                 final JSONObject response = sr.getObject();
                 if (response.has(ObjectAPIHandler.SUCCESS_KEY) && response.getBoolean(ObjectAPIHandler.SUCCESS_KEY)) {

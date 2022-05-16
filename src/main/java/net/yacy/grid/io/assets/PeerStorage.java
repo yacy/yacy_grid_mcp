@@ -24,7 +24,7 @@ import java.io.IOException;
 
 public class PeerStorage implements Storage<byte[]> {
 
-    private StorageFactory<byte[]> factory;
+    protected StorageFactory<byte[]> factory;
     
     public PeerStorage(boolean deleteafterread, File basePath) {
         this.factory = basePath == null ? null : new FilesystemStorageFactory(deleteafterread, basePath);

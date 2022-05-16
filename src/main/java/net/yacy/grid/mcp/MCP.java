@@ -62,7 +62,7 @@ public class MCP {
             // asset services
             net.yacy.grid.mcp.api.assets.StoreService.class,
             net.yacy.grid.mcp.api.assets.LoadService.class,
-            net.yacy.grid.mcp.api.assets.CheckService.class,
+            net.yacy.grid.mcp.api.assets.AssetsService.class,
 
             // admin services
             net.yacy.grid.mcp.api.admin.InquirySubmitService.class,

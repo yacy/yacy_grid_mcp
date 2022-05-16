@@ -35,10 +35,10 @@ import net.yacy.grid.mcp.Service;
 /**
  * test with http://127.0.0.1:8100/yacy/grid/mcp/assets/check.json
  */
-public class CheckService extends ObjectAPIHandler implements APIHandler {
+public class AssetsService extends ObjectAPIHandler implements APIHandler {
 
     private static final long serialVersionUID = 8578378303032749879L;
-    public static final String NAME = "check";
+    public static final String NAME = "assets";
 
     @Override
     public String getAPIPath() {
