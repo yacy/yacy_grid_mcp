@@ -33,7 +33,6 @@ import java.util.Map;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
@@ -54,7 +53,7 @@ public class AWSS3IO extends AbstractIO implements GenericIO {
     public AWSS3IO(final String endpointURL, final String accessKey, final String secretKey) {
         final BasicAWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         final AWSStaticCredentialsProvider provider = new AWSStaticCredentialsProvider(credentials);
-        final EndpointConfiguration endpoint = new EndpointConfiguration(endpointURL, Regions.EU_CENTRAL_1.getName());
+        final EndpointConfiguration endpoint = new EndpointConfiguration(endpointURL, null);
         this.s3 = (AmazonS3Client) AmazonS3ClientBuilder
                 .standard()
                 .withEndpointConfiguration(endpoint)
