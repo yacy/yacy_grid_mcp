@@ -74,29 +74,40 @@ public class GridIndex implements Index {
     }
 
     public boolean connectElasticsearch(String address) {
-        if (!address.startsWith(ElasticIndexFactory.PROTOCOL_PREFIX)) return false;
+        Logger.info("trying to connect to elasticsearch at " + address);
+        if (!address.startsWith(ElasticIndexFactory.PROTOCOL_PREFIX)) {
+            Logger.warn("elastic address does not start with protocol prefix " + ElasticIndexFactory.PROTOCOL_PREFIX);
+            return false;
+        }
         address = address.substring(ElasticIndexFactory.PROTOCOL_PREFIX.length());
-        int p = address.indexOf('/');
+        final int p = address.indexOf('/');
         String cluster = "";
         if (p >= 0) {
             cluster = address.substring(p + 1);
             address = address.substring(0, p);
         }
-        if (address.length() == 0) return false;
+        if (address.length() == 0) {
+            Logger.warn("address empty after removal of cluster name suffix");
+            return false;
+        }
 
         // if we reach this point, we try (forever) until we get a connection to elasticsearch
+        if (!this.shallRun) {
+            Logger.warn("Index Factory cannot be instantiated because shallRun=false");
+        }
         loop: while (this.shallRun) {
             try {
                 this.elasticIndexFactory = new ElasticIndexFactory(address, cluster);
                 Logger.info(this.getClass(), "Index/Client: connected to elasticsearch at " + address);
                 this.elastic_address = address;
                 return true;
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Logger.warn(this.getClass(), "Index/Client: trying to connect to elasticsearch at " + address + " failed", e);
-                try {Thread.sleep(5000);} catch (InterruptedException e1) {}
+                try {Thread.sleep(5000);} catch (final InterruptedException e1) {}
                 continue loop;
             }
         }
+        Logger.warn("cannot connect to elasticsearch!");
         return false;
     }
 
@@ -120,7 +131,7 @@ public class GridIndex implements Index {
         return this.elasticIndexFactory.getIndex();
     }
 
-    public boolean connectMCP(String host, int port) {
+    public boolean connectMCP(final String host, final int port) {
         this.mcp_host = host;
         this.mcp_port = port;
         this.mcpIndexFactory = new MCPIndexFactory(this, host, port);
@@ -150,7 +161,7 @@ public class GridIndex implements Index {
     }
 
     @Override
-    public IndexFactory add(String indexName, String typeName, String id, JSONObject object) throws IOException {
+    public IndexFactory add(final String indexName, final String typeName, final String id, final JSONObject object) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
@@ -158,7 +169,7 @@ public class GridIndex implements Index {
             this.elasticIndexFactory.getIndex().add(indexName, typeName, id, object);
             //Logger.info(this.getClass(), "Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return this.elasticIndexFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -171,14 +182,14 @@ public class GridIndex implements Index {
             this.mcpIndexFactory.getIndex().add(indexName, typeName, id, object);
             //Logger.info(this.getClass(), "Index/Client: add mcp service '" + mcp_host + "', object with id:" + id);
             return this.mcpIndexFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: add mcp service '" + this.mcp_host + "',mcp fail", e);
         }
         throw new IOException("Index/Client: add mcp service: no factory found!");
     }
 
     @Override
-    public IndexFactory addBulk(String indexName, String typeName, final Map<String, JSONObject> objects) throws IOException {
+    public IndexFactory addBulk(final String indexName, final String typeName, final Map<String, JSONObject> objects) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
@@ -186,7 +197,7 @@ public class GridIndex implements Index {
             this.elasticIndexFactory.getIndex().addBulk(indexName, typeName, objects);
             //Logger.info(this.getClass(), "Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return this.elasticIndexFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: add elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -199,22 +210,22 @@ public class GridIndex implements Index {
             this.mcpIndexFactory.getIndex().addBulk(indexName, typeName, objects);
             //Logger.info(this.getClass(), "Index/Client: add mcp service '" + mcp_host + "', object with id:" + id);
             return this.mcpIndexFactory;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: add mcp service '" + this.mcp_host + "',mcp fail", e);
         }
         throw new IOException("Index/Client: add mcp service: no factory found!");
     }
 
     @Override
-    public boolean exist(String indexName, String id) throws IOException {
+    public boolean exist(final String indexName, final String id) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            boolean exist = this.elasticIndexFactory.getIndex().exist(indexName, id);
+            final boolean exist = this.elasticIndexFactory.getIndex().exist(indexName, id);
             //Logger.info(this.getClass(), "Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return exist;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -224,25 +235,25 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            boolean exist = this.mcpIndexFactory.getIndex().exist(indexName, id);
+            final boolean exist = this.mcpIndexFactory.getIndex().exist(indexName, id);
             //Logger.info(this.getClass(), "Index/Client: exist mcp service '" + mcp_host + "', object with id:" + id);
             return exist;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: exist mcp service '" + this.mcp_host + "',mcp fail", e);
         }
         throw new IOException("Index/Client: exist mcp service: no factory found!");
     }
 
     @Override
-    public Set<String> existBulk(String indexName, Collection<String> ids) throws IOException {
+    public Set<String> existBulk(final String indexName, final Collection<String> ids) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            Set<String> exist = this.elasticIndexFactory.getIndex().existBulk(indexName, ids);
+            final Set<String> exist = this.elasticIndexFactory.getIndex().existBulk(indexName, ids);
             //Logger.info(this.getClass(), "Index/Client: exist elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return exist;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: existBulk elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -252,25 +263,25 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            Set<String> exist = this.mcpIndexFactory.getIndex().existBulk(indexName, ids);
+            final Set<String> exist = this.mcpIndexFactory.getIndex().existBulk(indexName, ids);
             //Logger.info(this.getClass(), "Index/Client: exist mcp service '" + mcp_host + "', object with id:" + id);
             return exist;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: existBulk mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: existBulk mcp service: no factory found!");
     }
 
     @Override
-    public long count(String indexName, QueryLanguage language, String query) throws IOException {
+    public long count(final String indexName, final QueryLanguage language, final String query) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            long count = this.elasticIndexFactory.getIndex().count(indexName, language, query);
+            final long count = this.elasticIndexFactory.getIndex().count(indexName, language, query);
             //Logger.info(this.getClass(), "Index/Client: count elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return count;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: count elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -280,25 +291,25 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            long count = this.mcpIndexFactory.getIndex().count(indexName, language, query);
+            final long count = this.mcpIndexFactory.getIndex().count(indexName, language, query);
             //Logger.info(this.getClass(), "Index/Client: count mcp service '" + mcp_host + "', object with query:" + query);
             return count;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: count mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: count mcp service: no factory found!");
     }
 
     @Override
-    public JSONObject query(String indexName, String id) throws IOException {
+    public JSONObject query(final String indexName, final String id) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            JSONObject json = this.elasticIndexFactory.getIndex().query(indexName, id);
+            final JSONObject json = this.elasticIndexFactory.getIndex().query(indexName, id);
             //Logger.info(this.getClass(), "Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return json;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: query/3 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -308,25 +319,25 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            JSONObject json = this.mcpIndexFactory.getIndex().query(indexName, id);
+            final JSONObject json = this.mcpIndexFactory.getIndex().query(indexName, id);
             //Logger.info(this.getClass(), "Index/Client: query mcp service '" + mcp_host + "', object with id:" + id);
             return json;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: query/3 mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: query/3 mcp service: no factory found!");
     }
 
     @Override
-    public Map<String, JSONObject> queryBulk(String indexName, Collection<String> ids) throws IOException {
+    public Map<String, JSONObject> queryBulk(final String indexName, final Collection<String> ids) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            Map<String, JSONObject> map = this.elasticIndexFactory.getIndex().queryBulk(indexName, ids);
+            final Map<String, JSONObject> map = this.elasticIndexFactory.getIndex().queryBulk(indexName, ids);
             //Logger.info(this.getClass(), "Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return map;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: queryBulk/3 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -336,25 +347,25 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            Map<String, JSONObject> map = this.mcpIndexFactory.getIndex().queryBulk(indexName, ids);
+            final Map<String, JSONObject> map = this.mcpIndexFactory.getIndex().queryBulk(indexName, ids);
             //Logger.info(this.getClass(), "Index/Client: query mcp service '" + mcp_host + "', object with id:" + id);
             return map;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: queryBulk/3 mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: queryBulk/3 mcp service: no factory found!");
     }
 
     @Override
-    public JSONList query(String indexName, QueryLanguage language, String query, int start, int count) throws IOException {
+    public JSONList query(final String indexName, final QueryLanguage language, final String query, final int start, final int count) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            JSONList list = this.elasticIndexFactory.getIndex().query(indexName, language, query, start, count);
+            final JSONList list = this.elasticIndexFactory.getIndex().query(indexName, language, query, start, count);
             //Logger.info(this.getClass(), "Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return list;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: query/6 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -364,25 +375,25 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            JSONList list = this.mcpIndexFactory.getIndex().query(indexName, language, query, start, count);
+            final JSONList list = this.mcpIndexFactory.getIndex().query(indexName, language, query, start, count);
             //Logger.info(this.getClass(), "Index/Client: query mcp service '" + mcp_host + "', object with query:" + query);
             return list;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: query/6 mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: query/6 mcp service: no factory found!");
     }
 
     @Override
-    public JSONObject query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, int timezoneOffset, int from, int resultCount, int aggregationLimit, boolean explain, WebMapping... aggregationFields) throws IOException {
+    public JSONObject query(final String indexName, final QueryBuilder queryBuilder, final QueryBuilder postFilter, final Sort sort, final HighlightBuilder hb, final int timezoneOffset, final int from, final int resultCount, final int aggregationLimit, final boolean explain, final WebMapping... aggregationFields) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-        	JSONObject queryResult = this.elasticIndexFactory.getIndex().query(indexName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+        	final JSONObject queryResult = this.elasticIndexFactory.getIndex().query(indexName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
             //Logger.info(this.getClass(), "Index/Client: query elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return queryResult;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: query/12 elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -392,25 +403,25 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-        	JSONObject queryResult = this.mcpIndexFactory.getIndex().query(indexName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
+        	final JSONObject queryResult = this.mcpIndexFactory.getIndex().query(indexName, queryBuilder, postFilter, sort, hb, timezoneOffset, from, resultCount, aggregationLimit, explain, aggregationFields);
             //Logger.info(this.getClass(), "Index/Client: query mcp service '" + mcp_host + "', object with query:" + query);
             return queryResult;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: query/12 mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: query/12 mcp service: no factory found!");
     }
 
     @Override
-    public boolean delete(String indexName, String typeName, String id) throws IOException {
+    public boolean delete(final String indexName, final String typeName, final String id) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            boolean deleted = this.elasticIndexFactory.getIndex().delete(indexName, typeName, id);
+            final boolean deleted = this.elasticIndexFactory.getIndex().delete(indexName, typeName, id);
             //Logger.info(this.getClass(), "Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with id:" + id);
             return deleted;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -420,25 +431,25 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            boolean deleted = this.mcpIndexFactory.getIndex().delete(indexName, typeName, id);
+            final boolean deleted = this.mcpIndexFactory.getIndex().delete(indexName, typeName, id);
             //Logger.info(this.getClass(), "Index/Client: delete mcp service '" + mcp_host + "', object with id:" + id);
             return deleted;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: delete mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: delete mcp service: no factory found!");
     }
 
     @Override
-    public long delete(String indexName, QueryLanguage language, String query) throws IOException {
+    public long delete(final String indexName, final QueryLanguage language, final String query) throws IOException {
         if (this.elasticIndexFactory == null && this.elastic_address != null) {
             connectElasticsearch(this.elastic_address); // try to connect again..
         }
         if (this.elasticIndexFactory != null) try {
-            long deleted = this.elasticIndexFactory.getIndex().delete(indexName, language, query);
+            final long deleted = this.elasticIndexFactory.getIndex().delete(indexName, language, query);
             //Logger.info(this.getClass(), "Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', object with query:" + query);
             return deleted;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: delete elastic service '" + this.elasticIndexFactory.getConnectionURL() + "', elastic fail", e);
         }
         if (this.mcpIndexFactory == null && this.mcp_host != null) {
@@ -448,23 +459,23 @@ public class GridIndex implements Index {
             }
         }
         if (this.mcpIndexFactory != null) try {
-            long deleted = this.mcpIndexFactory.getIndex().delete(indexName, language, query);
+            final long deleted = this.mcpIndexFactory.getIndex().delete(indexName, language, query);
             //Logger.info(this.getClass(), "Index/Client: delete mcp service '" + mcp_host + "', object with query:" + query);
             return deleted;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.debug(this.getClass(), "Index/Client: delete mcp service '" + this.mcp_host + "', mcp fail", e);
         }
         throw new IOException("Index/Client: delete mcp service: no factory found!");
     }
 
     @Override
-    public void refresh(String indexName) {
+    public void refresh(final String indexName) {
         if (this.elasticIndexFactory == null) try {
             Thread.sleep(1000);
-        } catch (InterruptedException e) {}
+        } catch (final InterruptedException e) {}
         else try {
             this.elasticIndexFactory.getIndex().refresh(indexName);
-        } catch (IOException e) {}
+        } catch (final IOException e) {}
     }
 
     @Override

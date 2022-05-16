@@ -211,20 +211,24 @@ public class Configuration {
             // s3
             final String[] gridS3Address = (this.properties.containsKey("grid.s3.address") ? this.properties.get("grid.s3.address") : "").split(",");
             final boolean  gridS3Active = this.properties.containsKey("grid.s3.active") ? "true".equals(this.properties.get("grid.s3.active")) : true;
+            boolean s3connected = false;
             for (final String address: gridS3Address) {
                 if (address.length() > 0 && this.gridStorage.connectS3(getHost(address) /*bucket.endpoint*/, getPort(address, "9000"), getUser(address, "admin"), getPassword(address, "12345678"), gridS3Active)) {
                     Logger.info("Connected S3 Storage at " + getHost(address));
+                    s3connected = true;
                     break;
                 }
             }
 
             // ftp
-            final String[] gridFtpAddress = (this.properties.containsKey("grid.ftp.address") ? this.properties.get("grid.ftp.address") : "").split(",");
-            final boolean  gridFtpActive = this.properties.containsKey("grid.ftp.active") ? "true".equals(this.properties.get("grid.ftp.active")) : true;
-            for (final String address: gridFtpAddress) {
-                if (address.length() > 0 && this.gridStorage.connectFTP(getHost(address), getPort(address, "2121"), getUser(address, "admin"), getPassword(address, "admin"), gridFtpActive)) {
-                    Logger.info("Connected FTP Storage at " + getHost(address));
-                    break;
+            if (!s3connected) {
+                final String[] gridFtpAddress = (this.properties.containsKey("grid.ftp.address") ? this.properties.get("grid.ftp.address") : "").split(",");
+                final boolean  gridFtpActive = this.properties.containsKey("grid.ftp.active") ? "true".equals(this.properties.get("grid.ftp.active")) : true;
+                for (final String address: gridFtpAddress) {
+                    if (address.length() > 0 && this.gridStorage.connectFTP(getHost(address), getPort(address, "2121"), getUser(address, "admin"), getPassword(address, "admin"), gridFtpActive)) {
+                        Logger.info("Connected FTP Storage at " + getHost(address));
+                        break;
+                    }
                 }
             }
 
@@ -249,8 +253,23 @@ public class Configuration {
             }
         }
 
-        // find connections first here before concurrent threads try to make their own connection concurrently
-        try { this.gridIndex.checkConnection(); } catch (final IOException e) { Logger.error("no connection to MCP", e); }
+        // check connections first here
+        // before concurrent threads try to make their own connection concurrently
+        try {
+            this.gridIndex.checkConnection();
+            Logger.info("Connection to Elasticsearch established");
+        } catch (final IOException e) {
+            Logger.error("no connection to MCP", e);
+        }
+        if (this.gridStorage.checkConnectionS3()) {
+            Logger.info("Connection to S3 established");
+        }
+        if (this.gridStorage.checkConnectionFTP()) {
+            Logger.info("Connection to FTP established");
+        }
+        if (this.gridBroker.isRabbitMQConnected()) {
+            Logger.info("Connection to RabbitMQ established");
+        }
     }
 
     /**

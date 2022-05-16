@@ -25,6 +25,7 @@ import java.util.List;
 import eu.searchlab.storage.io.AWSS3IO;
 import eu.searchlab.storage.io.GenericIO;
 import eu.searchlab.storage.io.IOPath;
+import net.yacy.grid.tools.Logger;
 
 public class S3StorageFactory  implements StorageFactory<byte[]> {
 
@@ -55,8 +56,10 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
                 final List<String> buckets = s3io.listBuckets();
                 // find or create bucket
                 if (buckets == null || buckets.size() == 0 || !buckets.contains(S3StorageFactory.this.bucket)) {
+                    Logger.info("initializing bucket store, creating bucket '" + S3StorageFactory.this.bucket + "'");
                     s3io.makeBucket(S3StorageFactory.this.bucket);
                 }
+                Logger.info("S3 endpoint established to " + endpointURL);
                 return s3io;
             }
 
@@ -67,7 +70,7 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
                 // there must be at least one bucket
                 if (buckets == null || buckets.size() == 0) throw new IOException("connection to s3:" + S3StorageFactory.this.endpoint + " is possible, but no buckets are available");
                 // the list must also contain the addressed bucket
-                if (!buckets.contains(S3StorageFactory.this.bucket)) throw new IOException("connection to s3 establishedm but bucket " + S3StorageFactory.this.bucket + " not available");
+                if (!buckets.contains(S3StorageFactory.this.bucket)) throw new IOException("connection to s3 established but bucket " + S3StorageFactory.this.bucket + " not available");
             }
 
             @Override
