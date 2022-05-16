@@ -35,8 +35,8 @@ public class FilesystemStorageFactory implements StorageFactory<byte[]> {
         this.storage = new Storage<byte[]>() {
 
             @Override
-            public void checkConnection() throws IOException {
-                // do nothing
+            public StorageFactory<byte[]> checkConnection() throws IOException {
+                return FilesystemStorageFactory.this;
             }
 
             @Override

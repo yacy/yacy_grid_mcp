@@ -28,8 +28,10 @@ import java.util.Random;
 import org.json.JSONObject;
 
 import net.yacy.grid.YaCyServices;
+import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
+import net.yacy.grid.io.index.MCPIndexFactory;
 import net.yacy.grid.mcp.Configuration;
 import net.yacy.grid.mcp.Service;
 import net.yacy.grid.mcp.api.assets.LoadService;
@@ -83,11 +85,18 @@ public class MCPStorageFactory implements StorageFactory<byte[]> {
         return new Storage<byte[]>() {
 
             @Override
-            public void checkConnection() throws IOException {
+            public StorageFactory<byte[]> checkConnection() throws IOException {
                 final Map<String, byte[]> params = new HashMap<>();
                 final String protocolhostportstub = MCPStorageFactory.this.getConnectionURL();
-                final ServiceResponse sr = Service.instance.config.getAPI(StatusService.NAME).serviceImpl(protocolhostportstub, params);
-                if (!sr.getObject().has("status")) throw new IOException("MCP does not respond properly");
+                final APIHandler apiHandler = Service.instance.config.getAPI(net.yacy.grid.mcp.api.assets.CheckService.NAME);
+                final ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
+                final JSONObject response = sr.getObject();
+                if (response.has(ObjectAPIHandler.SUCCESS_KEY) && response.getBoolean(ObjectAPIHandler.SUCCESS_KEY)) {
+                    connectMCP(response);
+                    return MCPStorageFactory.this;
+                } else {
+                    throw new IOException("MCP does not respond properly");
+                }
             }
 
             @Override

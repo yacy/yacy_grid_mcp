@@ -28,7 +28,7 @@ import java.io.IOException;
  */
 public interface Storage<A> {
     
-    public void checkConnection() throws IOException;
+    public StorageFactory<A> checkConnection() throws IOException;
     
     public StorageFactory<A> store(String path, A asset) throws IOException;
     

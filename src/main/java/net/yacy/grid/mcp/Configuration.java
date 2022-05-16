@@ -162,29 +162,30 @@ public class Configuration {
         boolean mcpConnected = false;
         for (final String address: gridMcpAddress) {
             if (address.length() <= 0) continue;
-            Logger.info("Attempting Grid Connection to " + address);
+            Logger.info("Attempting Grid Connection to MCP at " + address);
 
             final String host = getHost(address);
             final int port = YaCyServices.mcp.getDefaultPort();
             Logger.info("Checking Broker connection at " + host + ":" + port);
             final boolean brokerConnected = this.gridBroker.connectMCP(host, port);
             if (!brokerConnected) {Logger.warn("..failed"); continue;}
-            Logger.info(".. ok, RabbitMQ connected: " + this.gridBroker.isRabbitMQConnected());
+            Logger.info(".. ok, RabbitMQ connected via MCP: " + this.gridBroker.isRabbitMQConnected());
 
             Logger.info("Checking Storage connection at " + host + ":" + port);
             final boolean storageConnected = this.gridStorage.connectMCP(host, port, true);
             if (!storageConnected) {Logger.warn("..failed"); continue;}
-            Logger.info(".. ok, S3 connected: " + this.gridStorage.isS3Connected());
+            Logger.info(".. ok, S3 connected via MCP: " + this.gridStorage.isS3Connected());
+            Logger.info(".. ok, FTP connected via MCP: " + this.gridStorage.isFTPConnected());
 
             Logger.info("Checking Index connection at " + host + ":" + port);
             final boolean indexConnected = this.gridIndex.connectMCP(host, port);
             if (!indexConnected) {Logger.warn("..failed"); continue;}
-            Logger.info(".. ok, Elastic connected: " + this.gridIndex.isConnected());
+            Logger.info(".. ok, Elastic connected via MCP: " + this.gridIndex.isConnected());
 
             Logger.info("Checking Control connection at " + host + ":" + port);
             final boolean controlConnected = this.gridControl.connectMCP(host, port);
             if (!controlConnected) {Logger.warn("..failed"); continue;}
-            Logger.info(".. ok, Control connected: " + this.gridControl.getConnectionURL() + " with url "+ this.gridControl.getConnectionURL());
+            Logger.info(".. ok, Control connected via MCP: " + this.gridControl.getConnectionURL() + " with url "+ this.gridControl.getConnectionURL());
 
             Logger.info("Connected MCP at " + getHost(address));
             mcpConnected = true;

@@ -22,7 +22,6 @@ package net.yacy.grid.io.assets;
 import java.io.IOException;
 import java.util.List;
 
-import eu.searchlab.storage.io.AWSS3IO;
 import eu.searchlab.storage.io.GenericIO;
 import eu.searchlab.storage.io.IOPath;
 import eu.searchlab.storage.io.MinioS3IO;
@@ -66,25 +65,16 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
                 Logger.info("S3 endpoint established to " + endpointURL);
                 return s3io;
             }
-/*
- * Exception in thread "main" com.amazonaws.SdkClientException: Unable to execute HTTP request: yacygrid.yacy-grid-minio
- * at eu.searchlab.storage.io.AWSS3IO.makeBucket(AWSS3IO.java:81)
-	at net.yacy.grid.io.assets.S3StorageFactory$1.initConnection(S3StorageFactory.java:62)
-	at net.yacy.grid.io.assets.S3StorageFactory$1.checkConnection(S3StorageFactory.java:70)
-	at net.yacy.grid.io.assets.GridStorage.checkConnectionS3(GridStorage.java:98)
-	at net.yacy.grid.io.assets.GridStorage.connectS3(GridStorage.java:76)
-	at net.yacy.grid.mcp.Configuration.connectBackend(Configuration.java:216)
-	at net.yacy.grid.mcp.MCP$Application.<init>(MCP.java:122)
 
- */
             @Override
-            public void checkConnection() throws IOException {
+            public StorageFactory<byte[]> checkConnection() throws IOException {
                 if (this.io == null) this.io = initConnection();
                 final List<String> buckets = this.io.listBuckets();
                 // there must be at least one bucket
                 if (buckets == null || buckets.size() == 0) throw new IOException("connection to s3:" + S3StorageFactory.this.endpoint + " is possible, but no buckets are available");
                 // the list must also contain the addressed bucket
                 if (!buckets.contains(S3StorageFactory.this.bucket)) throw new IOException("connection to s3 established but bucket " + S3StorageFactory.this.bucket + " not available");
+                return S3StorageFactory.this;
             }
 
             @Override

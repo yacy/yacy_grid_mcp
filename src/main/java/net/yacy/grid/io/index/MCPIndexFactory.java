@@ -37,7 +37,6 @@ import net.yacy.grid.http.ObjectAPIHandler;
 import net.yacy.grid.http.ServiceResponse;
 import net.yacy.grid.mcp.Service;
 import net.yacy.grid.mcp.api.index.AddService;
-import net.yacy.grid.mcp.api.index.CheckService;
 import net.yacy.grid.mcp.api.index.CountService;
 import net.yacy.grid.mcp.api.index.DeleteService;
 import net.yacy.grid.mcp.api.index.ExistService;
@@ -112,7 +111,7 @@ public class MCPIndexFactory implements IndexFactory {
             @Override
             public IndexFactory checkConnection() throws IOException {
                 final String protocolhostportstub = MCPIndexFactory.this.getConnectionURL();
-                final APIHandler apiHandler = Service.instance.config.getAPI(CheckService.NAME);
+                final APIHandler apiHandler = Service.instance.config.getAPI(net.yacy.grid.mcp.api.index.CheckService.NAME);
                 final ServiceResponse sr = apiHandler.serviceImpl(protocolhostportstub, params);
                 final JSONObject response = sr.getObject();
                 if (success(response)) {

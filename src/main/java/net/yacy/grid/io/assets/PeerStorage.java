@@ -31,8 +31,9 @@ public class PeerStorage implements Storage<byte[]> {
     }
 
     @Override
-    public void checkConnection() throws IOException {
+    public StorageFactory<byte[]> checkConnection() throws IOException {
         if (this.factory == null) throw new IOException("peer storage not enabled");
+        return this.factory.getStorage().checkConnection();
     }
     
     @Override

@@ -52,8 +52,9 @@ public class FTPStorageFactory implements StorageFactory<byte[]> {
         this.ftpClient = new Storage<byte[]>() {
 
             @Override
-            public void checkConnection() throws IOException {
+            public StorageFactory<byte[]> checkConnection() throws IOException {
                 if (this.initConnection() == null) throw new IOException("FTPClient is NULL");
+                return FTPStorageFactory.this;
             }
 
             private FTPClient initConnection() throws IOException {

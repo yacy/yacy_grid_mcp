@@ -159,7 +159,7 @@ public class GridStorage extends PeerStorage implements Storage<byte[]> {
             return false;
         }
     }
-
+    
     @Override
     public StorageFactory<byte[]> store(final String path, final byte[] asset) throws IOException {
         if (this.s3 != null && this.s3_fail.get() < 10) {

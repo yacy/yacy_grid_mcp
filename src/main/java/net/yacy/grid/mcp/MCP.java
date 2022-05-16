@@ -22,30 +22,6 @@ package net.yacy.grid.mcp;
 import javax.servlet.Servlet;
 
 import net.yacy.grid.YaCyServices;
-import net.yacy.grid.mcp.api.admin.InquirySubmitService;
-import net.yacy.grid.mcp.api.assets.LoadService;
-import net.yacy.grid.mcp.api.assets.StoreService;
-import net.yacy.grid.mcp.api.control.LoaderThrottlingService;
-import net.yacy.grid.mcp.api.index.AddService;
-import net.yacy.grid.mcp.api.index.CheckService;
-import net.yacy.grid.mcp.api.index.CountService;
-import net.yacy.grid.mcp.api.index.DeleteService;
-import net.yacy.grid.mcp.api.index.ExistService;
-import net.yacy.grid.mcp.api.index.GSASearchService;
-import net.yacy.grid.mcp.api.index.QueryService;
-import net.yacy.grid.mcp.api.index.YaCySearchService;
-import net.yacy.grid.mcp.api.info.LogService;
-import net.yacy.grid.mcp.api.info.ServicesService;
-import net.yacy.grid.mcp.api.info.StatusService;
-import net.yacy.grid.mcp.api.info.ThreaddumpService;
-import net.yacy.grid.mcp.api.messages.AcknowledgeService;
-import net.yacy.grid.mcp.api.messages.AvailableService;
-import net.yacy.grid.mcp.api.messages.ClearService;
-import net.yacy.grid.mcp.api.messages.PeekService;
-import net.yacy.grid.mcp.api.messages.QueuesService;
-import net.yacy.grid.mcp.api.messages.ReceiveService;
-import net.yacy.grid.mcp.api.messages.RecoverService;
-import net.yacy.grid.mcp.api.messages.SendService;
 import net.yacy.grid.tools.CronBox;
 import net.yacy.grid.tools.CronBox.Telemetry;
 import net.yacy.grid.tools.GitTool;
@@ -65,41 +41,41 @@ public class MCP {
     @SuppressWarnings("unchecked")
     public final static Class<? extends Servlet>[] MCP_SERVLETS = new Class[]{
             // information services
-            ServicesService.class,
-            StatusService.class,
-            ThreaddumpService.class,
-            LogService.class,
+    		net.yacy.grid.mcp.api.info.ServicesService.class,
+            net.yacy.grid.mcp.api.info.StatusService.class,
+            net.yacy.grid.mcp.api.info.ThreaddumpService.class,
+            net.yacy.grid.mcp.api.info.LogService.class,
 
             // control services
-            LoaderThrottlingService.class,
+            net.yacy.grid.mcp.api.control.LoaderThrottlingService.class,
 
             // message services
-            AcknowledgeService.class,
-            AvailableService.class,
-            ClearService.class,
-            PeekService.class,
-            QueuesService.class,
-            ReceiveService.class,
-            RecoverService.class,
-            SendService.class,
+            net.yacy.grid.mcp.api.messages.AcknowledgeService.class,
+            net.yacy.grid.mcp.api.messages.AvailableService.class,
+            net.yacy.grid.mcp.api.messages.ClearService.class,
+            net.yacy.grid.mcp.api.messages.PeekService.class,
+            net.yacy.grid.mcp.api.messages.QueuesService.class,
+            net.yacy.grid.mcp.api.messages.ReceiveService.class,
+            net.yacy.grid.mcp.api.messages.RecoverService.class,
+            net.yacy.grid.mcp.api.messages.SendService.class,
 
             // asset services
-            //RetrieveService.class,
-            StoreService.class,
-            LoadService.class,
+            net.yacy.grid.mcp.api.assets.StoreService.class,
+            net.yacy.grid.mcp.api.assets.LoadService.class,
+            net.yacy.grid.mcp.api.assets.CheckService.class,
 
             // admin services
-            InquirySubmitService.class,
+            net.yacy.grid.mcp.api.admin.InquirySubmitService.class,
 
-            // search services
-            YaCySearchService.class,
-            GSASearchService.class,
-            AddService.class,
-            CheckService.class,
-            CountService.class,
-            DeleteService.class,
-            ExistService.class,
-            QueryService.class
+            // index services
+            net.yacy.grid.mcp.api.index.YaCySearchService.class,
+            net.yacy.grid.mcp.api.index.GSASearchService.class,
+            net.yacy.grid.mcp.api.index.AddService.class,
+            net.yacy.grid.mcp.api.index.CheckService.class,
+            net.yacy.grid.mcp.api.index.CountService.class,
+            net.yacy.grid.mcp.api.index.DeleteService.class,
+            net.yacy.grid.mcp.api.index.ExistService.class,
+            net.yacy.grid.mcp.api.index.QueryService.class
     };
 
     public static class Application implements CronBox.Application {
