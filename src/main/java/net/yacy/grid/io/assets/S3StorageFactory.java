@@ -25,6 +25,7 @@ import java.util.List;
 import eu.searchlab.storage.io.AWSS3IO;
 import eu.searchlab.storage.io.GenericIO;
 import eu.searchlab.storage.io.IOPath;
+import eu.searchlab.storage.io.MinioS3IO;
 import net.yacy.grid.tools.Logger;
 
 public class S3StorageFactory  implements StorageFactory<byte[]> {
@@ -54,7 +55,8 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
             private GenericIO initConnection() throws IOException {
                 final String endpointURL = (port == 443 ? "https://" : "http://") + S3StorageFactory.this.endpoint + (S3StorageFactory.this.port == 80 || S3StorageFactory.this.port == 443 ? "" : ":" + S3StorageFactory.this.port);
                 Logger.info("intializing S3 connection with endpointURL " + endpointURL);
-                final GenericIO s3io = new AWSS3IO(endpointURL, S3StorageFactory.this.accessKey, S3StorageFactory.this.secretKey);
+                //final GenericIO s3io = new AWSS3IO(endpointURL, S3StorageFactory.this.accessKey, S3StorageFactory.this.secretKey);
+                final GenericIO s3io = new MinioS3IO(endpointURL, S3StorageFactory.this.accessKey, S3StorageFactory.this.secretKey);
                 final List<String> buckets = s3io.listBuckets();
                 // find or create bucket
                 if (buckets == null || buckets.size() == 0 || !buckets.contains(S3StorageFactory.this.bucket)) {
@@ -64,7 +66,17 @@ public class S3StorageFactory  implements StorageFactory<byte[]> {
                 Logger.info("S3 endpoint established to " + endpointURL);
                 return s3io;
             }
+/*
+ * Exception in thread "main" com.amazonaws.SdkClientException: Unable to execute HTTP request: yacygrid.yacy-grid-minio
+ * at eu.searchlab.storage.io.AWSS3IO.makeBucket(AWSS3IO.java:81)
+	at net.yacy.grid.io.assets.S3StorageFactory$1.initConnection(S3StorageFactory.java:62)
+	at net.yacy.grid.io.assets.S3StorageFactory$1.checkConnection(S3StorageFactory.java:70)
+	at net.yacy.grid.io.assets.GridStorage.checkConnectionS3(GridStorage.java:98)
+	at net.yacy.grid.io.assets.GridStorage.connectS3(GridStorage.java:76)
+	at net.yacy.grid.mcp.Configuration.connectBackend(Configuration.java:216)
+	at net.yacy.grid.mcp.MCP$Application.<init>(MCP.java:122)
 
+ */
             @Override
             public void checkConnection() throws IOException {
                 if (this.io == null) this.io = initConnection();
