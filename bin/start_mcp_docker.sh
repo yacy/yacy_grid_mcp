@@ -2,7 +2,7 @@
 cd "`dirname $0`"
 
 bindhost="0.0.0.0"
-callhost=`hostname`.local
+callhost=`hostname`
 appname="YaCy Grid MCP"
 containername=yacy-grid-mcp
 imagename=${containername}
