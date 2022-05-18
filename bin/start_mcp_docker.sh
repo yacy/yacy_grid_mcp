@@ -6,6 +6,7 @@ callhost=`hostname`
 appname="YaCy Grid MCP"
 containername=yacy-grid-mcp
 imagename=${containername//-/_}
+dockerfile="Dockerfile"
 production=false
 
 usage() { echo "usage: $0 [-p | --production | --arm32 | --arm64 ]" 1>&2; exit 1; }
@@ -13,8 +14,8 @@ usage() { echo "usage: $0 [-p | --production | --arm32 | --arm64 ]" 1>&2; exit 1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -p | --production ) production=true; shift 1;;
-    --arm32 | --arm32v7 ) imagename=${imagename}:arm32; shift 1;;
-    --arm64 | --arm64v8 ) imagename=${imagename}:arm64; shift 1;;
+    --arm32 ) imagename=${imagename}:arm32; dockerfile=${dockerfile}_arm32; shift 1;;
+    --arm64 ) imagename=${imagename}:arm64; dockerfile=${dockerfile}_arm64; shift 1;;
     -h | --help | -* | --* | * ) usage;;
   esac
 done
@@ -30,7 +31,7 @@ elif [ ${containerExists} -gt 0 ]; then
 else
   if [[ $imagename != "yacy/"*":latest" ]] && [[ "$(docker images -q ${imagename} 2> /dev/null)" == "" ]]; then
       cd ..
-      docker build -t ${imagename} .
+      docker build -t ${imagename} -f ${dockerfile} .
       cd bin
   fi
   docker run -d --restart=unless-stopped -p ${bindhost}:8100:8100 \
