@@ -6,15 +6,19 @@ callhost=`hostname`
 appname="YaCy Grid MCP"
 containername=yacy-grid-mcp
 imagename=${containername//-/_}
+production=false
 
-usage() { echo "usage: $0 [-p | --production]" 1>&2; exit 1; }
+usage() { echo "usage: $0 [-p | --production | --arm32 | --arm64 ]" 1>&2; exit 1; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -p | --production ) bindhost="127.0.0.1"; callhost="localhost"; imagename="yacy/${imagename}:latest"; shift 1;;
+    -p | --production ) production=true; shift 1;;
+    --arm32 | --arm32v7 ) imagename=${imagename}:arm32; shift 1;;
+    --arm64 | --arm64v8 ) imagename=${imagename}:arm64; shift 1;;
     -h | --help | -* | --* | * ) usage;;
   esac
 done
+if [ "$production" = true ] ; then bindhost="127.0.0.1"; callhost="localhost"; imagename="yacy/${imagename}"; fi
 
 containerRuns=$(docker ps | grep -i "${containername}" | wc -l ) 
 containerExists=$(docker ps -a | grep -i "${containername}" | wc -l ) 
