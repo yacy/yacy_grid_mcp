@@ -21,7 +21,7 @@ LABEL maintainer="Michael Peter Christen <mc@yacy.net>"
 ENV DEBIAN_FRONTEND noninteractive
 ARG default_branch=master
 COPY ./conf /app/conf/
-COPY --from=appbuilder /app/build/libs/ ./app/build/libs/
+COPY --from=appbuilder /app/build/libs/yacy_grid_mcp-0.0.1-SNAPSHOT-all.jar ./app/build/libs/
 WORKDIR /app
 EXPOSE 8100
 CMD ["java", "-jar", "/app/build/libs/yacy_grid_mcp-0.0.1-SNAPSHOT-all.jar"]

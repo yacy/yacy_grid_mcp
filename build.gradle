@@ -35,8 +35,18 @@ jar {
 }
 
 shadowJar {
-  zip64 true
-  exclude 'data'
+    zip64 true
+    exclude 'data'
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    mergeServiceFiles()
+}
+
+distTar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+distZip {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 dependencies {
