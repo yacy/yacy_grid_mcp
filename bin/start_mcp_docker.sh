@@ -1,25 +1,28 @@
 #!/bin/bash
 cd "`dirname $0`"
 
-bindhost="0.0.0.0"
-callhost=`hostname`
+bindhost="127.0.0.1"
+callhost="localhost"
 appname="YaCy Grid MCP"
 containername=yacy-grid-mcp
 imagename=${containername//-/_}
 dockerfile="Dockerfile"
 production=false
+open=false
 
-usage() { echo "usage: $0 [-p | --production | --arm32 | --arm64 ]" 1>&2; exit 1; }
+usage() { echo "usage: $0 [-o | --open | -p | --production | --arm32 | --arm64 ]" 1>&2; exit 1; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -p | --production ) production=true; shift 1;;
+    -o | --open ) open=true; shift 1;;
     --arm32 ) imagename=${imagename}:arm32; dockerfile=${dockerfile}_arm32; shift 1;;
     --arm64 ) imagename=${imagename}:arm64; dockerfile=${dockerfile}_arm64; shift 1;;
     -h | --help | -* | --* | * ) usage;;
   esac
 done
-if [ "$production" = true ] ; then bindhost="127.0.0.1"; callhost="localhost"; imagename="yacy/${imagename}"; fi
+if [ "$production" = true ] ; then imagename="yacy/${imagename}"; fi
+if [ "$open" = true ] ; then bindhost="0.0.0.0"; callhost=`hostname`; fi
 
 containerRuns=$(docker ps | grep -i "${containername}" | wc -l ) 
 containerExists=$(docker ps -a | grep -i "${containername}" | wc -l ) 
