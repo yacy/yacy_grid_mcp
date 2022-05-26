@@ -26,7 +26,8 @@ else
   docker run -d --restart=unless-stopped -p ${bindhost}:9200:9200 -p ${bindhost}:9300:9300 \
          -v `pwd`/../conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml \
          -v ${containername}:/usr/share/elasticsearch/data \
-         --name ${containername} elasticsearch:6.8.20
+         -e ES_JAVA_OPTS="-Xms1g -Xmx4g" --name ${containername} \
+	 elasticsearch:6.8.20
   echo "${appname} container started."
 fi
 ./dockerps.sh
