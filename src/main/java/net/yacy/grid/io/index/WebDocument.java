@@ -86,6 +86,15 @@ public class WebDocument extends Document {
         return this;
     }
 
+    public WebDocument setUserlId(final String user_id) {
+        this.putString(WebMapping.user_id_s, user_id);
+        return this;
+    }
+
+    public String getUserId() {
+        return this.getString(WebMapping.user_id_s, "");
+    }
+
     public WebDocument setCrawlId(final String crawl_id) {
         this.putString(WebMapping.crawl_id_s, crawl_id);
         return this;

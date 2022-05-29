@@ -31,6 +31,7 @@ public enum WebMapping implements MappingDeclaration {
     url_s(MappingType.string, true, true, false, true, true, "url of document", true), // a 'sku' is a stock-keeping unit, a unique identifier and a default field in unmodified solr.
     //sku(MappingType.text_en_splitting_tight, true, true, false, true, true, "url of document"), // a 'sku' is a stock-keeping unit, a unique identifier and a default field in unmodified solr.
     crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
+ 	user_id_s(MappingType.string, true, true, false, true, true, "id of the user of the crawl start", true),
     last_modified(MappingType.date, true, true, false, false, false, "last-modified from http header", true), // date document was last modified, needed for media search and /date operator
     load_date_dt(MappingType.date, true, true, false, false, false, "time when resource was loaded", true),
     content_type(MappingType.string, true, true, true, false, false, "mime-type of document", true),
