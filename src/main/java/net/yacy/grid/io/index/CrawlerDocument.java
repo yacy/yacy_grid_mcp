@@ -137,8 +137,8 @@ public class CrawlerDocument extends Document {
         return this.getString(CrawlerMapping.crawl_id_s, "");
     }
 
-    public CrawlerDocument setUserlID(final String userId) {
-        this.putString(CrawlerMapping.user_id_s, userId);
+    public CrawlerDocument setUserlID(final String user_id) {
+        this.putString(CrawlerMapping.user_id_s, user_id);
         return this;
     }
 
