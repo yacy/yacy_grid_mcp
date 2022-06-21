@@ -211,7 +211,6 @@ public class ElasticIndexFactory implements IndexFactory {
                     }
                 } else if (language == QueryLanguage.elastic) {
                     QueryStringQueryBuilder qsqb = QueryBuilders.queryStringQuery(query);
-                    qsqb.useDisMax(false); // we want a boolean query here
                     qsqb.defaultOperator(Operator.AND);
                     qsqb.fuzziness(Fuzziness.ZERO);
                     qb = qsqb;

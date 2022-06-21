@@ -59,7 +59,7 @@ dependencies {
     implementation 'org.eclipse.jetty:jetty-server:9.4.+'
     implementation 'org.eclipse.jetty:jetty-servlet:9.4.+'
     implementation 'org.eclipse.jgit:org.eclipse.jgit:5.+'
-    implementation 'org.elasticsearch.client:transport:6.8.+'
+    implementation 'org.elasticsearch.client:transport:7.10.+'
     implementation 'org.mapdb:mapdb:3.+'
     implementation 'org.slf4j:log4j-over-slf4j:1.7.+'
     implementation 'org.slf4j:slf4j-jdk14:1.7.+'

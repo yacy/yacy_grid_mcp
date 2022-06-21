@@ -10,13 +10,13 @@
 # curl http://localhost:8100/yacy/grid/mcp/info/status.json
 
 ## build app
-FROM arm64v8/eclipse-temurin:8-jdk AS appbuilder
+FROM arm64v8/eclipse-temurin:11-jdk AS appbuilder
 COPY ./ /app
 WORKDIR /app
 RUN ./gradlew assemble
 
 ## build dist
-FROM arm64v8/eclipse-temurin:8-jre
+FROM arm64v8/eclipse-temurin:11-jre
 LABEL maintainer="Michael Peter Christen <mc@yacy.net>"
 ENV DEBIAN_FRONTEND noninteractive
 ARG default_branch=master

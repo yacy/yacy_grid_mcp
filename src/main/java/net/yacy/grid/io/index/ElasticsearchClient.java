@@ -310,7 +310,7 @@ public class ElasticsearchClient {
 
     public long countInternal(final QueryBuilder q, final String indexName) {
         SearchResponse response = this.elasticsearchClient.prepareSearch(indexName).setQuery(q).setSize(0).execute().actionGet();
-        return response.getHits().getTotalHits();
+        return response.getHits().getTotalHits().value;
     }
 
     /**
@@ -754,7 +754,7 @@ public class ElasticsearchClient {
             // get response
             SearchResponse response = request.execute().actionGet();
             SearchHits searchHits = response.getHits();
-            this.hitCount = (int) searchHits.getTotalHits();
+            this.hitCount = (int) searchHits.getTotalHits().value;
 
             // evaluate search result
             //long totalHitCount = response.getHits().getTotalHits();
