@@ -28,4 +28,4 @@ EXPOSE 8100
 # for some weird reason the jar file is sometimes not named correctly
 RUN if [ -e /app/build/libs/app-0.0.1-SNAPSHOT-all.jar ] ; then mv /app/build/libs/app-0.0.1-SNAPSHOT-all.jar /app/build/libs/yacy_grid_mcp-0.0.1-SNAPSHOT-all.jar; fi
 
-CMD ["java", "-jar", "/app/build/libs/yacy_grid_mcp-0.0.1-SNAPSHOT-all.jar"]
+CMD ["java", "-Xms320M", "-Xmx2G", "-jar", "/app/build/libs/yacy_grid_mcp-0.0.1-SNAPSHOT-all.jar"]
