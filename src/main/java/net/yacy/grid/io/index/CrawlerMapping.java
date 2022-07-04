@@ -22,7 +22,7 @@ package net.yacy.grid.io.index;
 public enum CrawlerMapping implements MappingDeclaration {
 
     crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
-	user_id_s(MappingType.string, true, true, false, true, true, "id of the user of the crawl start", true),
+    user_id_s(MappingType.string, true, true, false, true, true, "id of the user of the crawl start", true),
     mustmatch_s(MappingType.string, true, true, false, true, true, "must-match pattern string of the crawl start", true),
     collection_sxt(MappingType.string, true, true, true, false, false, "tags that are attached to crawls/index generation", false, "collections", "Collections", "String", "collection"),
     start_url_s(MappingType.string, true, true, false, true, true, "The start URL", true),

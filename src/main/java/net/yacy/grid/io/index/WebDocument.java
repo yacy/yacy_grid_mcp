@@ -86,13 +86,24 @@ public class WebDocument extends Document {
         return this;
     }
 
+    @Deprecated
     public WebDocument setUserlId(final String user_id) {
         this.putString(WebMapping.user_id_s, user_id);
         return this;
     }
 
+    @Deprecated
     public String getUserId() {
         return this.getString(WebMapping.user_id_s, "");
+    }
+
+    public WebDocument setUserlIds(final Collection<String> user_ids) {
+        this.putStrings(WebMapping.user_id_sxt, user_ids);
+        return this;
+    }
+
+    public Collection<String> getUserIds() {
+        return this.getStrings(WebMapping.user_id_sxt);
     }
 
     public WebDocument setCrawlId(final String crawl_id) {

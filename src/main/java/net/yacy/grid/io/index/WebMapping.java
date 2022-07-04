@@ -31,7 +31,8 @@ public enum WebMapping implements MappingDeclaration {
     url_s(MappingType.string, true, true, false, true, true, "url of document", true), // a 'sku' is a stock-keeping unit, a unique identifier and a default field in unmodified solr.
     //sku(MappingType.text_en_splitting_tight, true, true, false, true, true, "url of document"), // a 'sku' is a stock-keeping unit, a unique identifier and a default field in unmodified solr.
     crawl_id_s(MappingType.string, true, true, false, true, true, "id of the crawl start", true),
- 	user_id_s(MappingType.string, true, true, false, true, true, "id of the user of the crawl start", true),
+    user_id_s(MappingType.string, true, true, false, true, true, "id of the user of the crawl start", true), // deprecated, see user_id_sxt
+    user_id_sxt(MappingType.string, true, true, true, false, false, "ids of all the users who started that crawl", false, "users", "Users", "String", "user"),
     last_modified(MappingType.date, true, true, false, false, false, "last-modified from http header", true), // date document was last modified, needed for media search and /date operator
     load_date_dt(MappingType.date, true, true, false, false, false, "time when resource was loaded", true),
     content_type(MappingType.string, true, true, true, false, false, "mime-type of document", true),
@@ -265,9 +266,9 @@ public enum WebMapping implements MappingDeclaration {
     public static final Pattern catchall_pattern = Pattern.compile(".*");
 
     public static Map<String, Pattern> collectionParser(final String collectionString) {
-        if (collectionString == null || collectionString.length() == 0) return new HashMap<String, Pattern>();
+        if (collectionString == null || collectionString.length() == 0) return new HashMap<>();
         final String[] cs = collectionString.split(",");
-        final Map<String, Pattern> cm = new LinkedHashMap<String, Pattern>();
+        final Map<String, Pattern> cm = new LinkedHashMap<>();
         for (final String c: cs) {
             final int p = c.indexOf(':');
             if (p < 0) cm.put(c, catchall_pattern); else cm.put(c.substring(0, p), Pattern.compile(c.substring(p + 1)));
