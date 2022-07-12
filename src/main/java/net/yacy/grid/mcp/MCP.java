@@ -24,7 +24,6 @@ import javax.servlet.Servlet;
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.tools.CronBox;
 import net.yacy.grid.tools.CronBox.Telemetry;
-import net.yacy.grid.tools.GitTool;
 import net.yacy.grid.tools.Logger;
 
 /**
@@ -41,7 +40,7 @@ public class MCP {
     @SuppressWarnings("unchecked")
     public final static Class<? extends Servlet>[] MCP_SERVLETS = new Class[]{
             // information services
-    		net.yacy.grid.mcp.api.info.ServicesService.class,
+            net.yacy.grid.mcp.api.info.ServicesService.class,
             net.yacy.grid.mcp.api.info.StatusService.class,
             net.yacy.grid.mcp.api.info.ThreaddumpService.class,
             net.yacy.grid.mcp.api.info.LogService.class,
@@ -142,7 +141,6 @@ public class MCP {
 
         // first greeting
         Logger.info("YaCy Grid MCP started!");
-        Logger.info(new GitTool().toString());
         Logger.info("you can now search using the query api, i.e.:");
         Logger.info("curl \"http://127.0.0.1:8100/yacy/grid/mcp/index/yacysearch.json?query=test\"");
 
