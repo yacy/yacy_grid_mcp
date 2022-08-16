@@ -27,7 +27,7 @@ else
          -v `pwd`/../conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml \
          -v ${containername}:/usr/share/elasticsearch/data \
          -e ES_JAVA_OPTS="-Xms1g -Xmx4g" --name ${containername} \
-	 elasticsearch:6.8.20
+	 --platform linux/amd64 elasticsearch:6.8.20
   echo "${appname} container started."
 fi
 ./dockerps.sh
