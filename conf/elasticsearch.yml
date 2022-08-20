@@ -15,6 +15,7 @@ network.host: 0.0.0.0
 http.enabled: true
 
 discovery.type: single-node
+bootstrap.system_call_filter: false
 
 cluster.routing.allocation.disk.threshold_enabled : false
 cluster.routing.allocation.disk.watermark.low: 85%
