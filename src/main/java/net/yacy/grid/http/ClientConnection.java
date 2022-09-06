@@ -38,12 +38,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 
 import org.apache.http.Header;
+import org.apache.http.HeaderElement;
+import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -54,6 +57,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -62,8 +67,12 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.message.BasicHeaderElementIterator;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
@@ -79,6 +88,9 @@ public class ClientConnection {
     private static final byte CR = 13;
     public static final byte[] CRLF = {CR, LF};
 
+    private static String userAgentDefault = ClientIdentification.browserAgent.userAgent;
+    private final static CloseableHttpClient httpClient = getClosableHttpClient(userAgentDefault);
+
     public final static RequestConfig defaultRequestConfig = RequestConfig.custom()
             .setConnectTimeout(10000)           // time until a socket becomes available
             .setConnectionRequestTimeout(30000) // time until a request to the remote server is established
@@ -87,29 +99,48 @@ public class ClientConnection {
             .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
             .build();
 
-    private final static CloseableHttpClient httpClient = getClosableHttpClient();
 
+    private static ConnectionKeepAliveStrategy keepAliveStrategy = new ConnectionKeepAliveStrategy() {
+        @Override
+        public long getKeepAliveDuration(final HttpResponse response, final HttpContext context) {
+            final HeaderElementIterator it = new BasicHeaderElementIterator(response.headerIterator(HTTP.CONN_KEEP_ALIVE));
+            while (it.hasNext()) {
+                final HeaderElement he = it.nextElement();
+                final String param = he.getName();
+                final String value = he.getValue();
+                if (value != null && param.equalsIgnoreCase("timeout")) {
+                    return Long.parseLong(value) * 1000;
+                }
+            }
+            return 60000;
+        }
+    };
 
-    public final static CloseableHttpClient getClosableHttpClient() {
-        return HttpClients.custom()
+    public final static CloseableHttpClient getClosableHttpClient(final String userAgent) {
+        final HttpClientBuilder hcb = HttpClients.custom()
                 .useSystemProperties()
                 .setConnectionManager(getConnctionManager())
-                .setDefaultRequestConfig(defaultRequestConfig)
                 .setMaxConnPerRoute(200)
-                .setMaxConnTotal(500)
-                .build();
+                .setMaxConnTotal(Math.max(100, Runtime.getRuntime().availableProcessors() * 2))
+                .setUserAgent(userAgent)
+                .setDefaultRequestConfig(defaultRequestConfig)
+                //.setKeepAliveStrategy(DefaultConnectionKeepAliveStrategy.INSTANCE)
+                .setKeepAliveStrategy(keepAliveStrategy)
+                .setConnectionTimeToLive(60, TimeUnit.SECONDS)
+                .setMaxConnTotal(500);
+        return hcb.build();
     }
 
     private int status;
     public BufferedInputStream inputStream;
     private Map<String, List<String>> header;
-    private HttpRequestBase request;
+    private final HttpRequestBase request;
     private HttpResponse httpResponse;
     private ContentType contentType;
 
     private static class TrustAllHostNameVerifier implements HostnameVerifier {
         @Override
-        public boolean verify(String hostname, SSLSession session) {
+        public boolean verify(final String hostname, final SSLSession session) {
             return true;
         }
     }
@@ -120,7 +151,7 @@ public class ClientConnection {
      * @param useAuthentication
      * @throws IOException
      */
-    public ClientConnection(String urlstring) throws IOException {
+    public ClientConnection(final String urlstring) throws IOException {
         this.request = new HttpGet(urlstring);
         this.request.setHeader("User-Agent", ClientIdentification.getAgent(ClientIdentification.yacyInternetCrawlerAgentName).userAgent);
         this.init();
@@ -134,11 +165,11 @@ public class ClientConnection {
      * @throws ClientProtocolException
      * @throws IOException
      */
-    public ClientConnection(String urlstring, Map<String, byte[]> map, boolean useAuthentication) throws ClientProtocolException, IOException {
+    public ClientConnection(final String urlstring, final Map<String, byte[]> map, final boolean useAuthentication) throws ClientProtocolException, IOException {
         this.request = new HttpPost(urlstring);
-        MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+        final MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
         entityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-        for (Map.Entry<String, byte[]> entry: map.entrySet()) {
+        for (final Map.Entry<String, byte[]> entry: map.entrySet()) {
             entityBuilder.addBinaryBody(entry.getKey(), entry.getValue());
         }
         ((HttpPost) this.request).setEntity(entityBuilder.build());
@@ -153,15 +184,20 @@ public class ClientConnection {
      * @throws ClientProtocolException
      * @throws IOException
      */
-    public ClientConnection(String urlstring, Map<String, byte[]> map) throws ClientProtocolException, IOException {
+    public ClientConnection(final String urlstring, final Map<String, byte[]> map) throws ClientProtocolException, IOException {
         this(urlstring, map, true);
     }
 
-    public static PoolingHttpClientConnectionManager getConnctionManager(){
+    /**
+     * get a connection manager
+     * @param trustAllCerts allow opportunistic encryption if needed
+     * @return
+     */
+    public static PoolingHttpClientConnectionManager getConnctionManager() {
 
         Registry<ConnectionSocketFactory> socketFactoryRegistry = null;
         try {
-            SSLConnectionSocketFactory trustSelfSignedSocketFactory = new SSLConnectionSocketFactory(
+            final SSLConnectionSocketFactory trustSelfSignedSocketFactory = new SSLConnectionSocketFactory(
                         new SSLContextBuilder().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build(),
                         new TrustAllHostNameVerifier());
             socketFactoryRegistry = RegistryBuilder
@@ -173,7 +209,7 @@ public class ClientConnection {
             Logger.warn(e);
         }
 
-        PoolingHttpClientConnectionManager cm = (socketFactoryRegistry != null) ?
+        final PoolingHttpClientConnectionManager cm = (socketFactoryRegistry != null) ?
                 new PoolingHttpClientConnectionManager(socketFactoryRegistry):
                 new PoolingHttpClientConnectionManager();
 
@@ -189,28 +225,34 @@ public class ClientConnection {
         this.httpResponse = null;
         try {
             this.httpResponse = httpClient.execute(this.request);
-        } catch (UnknownHostException e) {
+        } catch (final UnknownHostException e) {
             this.request.releaseConnection();
             throw new IOException("client connection failed: unknown host " + this.request.getURI().getHost());
-        } catch (SocketTimeoutException e){
+        } catch (final SocketTimeoutException e){
             this.request.releaseConnection();
             throw new IOException("client connection timeout for request: " + this.request.getURI());
-        } catch (SSLHandshakeException e){
+        } catch (final SSLHandshakeException e){
             this.request.releaseConnection();
             throw new IOException("client connection handshake error for domain " + this.request.getURI().getHost() + ": " + e.getMessage());
+        } catch (final HttpHostConnectException e) {
+            this.request.releaseConnection();
+            throw new IOException("client connection refused for request " + this.request.getURI() + ": " + e.getMessage());
+        } catch (final Throwable e) {
+            this.request.releaseConnection();
+            throw new IOException("error " + this.request.getURI() + ": " + e.getMessage());
         }
-        HttpEntity httpEntity = this.httpResponse.getEntity();
+        final HttpEntity httpEntity = this.httpResponse.getEntity();
         this.contentType = ContentType.get(httpEntity);
         if (httpEntity != null) {
             if (this.httpResponse.getStatusLine().getStatusCode() == 200) {
                 try {
                     this.inputStream = new BufferedInputStream(httpEntity.getContent());
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     this.request.releaseConnection();
                     throw e;
                 }
                 this.header = new HashMap<String, List<String>>();
-                for (Header header: this.httpResponse.getAllHeaders()) {
+                for (final Header header: this.httpResponse.getAllHeaders()) {
                     List<String> vals = this.header.get(header.getName());
                     if (vals == null) { vals = new ArrayList<String>(); this.header.put(header.getName(), vals); }
                     vals.add(header.getValue());
@@ -237,16 +279,16 @@ public class ClientConnection {
      * @return the redirect url for the given urlstring
      * @throws IOException if the url is not redirected
      */
-    public static String getRedirect(String urlstring) throws IOException {
-        HttpGet get = new HttpGet(urlstring);
+    public static String getRedirect(final String urlstring) throws IOException {
+        final HttpGet get = new HttpGet(urlstring);
         get.setConfig(RequestConfig.custom().setRedirectsEnabled(false).build());
         get.setHeader("User-Agent", ClientIdentification.getAgent(ClientIdentification.yacyInternetCrawlerAgentName).userAgent);
-        CloseableHttpClient httpClient = getClosableHttpClient();
-        HttpResponse httpResponse = httpClient.execute(get);
-        HttpEntity httpEntity = httpResponse.getEntity();
+        final CloseableHttpClient httpClient = getClosableHttpClient(userAgentDefault);
+        final HttpResponse httpResponse = httpClient.execute(get);
+        final HttpEntity httpEntity = httpResponse.getEntity();
         if (httpEntity != null) {
             if (httpResponse.getStatusLine().getStatusCode() == 301) {
-                for (Header header: httpResponse.getAllHeaders()) {
+                for (final Header header: httpResponse.getAllHeaders()) {
                     if (header.getName().equalsIgnoreCase("location")) {
                         EntityUtils.consumeQuietly(httpEntity);
                         return header.getValue();
@@ -264,40 +306,40 @@ public class ClientConnection {
     }
 
     public void close() {
-        HttpEntity httpEntity = this.httpResponse.getEntity();
+        final HttpEntity httpEntity = this.httpResponse.getEntity();
         if (httpEntity != null) EntityUtils.consumeQuietly(httpEntity);
         try {
             this.inputStream.close();
-        } catch (IOException e) {} finally {
+        } catch (final IOException e) {} finally {
             this.request.releaseConnection();
         }
     }
 
-    public static void download(String source_url, File target_file) {
+    public static void download(final String source_url, final File target_file) {
         try {
-            ClientConnection connection = new ClientConnection(source_url);
+            final ClientConnection connection = new ClientConnection(source_url);
             try {
-                OutputStream os = new BufferedOutputStream(new FileOutputStream(target_file));
+                final OutputStream os = new BufferedOutputStream(new FileOutputStream(target_file));
                 int count;
-                byte[] buffer = new byte[2048];
+                final byte[] buffer = new byte[2048];
                 try {
                     while ((count = connection.inputStream.read(buffer)) > 0) os.write(buffer, 0, count);
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     Logger.warn(e.getMessage());
                 } finally {
                     os.close();
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Logger.warn(e.getMessage());
             } finally {
                 connection.close();
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.warn(e.getMessage());
         }
     }
 
-    public static void load(String source_url, File target_file) {
+    public static void load(final String source_url, final File target_file) {
         download(source_url, target_file);
     }
 
@@ -307,8 +349,8 @@ public class ClientConnection {
      * @return the response
      * @throws IOException
      */
-    public static byte[] load(String source_url) throws IOException {
-        ClientConnection connection = new ClientConnection(source_url);
+    public static byte[] load(final String source_url) throws IOException {
+        final ClientConnection connection = new ClientConnection(source_url);
         return connection.load();
     }
 
@@ -319,19 +361,19 @@ public class ClientConnection {
      * @return the response
      * @throws IOException
      */
-    public static byte[] load(String source_url, Map<String, byte[]> post) throws IOException {
-        ClientConnection connection = new ClientConnection(source_url, post);
+    public static byte[] load(final String source_url, final Map<String, byte[]> post) throws IOException {
+        final ClientConnection connection = new ClientConnection(source_url, post);
         return connection.load();
     }
 
     public byte[] load() throws IOException {
         if (this.inputStream == null) return null;
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int count;
-        byte[] buffer = new byte[2048];
+        final byte[] buffer = new byte[2048];
         try {
             while ((count = this.inputStream.read(buffer)) > 0) baos.write(buffer, 0, count);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.warn(this.getClass(), e.getMessage());
         } finally {
             this.close();
@@ -339,30 +381,30 @@ public class ClientConnection {
         return baos.toByteArray();
     }
 
-    public static JSONArray loadJSONArray(String source_url) throws IOException {
-        byte[] b = load(source_url);
+    public static JSONArray loadJSONArray(final String source_url) throws IOException {
+        final byte[] b = load(source_url);
         return new JSONArray(new JSONTokener(new String(b, StandardCharsets.UTF_8)));
     }
-    public static JSONArray loadJSONArray(String source_url, Map<String, byte[]> params) throws IOException {
-        byte[] b = load(source_url, params);
+    public static JSONArray loadJSONArray(final String source_url, final Map<String, byte[]> params) throws IOException {
+        final byte[] b = load(source_url, params);
         return new JSONArray(new JSONTokener(new String(b, StandardCharsets.UTF_8)));
     }
 
-    public static JSONObject loadJSONObject(String source_url) throws IOException {
-        byte[] b = load(source_url);
+    public static JSONObject loadJSONObject(final String source_url) throws IOException {
+        final byte[] b = load(source_url);
         return new JSONObject(new JSONTokener(new String(b, StandardCharsets.UTF_8)));
     }
-    public static JSONObject loadJSONObject(String source_url, Map<String, byte[]> params) throws IOException {
-        byte[] b = load(source_url, params);
+    public static JSONObject loadJSONObject(final String source_url, final Map<String, byte[]> params) throws IOException {
+        final byte[] b = load(source_url, params);
         return new JSONObject(new JSONTokener(new String(b, StandardCharsets.UTF_8)));
     }
 
-    public static String loadFromEtherpad(String etherpadUrlstub, String etherpadApikey, String padID) throws IOException {
-        String padurl = etherpadUrlstub + "/api/1/getText?apikey=" + etherpadApikey + "&padID=" + padID;
-        InputStream is = new URL(padurl).openStream();
-        JSONTokener serviceResponse = new JSONTokener(is);
-        JSONObject json = new JSONObject(serviceResponse);
-        String text = json.getJSONObject("data").getString("text");
+    public static String loadFromEtherpad(final String etherpadUrlstub, final String etherpadApikey, final String padID) throws IOException {
+        final String padurl = etherpadUrlstub + "/api/1/getText?apikey=" + etherpadApikey + "&padID=" + padID;
+        final InputStream is = new URL(padurl).openStream();
+        final JSONTokener serviceResponse = new JSONTokener(is);
+        final JSONObject json = new JSONObject(serviceResponse);
+        final String text = json.getJSONObject("data").getString("text");
         return text;
     }
 }
