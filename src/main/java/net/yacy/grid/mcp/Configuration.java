@@ -31,10 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.Servlet;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-
 import net.yacy.grid.YaCyServices;
 import net.yacy.grid.http.APIHandler;
 import net.yacy.grid.io.assets.GridStorage;
@@ -45,7 +41,6 @@ import net.yacy.grid.io.index.BoostsFactory;
 import net.yacy.grid.io.index.ElasticIndexFactory;
 import net.yacy.grid.io.index.GridIndex;
 import net.yacy.grid.io.messages.GridBroker;
-import net.yacy.grid.mcp.api.info.StatusService;
 import net.yacy.grid.tools.Logger;
 import net.yacy.grid.tools.MapUtil;
 import net.yacy.grid.tools.OS;
@@ -63,7 +58,6 @@ public class Configuration {
     public final Map<String, String> properties;
     public final BoostsFactory boostsFactory;
     public final YaCyServices type;
-    public HazelcastInstance hazelcast;
     public final List<Class<? extends Servlet>> servlets;
     public final Map<String, APIHandler> serviceMap;
 
@@ -134,19 +128,6 @@ public class Configuration {
         this.servlets = new ArrayList<>();
         this.serviceMap = new ConcurrentHashMap<>();
         for (final Class<? extends Servlet> servlet: servlets) addServlet(servlet);
-
-        // start hazelcast service concurrently (that sometimes takes time)
-        this.hazelcast = null;
-        final Thread hazelcastStarter = new Thread() {
-            @Override
-            public void run() {
-                final Config hazelcastconfig = new Config().setClusterName("YaCyGrid").setInstanceName("Services");
-                Configuration.this.hazelcast = Hazelcast.newHazelcastInstance(hazelcastconfig);
-                final String uuid = Configuration.this.hazelcast.getCluster().getLocalMember().getUuid().toString();
-                Configuration.this.hazelcast.getMap("status").put(uuid, StatusService.status());
-            }
-        };
-        hazelcastStarter.start();
     }
 
     /**
@@ -345,7 +326,6 @@ public class Configuration {
         if (this.gridBroker != null) this.gridBroker.close();
         if (this.gridStorage != null) this.gridStorage.close();
         if (this.gridIndex != null) this.gridIndex.close();
-        if (this.hazelcast != null) this.hazelcast.shutdown();
     }
 
 }
