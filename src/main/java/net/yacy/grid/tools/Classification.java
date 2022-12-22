@@ -30,6 +30,7 @@ import java.util.Set;
 
 public class Classification {
 
+    private static final Set<String> htmlExtSet = new HashSet<String>();
     private static final Set<String> textExtSet = new HashSet<String>();
     private static final Set<String> mediaExtSet = new HashSet<String>();
     private static final Set<String> imageExtSet = new HashSet<String>();
@@ -84,25 +85,32 @@ public class Classification {
 
     static {
 
-        final String text = "htm,html,phtml,shtml,xhtml,php,php3,php4,php5,cfm,asp,aspx,tex,txt,jsp,mf,asp,aspx,csv,gpx,vcf,xsl,xml,pdf,doc,docx,xls,xlsx,ppt,pptx";
-        final String apps = "7z,ace,arc,arj,apk,asf,asx,bat,bin,bkf,bz2,cab,com,css,dcm,deb,dll,dmg,exe,java,gho,ghs,gz,hqx,img,iso,jar,lha,rar,sh,sit,sitx,tar,tbz,tgz,tib,torrent,vbs,war,zip";
+        final String html  = "htm,html,phtml,shtml,xhtml,php,php3,php4,php5,cfm,asp,aspx";
+        final String text  = html + ",tex,txt,jsp,mf,asp,aspx,csv,gpx,vcf,xsl,xml,pdf,doc,docx,xls,xlsx,ppt,pptx";
+        final String apps  = "7z,ace,arc,arj,apk,asf,asx,bat,bin,bkf,bz2,cab,com,css,dcm,deb,dll,dmg,exe,java,gho,ghs,gz,hqx,img,iso,jar,lha,rar,sh,sit,sitx,tar,tbz,tgz,tib,torrent,vbs,war,zip";
         final String audio = "aac,aif,aiff,flac,m4a,m4p,mid,mp2,mp3,oga,ogg,ram,sid,wav,wma";
         final String video = "3g2,3gp,3gp2,3gpp,3gpp2,3ivx,asf,asx,avi,div,divx,dv,dvx,env,f4v,flv,hdmov,m1v,m4v,m-jpeg,mkv,moov,mov,movie,mp2v,mp4,mpe,mpeg,mpg,mpg4,mv4,ogm,ogv,qt,rm,rv,vid,swf,webm,wmv";
         final String image = "ai,bmp,cdr,cmx,emf,eps,gif,img,jpeg,jpg,mng,pct,pdd,pdn,pict,png,psb,psd,psp,svg,tif,tiff,wmf";
-        final String ctrl = "sha1,md5,crc32,sfv";
+        final String ctrl  = "sha1,md5,crc32,sfv";
 
-        addSet(textExtSet, text); // text formats
+        addSet(htmlExtSet,  html);  // html formats
+        addSet(textExtSet,  text);  // text formats
         addSet(imageExtSet, image); // image formats
         addSet(audioExtSet, audio); // audio formats
         addSet(videoExtSet, video); // video formats
-        addSet(appsExtSet, apps);   // application formats
-        addSet(ctrlExtSet, ctrl);   // control formats
+        addSet(appsExtSet,  apps);  // application formats
+        addSet(ctrlExtSet,  ctrl);  // control formats
         addSet(mediaExtSet, apps + "," + audio + "," + video + "," + image); // all media formats
     }
 
     private static void addSet(Set<String> set, final String extString) {
         if ((extString == null) || (extString.isEmpty())) return;
         for (String s: CommonPattern.COMMA.split(extString, 0)) set.add(s.toLowerCase().trim());
+    }
+
+    public static boolean isHtmlExtension(String htmlExt) {
+        if (htmlExt == null) return false;
+        return htmlExtSet.contains(htmlExt.trim().toLowerCase());
     }
 
     public static boolean isTextExtension(String textExt) {
